@@ -300,7 +300,7 @@ function renderList(){
       <span class="song-key-badge">${escH(s.key)}</span>
       ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
-      ${canDel?`<button class="song-del" onclick="event.stopPropagation();confirmDelete('song',this.dataset.id,this.dataset.title)" data-id="${s.id}" data-title="${escH(s.title)}" title="Eliminar">&#10005;</button>`:''}
+      ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
 function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
@@ -390,6 +390,9 @@ async function saveSongEdit(id){
     if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
     currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
+}
+function doDelete(id,name){
+  confirmDelete('song', id, name);
 }
 function confirmDelete(type,id,name){
   pendingDeleteId=id;pendingDeleteType=type;
