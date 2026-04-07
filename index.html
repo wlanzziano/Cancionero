@@ -214,7 +214,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzSU-VYFffZTLrXPxBNvT4hspgHDlOu5AaxsG2G8SJOChacpsfCUwRZg6J8F0O9ygUodg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxgOiRqZgj0cg1d5w5lPD3wWOMulYiMA2-DiDZAU-YnlqxYaTp3aY7PTd0Mu95t4k41wA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 const CH=8.4;
@@ -223,8 +223,14 @@ function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
-  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
-  catch(e){return{ok:false,error:'Error de red'};}
+  try{
+    const res=await fetch(SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({...params,token:currentUser?currentUser.token:''}),
+      redirect:'follow'
+    });
+    return await res.json();
+  }catch(e){return{ok:false,error:'Error de red'};}
 }
 async function apiGet(params){
   try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
@@ -395,11 +401,11 @@ function closeConfirm(){pendingDeleteId=null;document.getElementById('confirm-mo
 document.getElementById('confirm-ok-btn').onclick=async function(){
   if(!pendingDeleteId)return;closeConfirm();
   if(pendingDeleteType==='song'){
-    const r=await api({action:'delete',id:pendingDeleteId});
+    const r=await apiGet({action:'delete',id:pendingDeleteId});
     if(r.ok){songs=songs.filter(s=>String(s.id)!==String(pendingDeleteId));renderList();toast('Canción eliminada');}
     else toast('Error: '+r.error);
   }else{
-    const r=await api({action:'delete_user',code:pendingDeleteId});
+    const r=await apiGet({action:'delete_user',code:pendingDeleteId});
     if(r.ok){openUsers();toast('Usuario eliminado');}
     else toast('Error: '+r.error);
   }
