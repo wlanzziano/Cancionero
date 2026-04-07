@@ -223,14 +223,8 @@ function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
-  try{
-    const res=await fetch(SCRIPT_URL,{
-      method:'POST',
-      body:JSON.stringify({...params,token:currentUser?currentUser.token:''}),
-      redirect:'follow'
-    });
-    return await res.json();
-  }catch(e){return{ok:false,error:'Error de red'};}
+  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
+  catch(e){return{ok:false,error:'Error de red'};}
 }
 async function apiGet(params){
   try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
@@ -285,10 +279,9 @@ async function loadSongs(){
   const r=await apiGet({action:'songs'});icon.classList.remove('spin');
   if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
 }
-let filtered=[];
 function renderList(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
+  const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   const canDel=currentUser.role==='admin';
@@ -301,7 +294,7 @@ function renderList(){
       <span class="song-key-badge">${escH(s.key)}</span>
       ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
-      ${canDel?`<button class="song-del" onclick="event.stopPropagation();deleteByIndex(${i})" title="Eliminar">&#10005;</button>`:''}
+      ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
 function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
@@ -392,201 +385,7 @@ async function saveSongEdit(id){
     currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
-function doDelete(id,name){
-  document.getElementById('confirm-title').textContent='¿Eliminar canción?';
-  document.getElementById('confirm-detail').textContent=name;
-  document.getElementById('confirm-modal').classList.add('open');
-  document.getElementById('confirm-ok-btn').onclick=async function(){
-    document.getElementById('confirm-modal').classList.remove('open');
-    const r=await apiGet({action:'delete',id:id});
-    if(r.ok){songs=songs.filter(s=>String(s.id)!==String(id));renderList();toast('Canción eliminada');}
-    else toast('Error: '+r.error);
-  };
-}
-function doDeleteUser(code,name){
-  document.getElementById('confirm-title').textContent='¿Eliminar usuario?';
-  document.getElementById('confirm-detail').textContent=name;
-  document.getElementById('confirm-modal').classList.add('open');
-  document.getElementById('confirm-ok-btn').onclick=async function(){
-    document.getElementById('confirm-modal').classList.remove('open');
-    const r=await apiGet({action:'delete_user',code:code});
-    if(r.ok){openUsers();toast('Usuario eliminado');}
-    else toast('Error: '+r.error);
-  };
-}
-function confirmDelete(type,id,name){
-  if(type==='song')doDelete(id,name);
-  else doDeleteUser(id,name);
-}
-function closeConfirm(){document.getElementById('confirm-modal').classList.remove('open');}}
-}
-async function apiGet(params){
-  try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
-  catch(e){return{ok:false,error:'Error de red'};}
-}
-function init(){
-  const saved=localStorage.getItem('cancionero_session');
-  if(saved){
-    try{
-      currentUser=JSON.parse(saved);
-      currentUser.role=String(currentUser.role||'').trim().toLowerCase();
-      document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();return;
-    }catch(e){}
-  }
-  document.getElementById('loading').classList.remove('show');
-  document.getElementById('login-view').style.display='flex';
-}
-async function doLogin(){
-  const code=document.getElementById('login-code').value.trim();
-  const err=document.getElementById('login-err');const btn=document.getElementById('login-btn');
-  if(!code){err.textContent='Ingresa tu código';return;}
-  btn.disabled=true;btn.textContent='Verificando...';err.textContent='';
-  const r=await apiGet({action:'login',code});
-  btn.disabled=false;btn.textContent='Entrar';
-  if(r.ok){
-    currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
-    localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
-    document.getElementById('login-view').style.display='none';
-    showApp();loadSongs();
-  }else{err.textContent=r.error||'Código incorrecto';}
-}
-function doLogout(){
-  currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-code').value='';
-  document.getElementById('login-err').textContent='';
-  document.getElementById('login-view').style.display='flex';
-}
-function showApp(){
-  document.getElementById('app').style.display='block';
-  const role=currentUser.role;
-  const isAdmin=role==='admin';const canEdit=isAdmin||role==='editor';
-  document.getElementById('admin-btn').style.display=isAdmin?'flex':'none';
-  document.getElementById('add-song-btn').style.display=canEdit?'block':'none';
-  const badge=document.getElementById('role-badge');
-  badge.textContent=role;badge.className='role-badge role-'+role;
-  document.getElementById('user-name-display').textContent=currentUser.name;
-}
-async function loadSongs(){
-  const icon=document.getElementById('sync-icon');icon.classList.add('spin');
-  const r=await apiGet({action:'songs'});icon.classList.remove('spin');
-  if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
-}
-let filtered=[];
-function renderList(){
-  const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
-  document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
-  const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
-  const canDel=currentUser.role==='admin';
-  const list=document.getElementById('song-list');
-  if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
-  list.innerHTML=filtered.map((s,i)=>`
-    <div class="song-card" onclick="openSong('${s.id}')">
-      <span class="song-num">${i+1}</span>
-      <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text">${escH(s.artist)}</div></div>
-      <span class="song-key-badge">${escH(s.key)}</span>
-      ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
-      ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
-      ${canDel?`<button class="song-del" onclick="event.stopPropagation();deleteByIndex(${i})" title="Eliminar">&#10005;</button>`:''}
-    </div>`).join('');
-}
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
-function drawSong(){
-  const s=currentSong,st=semitones;
-  const badge=st===0?'Original':(st>0?'+':'')+st+' st';
-  const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
-  let secs='';
-  s.sections.forEach(sec=>{
-    if(sec.label)secs+=`<div class="sec-label">${escH(sec.label)}</div>`;
-    sec.lines.forEach(line=>{
-      if(!line.lyric&&!line.chords.length)return;
-      secs+=`<div class="line-block"><div class="chord-row">`;
-      line.chords.forEach(c=>{secs+=`<span class="chord-pill" style="left:${c.pos*CH}px">${txChord(c.ch,st)}</span>`;});
-      secs+=`</div><div class="lyric-line">${escH(line.lyric)}</div></div>`;
-    });
-    secs+='<div style="height:8px"></div>';
-  });
-  document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
-    <div class="sv-card">
-      <div class="sv-title">${escH(s.title)}</div>
-      <div class="sv-meta">
-        <span class="sv-artist">${escH(s.artist)}</span>
-        ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
-      </div>
-      <div class="sv-controls">
-        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
-        <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
-        ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
-      </div>
-      <div class="lyrics-wrap">${secs}</div>
-    </div>`;
-}
-function doTranspose(d){semitones+=d;drawSong();}
-function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);}
-function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);}
-function formHTML(s){
-  const isEdit=!!s;const body=s?songToText(s):'';
-  return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
-    <div class="form-card">
-      <div class="form-title">${isEdit?'Editar canción':'Nueva canción'}</div>
-      <div class="row-2">
-        <div class="field"><label>Título *</label><input type="text" id="f-title" value="${escH(s?s.title:'')}" placeholder="Ej: Pescador de hombres"></div>
-        <div class="field"><label>Tono *</label><input type="text" id="f-key" value="${escH(s?s.key:'')}" placeholder="G" maxlength="3"></div>
-      </div>
-      <div class="row-2b">
-        <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
-        <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
-      </div>
-      <div class="field"><label>Letra con acordes *</label>
-        <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
-        <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
-      </div>
-      <div class="form-actions">
-        <button class="btn-cancel" onclick="showList()">Cancelar</button>
-        <button class="btn-save" id="save-btn" onclick="${isEdit?`saveSongEdit('${s.id}')`:'saveSongNew()'}">${isEdit?'Guardar cambios':'Guardar canción'}</button>
-      </div>
-    </div>`;
-}
-function getFormValues(){
-  const title=document.getElementById('f-title').value.trim();
-  const artist=document.getElementById('f-artist').value.trim()||'Desconocido';
-  const key=document.getElementById('f-key').value.trim()||'?';
-  const body=document.getElementById('f-body').value.trim();
-  const bpmEl=document.getElementById('f-bpm');
-  const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
-  if(!title){alert('El título es obligatorio');return null;}
-  if(!body){alert('La letra es obligatoria');return null;}
-  return{title,artist,key,bpm,body};
-}
-async function saveSongNew(){
-  const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
-  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,sections:parseBody(body),createdBy:currentUser.name}});
-  if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
-  else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
-}
-async function saveSongEdit(id){
-  const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
-  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,sections:parseBody(body)}});
-  if(r.ok){
-    const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
-    currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
-  }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
-}
-function doDelete(id,name){
-  confirmDelete('song', id, name);
-}
-function deleteByIndex(i){
-  const s=filtered[i];
-  if(s) confirmDelete('song', s.id, s.title);
-}
+function doDelete(id,name){confirmDelete('song',id,name);}
 function confirmDelete(type,id,name){
   pendingDeleteId=id;pendingDeleteType=type;
   document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
