@@ -201,7 +201,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.3</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.4</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -322,7 +322,7 @@ function drawSong(){
     if(sec.label)secs+=`<div class="sec-label">${escH(sec.label)}</div>`;
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
-      if(!line.lyric&&!line.chords.length){secs+='<div style="height:6px"></div>';continue;}
+      if(!line.lyric&&!line.chords.length){secs+='<div style="height:6px"></div>';}else{
       // Build segments: split lyric by chord positions
       const lyric=line.lyric||'';
       const positions=[...line.chords].sort((a,b)=>a.pos-b.pos);
@@ -346,7 +346,7 @@ function drawSong(){
         cells+=`<div class="lyric-cell">${escH(seg.lyric)||'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
-      secs+=`<div class="line-block"><table class="chord-table"><tr>${cells}</tr></table></div>`;
+      secs+=`<div class="line-block"><table class="chord-table"><tr>${cells}</tr></table></div>`;}
     });
     secs+='<div style="height:2px"></div>';
   });
