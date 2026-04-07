@@ -296,6 +296,16 @@ function renderList(){
     </div>`).join('');
 }
 function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
+function fixChordOverlap(chords){
+  if(!chords||chords.length<2)return chords;
+  const sorted=[...chords].sort((a,b)=>a.pos-b.pos);
+  for(let i=1;i<sorted.length;i++){
+    const prev=sorted[i-1];
+    const minPos=prev.pos+(prev.ch.length*7)+6;
+    if(sorted[i].pos<minPos)sorted[i]={...sorted[i],pos:minPos};
+  }
+  return sorted;
+}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
@@ -306,7 +316,7 @@ function drawSong(){
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
       secs+=`<div class="line-block"><div class="chord-row">`;
-      line.chords.forEach(c=>{secs+=`<span class="chord-pill" style="left:${c.pos*CH}px">${txChord(c.ch,st)}</span>`;});
+      fixChordOverlap(line.chords).forEach(c=>{secs+=`<span class="chord-pill" style="left:${c.pos*CH}px">${txChord(c.ch,st)}</span>`;});
       secs+=`</div><div class="lyric-line">${escH(line.lyric)}</div></div>`;
     });
     secs+='<div style="height:8px"></div>';
