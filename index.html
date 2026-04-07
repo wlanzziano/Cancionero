@@ -195,7 +195,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v1.5</div>
+      <div class="footer">Powered by <span>Nano</span> · v1.6</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -214,7 +214,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxgOiRqZgj0cg1d5w5lPD3wWOMulYiMA2-DiDZAU-YnlqxYaTp3aY7PTd0Mu95t4k41wA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzmnLDDamecdnF1jW4_vAXVH1kk2IfWjcNFtvJzwM6uOtvGnVenRrBxD27CuZoRYrPfsg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 const CH=8.4;
@@ -392,11 +392,9 @@ async function saveSongEdit(id){
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
 function doDelete(id,name){
-  console.log('doDelete called with id:', id, 'name:', name);
   confirmDelete('song', id, name);
 }
 function confirmDelete(type,id,name){
-  console.log('confirmDelete:', type, id, name);
   pendingDeleteId=id;pendingDeleteType=type;
   document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
   document.getElementById('confirm-detail').textContent=name;
