@@ -195,7 +195,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v1.7</div>
+      <div class="footer">Powered by <span>Nano</span> · v1.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -394,13 +394,15 @@ function confirmDelete(type,id,name){
 }
 function closeConfirm(){pendingDeleteId=null;document.getElementById('confirm-modal').classList.remove('open');}
 document.getElementById('confirm-ok-btn').onclick=async function(){
-  if(!pendingDeleteId)return;closeConfirm();
-  if(pendingDeleteType==='song'){
-    const r=await apiGet({action:'delete',id:pendingDeleteId});
-    if(r.ok){songs=songs.filter(s=>String(s.id)!==String(pendingDeleteId));renderList();toast('Canción eliminada');}
+  if(!pendingDeleteId)return;
+  const _id=pendingDeleteId;const _type=pendingDeleteType;
+  closeConfirm();
+  if(_type==='song'){
+    const r=await apiGet({action:'delete',id:_id});
+    if(r.ok){songs=songs.filter(s=>String(s.id)!==String(_id));renderList();toast('Canción eliminada');}
     else toast('Error: '+r.error);
   }else{
-    const r=await apiGet({action:'delete_user',code:pendingDeleteId});
+    const r=await apiGet({action:'delete_user',code:_id});
     if(r.ok){openUsers();toast('Usuario eliminado');}
     else toast('Error: '+r.error);
   }
