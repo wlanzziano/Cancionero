@@ -196,7 +196,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v1.9</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -218,7 +218,16 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzmnLDDamecdnF1jW4_vAXVH1kk2IfWjcNFtvJzwM6uOtvGnVenRrBxD27CuZoRYrPfsg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-const CH=8.4;
+let CH=8.4;
+function calcCH(){
+  const el=document.createElement('span');
+  el.style.cssText='font-family:var(--font-mono);font-size:14px;position:absolute;visibility:hidden;white-space:pre';
+  el.textContent='MMMMMMMMMM';
+  document.body.appendChild(el);
+  CH=el.getBoundingClientRect().width/10;
+  document.body.removeChild(el);
+}
+window.addEventListener('resize',()=>{calcCH();if(currentSong)drawSong();});
 function txChord(ch,st){const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;return NS[((i+st)%12+12)%12]+m[2];}
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
@@ -231,7 +240,7 @@ async function apiGet(params){
   try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
   catch(e){return{ok:false,error:'Error de red'};}
 }
-function init(){
+function init(){calcCH();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
     try{
