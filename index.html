@@ -195,7 +195,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v1.4</div>
+      <div class="footer">Powered by <span>Nano</span> · v1.5</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -392,9 +392,11 @@ async function saveSongEdit(id){
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
 function doDelete(id,name){
+  console.log('doDelete called with id:', id, 'name:', name);
   confirmDelete('song', id, name);
 }
 function confirmDelete(type,id,name){
+  console.log('confirmDelete:', type, id, name);
   pendingDeleteId=id;pendingDeleteType=type;
   document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
   document.getElementById('confirm-detail').textContent=name;
