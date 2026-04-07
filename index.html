@@ -98,13 +98,13 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sv-action-btn.edit{background:var(--accent-bg);border-color:rgba(167,139,250,.25);color:var(--accent)}
 .sv-action-btn.edit:hover{background:rgba(167,139,250,.2)}
 .ml-auto{margin-left:auto}
-.lyrics-wrap{margin-top:6px}
-.sec-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.lyrics-wrap{margin-top:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sec-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:10px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border)}
 .sec-label:first-child{margin-top:4px}
 .line-block{margin-bottom:2px}
 .chord-row{position:relative;height:22px;user-select:none}
 .chord-pill{position:absolute;top:0;font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(167,139,250,.2);border-radius:5px;padding:1px 6px;white-space:nowrap;line-height:20px}
-.lyric-line{font-family:var(--font-mono);font-size:14px;color:var(--text);line-height:1.6;padding-bottom:4px;white-space:pre-wrap;word-break:break-word}
+.lyric-line{font-family:var(--font-mono);font-size:14px;color:var(--text);line-height:1.6;padding-bottom:2px;white-space:pre;overflow-x:auto}
 .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
 .form-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:20px}
 .field{margin-bottom:16px}
@@ -153,7 +153,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .loading-text{font-size:13px;color:var(--text3)}
 .footer{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.08em}.footer span{color:var(--accent);font-weight:500}
-@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:13px}.chord-pill{font-size:11px}.header-title{font-size:15px}}
+@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}}
+@media(max-width:380px){.lyric-line{font-size:11px}.chord-pill{font-size:10px}}
 </style>
 </head>
 <body>
@@ -195,7 +196,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v1.8</div>
+      <div class="footer">Powered by <span>Nano</span> · v1.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -311,7 +312,7 @@ function drawSong(){
       line.chords.forEach(c=>{secs+=`<span class="chord-pill" style="left:${c.pos*CH}px">${txChord(c.ch,st)}</span>`;});
       secs+=`</div><div class="lyric-line">${escH(line.lyric)}</div></div>`;
     });
-    secs+='<div style="height:8px"></div>';
+    secs+='<div style="height:2px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
     <button class="back-btn" onclick="showList()">&#8592; Volver</button>
