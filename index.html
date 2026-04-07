@@ -102,9 +102,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sec-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:10px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border)}
 .sec-label:first-child{margin-top:4px}
 .line-block{margin-bottom:2px}
-.chord-row{position:relative;height:22px;user-select:none}
+.chord-row{position:relative;height:24px;user-select:none}
 .chord-row-txt{font-family:var(--font-mono);font-size:14px;color:var(--accent);line-height:1.3;white-space:pre;letter-spacing:0}
-.chord-pill{position:absolute;top:0;font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(167,139,250,.2);border-radius:5px;padding:1px 6px;white-space:nowrap;line-height:20px}
+.chord-pill{position:absolute;top:0;font-family:var(--font-mono);font-size:14px;font-weight:500;color:var(--accent);white-space:nowrap;line-height:20px}
 .chord-row-txt .acc{color:var(--accent);font-weight:500}
 .lyric-line{font-family:var(--font-mono);font-size:14px;color:var(--text);line-height:1.6;padding-bottom:2px;white-space:pre;overflow-x:auto}
 .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
@@ -198,7 +198,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.1</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -224,7 +224,7 @@ let CH=8.4;
 function calcCH(){
   const el=document.createElement('span');
   el.style.cssText='font-family:var(--font-mono);font-size:14px;position:absolute;visibility:hidden;white-space:pre';
-  el.textContent='MMMMMMMMMM';
+  el.textContent='aaaaaaaaaa';
   document.body.appendChild(el);
   CH=el.getBoundingClientRect().width/10;
   document.body.removeChild(el);
@@ -319,25 +319,9 @@ function drawSong(){
     if(sec.label)secs+=`<div class="sec-label">${escH(sec.label)}</div>`;
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
-      const lyric=line.lyric||'';
-      const chordMap={};
-      line.chords.forEach(c=>{chordMap[c.pos]=txChord(c.ch,st);});
-      let chordRow='';let lyricRow='';
-      let ci=0;
-      for(let i=0;i<=lyric.length;i++){
-        const ch=chordMap[i];
-        const lch=lyric[i]||'';
-        if(ch){
-          const pad=Math.max(ch.length,lch?1:0);
-          chordRow+=ch.padEnd(pad,' ');
-          lyricRow+=lch.padEnd(pad,' ');
-          i+=(lch?0:0);
-        }else if(lch){
-          chordRow+=' ';
-          lyricRow+=lch;
-        }
-      }
-      secs+=`<div class="line-block"><div class="chord-row-txt">${escH(chordRow)}</div><div class="lyric-line">${escH(lyricRow)}</div></div>`;
+      secs+=`<div class="line-block"><div class="chord-row">`;
+      line.chords.forEach(c=>{secs+=`<span class="chord-pill" style="left:${c.pos*CH}px">${txChord(c.ch,st)}</span>`;});
+      secs+=`</div><div class="lyric-line">${escH(line.lyric)}</div></div>`;
     });
     secs+='<div style="height:2px"></div>';
   });
