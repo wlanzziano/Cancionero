@@ -203,7 +203,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.5</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.6</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -521,9 +521,26 @@ function exportPDF(){
     if(sec.label)secs+=`<div class="sec">${sec.label}</div>`;
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
-      secs+=`<div class="block"><div class="cline">`;
-      line.chords.forEach(c=>{secs+=`<span class="ch" style="left:${c.pos*8.2}px">${txChord(c.ch,st)}</span>`;});
-      secs+=`</div><div class="ly">${line.lyric||'&nbsp;'}</div></div>`;
+      const lyric=line.lyric||'';
+      const positions=[...line.chords].sort((a,b)=>a.pos-b.pos);
+      let segments=[];
+      if(positions.length===0){
+        segments.push({chord:'',lyric:lyric});
+      } else {
+        if(positions[0].pos>0) segments.push({chord:'',lyric:lyric.slice(0,positions[0].pos)});
+        positions.forEach((c,i)=>{
+          const nextPos=positions[i+1]?positions[i+1].pos:lyric.length;
+          segments.push({chord:txChord(c.ch,st),lyric:lyric.slice(c.pos,nextPos)});
+        });
+      }
+      let cells='';
+      segments.forEach(seg=>{
+        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;font-family:monospace;font-size:14px">`;
+        cells+=`<div style="color:#534ab7;font-weight:bold;line-height:1.3;white-space:pre;min-width:4px">${seg.chord||'&nbsp;'}</div>`;
+        cells+=`<div style="color:#1a1033;line-height:1.5;white-space:pre;min-width:4px">${seg.lyric||'&nbsp;'}</div>`;
+        cells+=`</td>`;
+      });
+      secs+=`<div class="block"><table style="border-collapse:collapse;margin-bottom:4px"><tr>${cells}</tr></table></div>`;
     });
   });
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.title}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#1a1033;max-width:700px;margin:auto}h1{font-size:26px;color:#1a1033;margin-bottom:4px}.meta{font-size:13px;color:#6b63a0;margin-bottom:6px}.badge{display:inline-block;background:#eeeeff;color:#534ab7;border-radius:5px;font-size:11px;padding:2px 8px;margin-bottom:24px}.sec{font-size:10px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#9b93c4;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e8e5f5}.block{margin-bottom:2px}.cline{position:relative;height:22px}.ch{position:absolute;top:0;font-size:12px;font-weight:bold;color:#534ab7;background:#eeeeff;border-radius:4px;padding:1px 5px;white-space:nowrap}.ly{font-family:monospace;font-size:14px;color:#1a1033;line-height:1.6;padding-bottom:3px}@media print{body{padding:20px}}</style></head><body><h1>${s.title}</h1><div class="meta">${s.artist}${bpmInfo}</div><div class="badge">${badge}</div>${secs}<div style="margin-top:32px;text-align:right;font-size:11px;color:#c4c0d8">Cancionero Católico</div></body></html>`;
