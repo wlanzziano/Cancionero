@@ -1,12 +1,30 @@
-<!https://script.google.com/macros/s/AKfycbxZZqIpKcad74LVPxPlTSan09pFeSw723pPCL3zBBUtj9oGVYCsqzX8XXQpX35I9zhuMA/exec'Playfair Display',serif;
-  --font-body:'DM Sans',sans-serif;
-  --font-mono:'DM Mono',monospace;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cancionero Católico">
+<meta name="theme-color" content="#1a1033">
+<title>Cancionero Católico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0c1d;--surface:#1a1533;--surface2:#231d45;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --text:#f0ecff;--text2:#9b93c4;--text3:#5e577d;
+  --accent:#a78bfa;--accent2:#7c3aed;--accent-bg:rgba(167,139,250,0.12);
+  --green:#34d399;--green-bg:rgba(52,211,153,0.1);--red:#f87171;
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);
+  --font-display:'Playfair Display',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
   --r:14px;--r-sm:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow-x:hidden}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
-#app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 80px}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
+#app{min-height:100vh;display:flex;flex-direction:column;max-width:680px;margin:0 auto;padding:0 16px 80px}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:340px}
 .login-logo{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -14,19 +32,22 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .login-sub{font-size:13px;color:var(--text3);margin-bottom:28px}
 .login-field{margin-bottom:16px}
 .login-field label{display:block;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
-.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:16px;outline:none;transition:border .2s;-webkit-appearance:none}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:16px;letter-spacing:.1em;outline:none;transition:border .2s;-webkit-appearance:none}
 .login-field input:focus{border-color:var(--accent)}
-.login-field input::placeholder{color:var(--text3)}
-.login-btn{width:100%;background:var(--accent);border:none;border-radius:var(--r-sm);padding:12px;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;margin-top:8px}
+.login-field input::placeholder{color:var(--text3);letter-spacing:normal}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:var(--r-sm);padding:12px;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:background .2s}
 .login-btn:hover{background:var(--accent2)}
+.login-btn:active{transform:scale(.98)}
 .login-btn:disabled{opacity:.5;cursor:not-allowed}
 .login-err{font-size:13px;color:var(--red);margin-top:10px;text-align:center;min-height:20px}
 .login-info{font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6}
+.no-sheet-banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:20px;font-size:13px;color:var(--amber);line-height:1.5}
+.setup-link{color:var(--amber);text-decoration:underline;cursor:pointer;background:none;border:none;font-family:var(--font-body);font-size:13px;padding:0}
 .header{padding:16px 0 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
-.header-title{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text);flex-shrink:0}
+.header-title{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text);letter-spacing:-.3px;flex-shrink:0}
 .header-title span{color:var(--accent)}
 .search-wrap{flex:1;position:relative}
-.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px 8px 32px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px 8px 32px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border .2s}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap input::placeholder{color:var(--text3)}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
@@ -35,6 +56,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .btn-icon:hover{border-color:var(--accent);color:var(--accent)}
 .btn-add{background:var(--accent);border:none;border-radius:var(--r-sm);padding:7px 13px;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer}
 .btn-add:hover{background:var(--accent2)}
+.btn-add:active{transform:scale(.97)}
 .role-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px}
 .role-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
 .role-admin{background:rgba(167,139,250,.15);color:var(--accent);border:1px solid rgba(167,139,250,.25)}
@@ -47,33 +69,34 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .list-count{font-size:12px;color:var(--text3);margin-bottom:10px;letter-spacing:.04em}
 .song-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:border-color .2s,background .2s}
 .song-card:hover{border-color:var(--accent);background:var(--surface2)}
+.song-card:active{transform:scale(.99)}
 .song-num{font-family:var(--font-mono);font-size:11px;color:var(--text3);width:20px;flex-shrink:0;text-align:right}
 .song-info{flex:1;min-width:0}
 .song-title-text{font-size:15px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .song-artist-text{font-size:12px;color:var(--text2);margin-top:1px}
 .song-key-badge{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(167,139,250,.25);border-radius:6px;font-family:var(--font-mono);font-size:12px;font-weight:500;padding:3px 9px;flex-shrink:0}
-.song-bpm-badge{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.2);border-radius:6px;font-family:var(--font-mono);font-size:11px;padding:3px 7px;flex-shrink:0}
 .song-del{background:transparent;border:none;color:var(--text3);font-size:15px;padding:4px 6px;cursor:pointer;border-radius:6px;flex-shrink:0;line-height:1}
 .song-del:hover{color:var(--red);background:rgba(248,113,113,.1)}
 .song-edit{background:transparent;border:none;color:var(--text3);font-size:14px;padding:4px 6px;cursor:pointer;border-radius:6px;flex-shrink:0;line-height:1}
 .song-edit:hover{color:var(--accent);background:var(--accent-bg)}
 .empty{text-align:center;padding:48px 0;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:8px;opacity:.5}
+.empty p{font-size:14px}
 .sync-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 0;margin-bottom:8px}
 .sync-btn:hover{color:var(--accent)}
-.spin{animation:spin .8s linear infinite}
+.spin{display:inline-block;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text2);font-size:13px;cursor:pointer;padding:10px 0 14px;background:none;border:none;font-family:var(--font-body)}
 .back-btn:hover{color:var(--accent)}
 .sv-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
 .sv-title{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);line-height:1.2}
-.sv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-.sv-artist{font-size:13px;color:var(--text2)}
-.sv-bpm{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.25);border-radius:5px;font-family:var(--font-mono);font-size:12px;padding:2px 8px}
+.sv-artist{font-size:13px;color:var(--text2);margin-top:4px}
 .sv-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .t-group{display:flex;align-items:center;gap:7px}
 .t-label{font-size:12px;color:var(--text3)}
-.t-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font-body)}
+.t-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:var(--font-body)}
 .t-btn:hover{border-color:var(--accent);color:var(--accent)}
+.t-btn:active{transform:scale(.95)}
 .t-badge{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(167,139,250,.25);border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12px;font-weight:500;padding:5px 10px;min-width:68px;text-align:center}
 .sv-action-btn{background:var(--green-bg);border:1px solid rgba(52,211,153,.25);border-radius:var(--r-sm);color:var(--green);font-family:var(--font-body);font-size:13px;font-weight:500;padding:6px 12px;cursor:pointer}
 .sv-action-btn:hover{background:rgba(52,211,153,.18)}
@@ -99,12 +122,12 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .hint{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5}
 .hint code{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);font-size:11px;color:var(--accent)}
 .row-2{display:grid;grid-template-columns:1fr 80px;gap:12px}
-.row-2b{display:grid;grid-template-columns:1fr 100px;gap:12px}
 .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
 .btn-cancel{background:transparent;border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px 18px;color:var(--text2);font-family:var(--font-body);font-size:14px;cursor:pointer}
-.btn-cancel:hover{color:var(--text)}
+.btn-cancel:hover{border-color:var(--text2);color:var(--text)}
 .btn-save{background:var(--accent);border:none;border-radius:var(--r-sm);padding:9px 20px;color:#fff;font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer}
 .btn-save:hover{background:var(--accent2)}
+.btn-save:active{transform:scale(.97)}
 .btn-save:disabled{opacity:.5;cursor:not-allowed}
 .user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px}
 .user-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
@@ -124,6 +147,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .modal-box small{font-size:13px;color:var(--text2)}
 .modal-btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 .modal-cancel{background:transparent;border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px 18px;color:var(--text2);font-family:var(--font-body);font-size:14px;cursor:pointer}
+.modal-cancel:hover{color:var(--text)}
 .modal-confirm{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:var(--r-sm);padding:8px 18px;color:var(--red);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer}
 .modal-confirm:hover{background:rgba(248,113,113,.25)}
 .loading-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:400;align-items:center;justify-content:center;flex-direction:column;gap:16px}
@@ -134,8 +158,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .loading-dots span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .loading-text{font-size:13px;color:var(--text3)}
-.footer{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.08em}.footer span{color:var(--accent);font-weight:500}
-@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:13px}.chord-pill{font-size:11px}.header-title{font-size:15px}}
+@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:13px}.chord-pill{font-size:11px}.header-title{font-size:16px}}
 </style>
 </head>
 <body>
@@ -145,26 +168,36 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 </div>
 <div class="login-wrap" id="login-view" style="display:none">
   <div class="login-card">
-    <div class="login-logo">&#9834; <span>Cancionero</span> Católico</div>
+    <div class="login-logo">♪ <span>Cancionero</span> Católico</div>
     <div class="login-sub">Ingresa tu código de acceso</div>
-    <div class="login-field">
-      <label>Código de acceso</label>
-      <input type="text" id="login-code" placeholder="Ej: admin123" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="no-sheet-warn" style="display:none">
+      <div class="no-sheet-banner">&#9888;&#65039; Primero configura la URL de tu Google Apps Script.</div>
+      <div class="login-field">
+        <label>URL del Apps Script</label>
+        <input type="text" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+      </div>
+      <button class="login-btn" onclick="saveSetupURL()" style="background:var(--amber);margin-bottom:16px">Guardar URL y continuar</button>
     </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-err" id="login-err"></div>
-    <div class="login-info">¿No tienes código? Pide al administrador que te agregue.</div>
+    <div id="login-fields" style="display:none">
+      <div class="login-field">
+        <label>C&#243;digo de acceso</label>
+        <input type="text" id="login-code" placeholder="Ej: admin123" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
+      <div class="login-err" id="login-err"></div>
+      <div class="login-info">&#191;No tienes c&#243;digo? Pide al administrador que te agregue.</div>
+    </div>
   </div>
 </div>
 <div id="app" style="display:none">
   <div class="header">
-    <div class="header-title">&#9834; <span>Cancionero</span> Católico</div>
+    <div class="header-title">♪ <span>Cancionero</span> Católico</div>
     <div class="search-wrap">
-      <span class="search-icon">&#128269;</span>
+      <span class="search-icon">🔍</span>
       <input type="text" id="search" placeholder="Buscar..." oninput="renderList()">
     </div>
     <div class="header-actions">
-      <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">&#128101;</div>
+      <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">👥</div>
       <button class="btn-add" id="add-song-btn" onclick="openAdd()" style="display:none">+ Nueva</button>
     </div>
   </div>
@@ -174,10 +207,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
         <div><span class="role-badge" id="role-badge"></span><span class="user-name-lbl" id="user-name-display" style="margin-left:8px"></span></div>
         <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
       </div>
-      <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
+      <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">↻</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span></div>
+      <div style="text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.08em">Powered by <span style="color:var(--accent);font-weight:500">Nano</span></div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -196,7 +229,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZZqIpKcad74LVPxPlTSan09pFeSw723pPCL3zBBUtj9oGVYCsqzX8XXQpX35I9zhuMA/exec';
+let SCRIPT_URL=localStorage.getItem('cancionero_script_url')||'https://script.google.com/macros/s/AKfycbwuKXCtneY4yQ6P2J1_uyYV5jNjU52BuJiQOVn0L_G2aZ4IU7Xlunbnd2Pa764sKQ0TKw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 const CH=8.4;
@@ -204,56 +237,50 @@ function txChord(ch,st){const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;le
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function showLoading(v){document.getElementById('loading').classList.toggle('show',v);}
 async function api(params){
-  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
+  if(!SCRIPT_URL)return{ok:false,error:'Sin URL configurada'};
+  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?.token||''})});return await res.json();}
   catch(e){return{ok:false,error:'Error de red'};}
 }
 async function apiGet(params){
-  try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
+  if(!SCRIPT_URL)return{ok:false,error:'Sin URL configurada'};
+  try{const qs=new URLSearchParams({...params,token:currentUser?.token||''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
   catch(e){return{ok:false,error:'Error de red'};}
 }
 function init(){
   const saved=localStorage.getItem('cancionero_session');
-  if(saved){
-    try{
-      currentUser=JSON.parse(saved);
-      currentUser.role=String(currentUser.role||'').trim().toLowerCase();
-      document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();return;
-    }catch(e){}
+  if(!SCRIPT_URL){
+    showLoading(false);
+    document.getElementById('no-sheet-warn').style.display='block';
+    document.getElementById('login-fields').style.display='none';
+    document.getElementById('login-view').style.display='flex';
+    return;
   }
-  document.getElementById('loading').classList.remove('show');
-  document.getElementById('login-view').style.display='flex';
+  document.getElementById('login-fields').style.display='block';
+  if(saved){try{currentUser=JSON.parse(saved);showLoading(false);showApp();loadSongs();return;}catch(e){}}
+  showLoading(false);document.getElementById('login-view').style.display='flex';
 }
 async function doLogin(){
   const code=document.getElementById('login-code').value.trim();
   const err=document.getElementById('login-err');const btn=document.getElementById('login-btn');
   if(!code){err.textContent='Ingresa tu código';return;}
+  if(!SCRIPT_URL){showSetup();return;}
   btn.disabled=true;btn.textContent='Verificando...';err.textContent='';
   const r=await apiGet({action:'login',code});
   btn.disabled=false;btn.textContent='Entrar';
-  if(r.ok){
-    currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
-    localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
-    document.getElementById('login-view').style.display='none';
-    showApp();loadSongs();
-  }else{err.textContent=r.error||'Código incorrecto';}
+  if(r.ok){currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};localStorage.setItem('cancionero_session',JSON.stringify(currentUser));document.getElementById('login-view').style.display='none';showApp();loadSongs();}
+  else{err.textContent=r.error||'Código incorrecto';}
 }
-function doLogout(){
-  currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-code').value='';
-  document.getElementById('login-err').textContent='';
-  document.getElementById('login-view').style.display='flex';
-}
+function doLogout(){currentUser=null;songs=[];localStorage.removeItem('cancionero_session');document.getElementById('app').style.display='none';document.getElementById('login-code').value='';document.getElementById('login-err').textContent='';document.getElementById('login-view').style.display='flex';}
 function showApp(){
-  document.getElementById('app').style.display='block';
-  const role=currentUser.role;
+  document.getElementById('app').style.display='flex';
+  const role=String(currentUser.role||'').trim().toLowerCase();
+  currentUser.role=role;
   const isAdmin=role==='admin';const canEdit=isAdmin||role==='editor';
   document.getElementById('admin-btn').style.display=isAdmin?'flex':'none';
   document.getElementById('add-song-btn').style.display=canEdit?'block':'none';
-  const badge=document.getElementById('role-badge');
-  badge.textContent=role;badge.className='role-badge role-'+role;
+  const badge=document.getElementById('role-badge');badge.textContent=currentUser.role;badge.className='role-badge role-'+currentUser.role;
   document.getElementById('user-name-display').textContent=currentUser.name;
 }
 async function loadSongs(){
@@ -262,21 +289,21 @@ async function loadSongs(){
   if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
 }
 function renderList(){
-  const q=(document.getElementById('search').value||'').toLowerCase().trim();
+  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
   const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   const canDel=currentUser.role==='admin';
   const list=document.getElementById('song-list');
-  if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
+  if(!filtered.length){list.innerHTML='<div class="empty"><div class="empty-icon">🎵</div><p>No se encontraron canciones</p></div>';return;}
   list.innerHTML=filtered.map((s,i)=>`
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
       <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text">${escH(s.artist)}</div></div>
-      <span class="song-key-badge">${escH(s.key)}</span>
-      ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
-      ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
-      ${canDel?`<button class="song-del" onclick="event.stopPropagation();confirmDelete('song','${s.id}',this.dataset.title)" data-title="${escH(s.title)}" title="Eliminar">&#10005;</button>`:''}
+      <span class="song-key-badge">${escH(s.key)}</span>${s.bpm?'<span style="background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.2);border-radius:6px;font-family:var(--font-mono);font-size:11px;padding:3px 7px;flex-shrink:0">&#9836; '+s.bpm+'</span>':''}
+      ${s.bpm?'<span style="font-size:11px;color:var(--amber);background:var(--amber-bg);border:1px solid rgba(251,191,36,.2);border-radius:5px;padding:2px 7px;font-family:var(--font-mono)">&#9836; '+s.bpm+' bpm</span>':''}
+      ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">✎</button>`:''}
+      ${canDel?`<button class="song-del" onclick="event.stopPropagation();confirmDelete('song','${s.id}','${escH(s.title)}')" title="Eliminar">✕</button>`:''}
     </div>`).join('');
 }
 function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
@@ -296,17 +323,14 @@ function drawSong(){
     secs+='<div style="height:8px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="showList()">← Volver</button>
     <div class="sv-card">
       <div class="sv-title">${escH(s.title)}</div>
-      <div class="sv-meta">
-        <span class="sv-artist">${escH(s.artist)}</span>
-        ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
-      </div>
+      <div class="sv-artist">${escH(s.artist)}${s.bpm ? '<span style="margin-left:10px;font-size:11px;background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.25);border-radius:5px;padding:2px 8px;font-family:var(--font-mono)">&#9836; '+s.bpm+' BPM</span>' : ''}</div>
       <div class="sv-controls">
-        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
-        <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
-        ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
+        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">−</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
+        <button class="sv-action-btn ml-auto" onclick="exportPDF()">↓ PDF</button>
+        ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">✎ Editar</button>`:''}
       </div>
       <div class="lyrics-wrap">${secs}</div>
     </div>`;
@@ -316,16 +340,16 @@ function openAdd(){showView('add-view');document.getElementById('add-view').inne
 function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);}
 function formHTML(s){
   const isEdit=!!s;const body=s?songToText(s):'';
-  return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
+  return `<button class="back-btn" onclick="showList()">← Volver</button>
     <div class="form-card">
       <div class="form-title">${isEdit?'Editar canción':'Nueva canción'}</div>
       <div class="row-2">
-        <div class="field"><label>Título *</label><input type="text" id="f-title" value="${escH(s?s.title:'')}" placeholder="Ej: Pescador de hombres"></div>
-        <div class="field"><label>Tono *</label><input type="text" id="f-key" value="${escH(s?s.key:'')}" placeholder="G" maxlength="3"></div>
+        <div class="field"><label>Título *</label><input type="text" id="f-title" value="${escH(s?.title||'')}" placeholder="Ej: Pescador de hombres"></div>
+        <div class="field"><label>Tono *</label><input type="text" id="f-key" value="${escH(s?.key||'')}" placeholder="G" maxlength="3"></div>
       </div>
-      <div class="row-2b">
-        <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
-        <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
+      <div class="row-2" style="grid-template-columns:1fr 100px">
+        <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?.artist||'')}" placeholder="Ej: Ces&#225;reo Gabar&#225;in"></div>
+        <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s?.bpm||''}" placeholder="120" min="40" max="300"></div>
       </div>
       <div class="field"><label>Letra con acordes *</label>
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
@@ -337,59 +361,41 @@ function formHTML(s){
       </div>
     </div>`;
 }
-function getFormValues(){
-  const title=document.getElementById('f-title').value.trim();
-  const artist=document.getElementById('f-artist').value.trim()||'Desconocido';
-  const key=document.getElementById('f-key').value.trim()||'?';
-  const body=document.getElementById('f-body').value.trim();
-  const bpmEl=document.getElementById('f-bpm');
-  const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
-  if(!title){alert('El título es obligatorio');return null;}
-  if(!body){alert('La letra es obligatoria');return null;}
-  return{title,artist,key,bpm,body};
-}
 async function saveSongNew(){
-  const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,body}=getFormValues();if(!title||!body)return;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
   const r=await api({action:'add',song:{title,artist,key,bpm,sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
 async function saveSongEdit(id){
-  const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,body}=getFormValues();if(!title||!body)return;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
   const r=await api({action:'edit',song:{id,title,artist,key,bpm,sections:parseBody(body)}});
-  if(r.ok){
-    const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
-    currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
-  }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
+  if(r.ok){const idx=songs.findIndex(s=>String(s.id)===String(id));if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,sections:parseBody(body)};currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');}
+  else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
-function confirmDelete(type,id,name){
-  pendingDeleteId=id;pendingDeleteType=type;
-  document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
-  document.getElementById('confirm-detail').textContent=name;
-  document.getElementById('confirm-modal').classList.add('open');
+function getFormValues(){
+  const title=document.getElementById('f-title').value.trim();
+  const artist=document.getElementById('f-artist').value.trim()||'Desconocido';
+  const key=document.getElementById('f-key').value.trim()||'?';
+  const body=document.getElementById('f-body').value.trim();
+  const bpmEl=document.getElementById('f-bpm');const bpm=bpmEl?parseInt(bpmEl.value)||'':'';
+  if(!title)alert('El título es obligatorio');
+  if(!body)alert('La letra es obligatoria');
+  return{title,artist,key,bpm,body};
 }
+function confirmDelete(type,id,name){pendingDeleteId=id;pendingDeleteType=type;document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';document.getElementById('confirm-detail').textContent=name;document.getElementById('confirm-modal').classList.add('open');}
 function closeConfirm(){pendingDeleteId=null;document.getElementById('confirm-modal').classList.remove('open');}
 document.getElementById('confirm-ok-btn').onclick=async function(){
   if(!pendingDeleteId)return;closeConfirm();
-  if(pendingDeleteType==='song'){
-    const r=await api({action:'delete',id:pendingDeleteId});
-    if(r.ok){songs=songs.filter(s=>String(s.id)!==String(pendingDeleteId));renderList();toast('Canción eliminada');}
-    else toast('Error: '+r.error);
-  }else{
-    const r=await api({action:'delete_user',code:pendingDeleteId});
-    if(r.ok){openUsers();toast('Usuario eliminado');}
-    else toast('Error: '+r.error);
-  }
+  if(pendingDeleteType==='song'){const r=await api({action:'delete',id:pendingDeleteId});if(r.ok){songs=songs.filter(s=>String(s.id)!==String(pendingDeleteId));renderList();toast('Canción eliminada');}else toast('Error: '+r.error);}
+  else{const r=await api({action:'delete_user',code:pendingDeleteId});if(r.ok){openUsers();toast('Usuario eliminado');}else toast('Error: '+r.error);}
 };
 async function openUsers(){
   showView('users-view');
   document.getElementById('users-view').innerHTML=`
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="showList()">← Volver</button>
     <div class="form-card">
       <div class="form-title" style="margin-bottom:16px">Gestionar usuarios</div>
       <div id="users-list"><div style="color:var(--text3);font-size:14px">Cargando...</div></div>
@@ -401,14 +407,12 @@ async function openUsers(){
         </div>
         <div class="field"><label>Rol</label>
           <select id="u-role">
-            <option value="lector">&#128065; Lector — solo puede ver</option>
-            <option value="editor">&#9998; Editor — puede agregar y editar</option>
-            <option value="admin">&#128081; Admin — acceso total</option>
+            <option value="lector">👁 Lector — solo puede ver</option>
+            <option value="editor">✏️ Editor — puede agregar y editar</option>
+            <option value="admin">👑 Admin — acceso total</option>
           </select>
         </div>
-        <div class="form-actions" style="margin-top:12px;padding-top:12px">
-          <button class="btn-save" onclick="addUserAction()">Agregar usuario</button>
-        </div>
+        <div class="form-actions" style="margin-top:12px;padding-top:12px"><button class="btn-save" onclick="addUserAction()">Agregar usuario</button></div>
       </div>
     </div>`;
   const r=await api({action:'users'});
@@ -419,18 +423,16 @@ async function openUsers(){
 function renderUsersList(users){
   const wrap=document.getElementById('users-list');
   if(!users.length){wrap.innerHTML='<div style="color:var(--text3);font-size:14px">No hay usuarios</div>';return;}
-  const roleLabel={admin:'Admin &#128081;',editor:'Editor &#9998;',lector:'Lector &#128065;'};
+  const roleIcon={admin:'👑',editor:'✏️',lector:'👁'};const roleLabel={admin:'Admin',editor:'Editor',lector:'Lector'};
   wrap.innerHTML=users.map(u=>`
     <div class="user-card">
       <div class="user-avatar ua-${u.role}">${(u.name||'?')[0].toUpperCase()}</div>
-      <div class="user-info"><div class="user-name-text">${escH(u.name)}</div><div class="user-role-text">${roleLabel[u.role]||u.role} · código: <span class="user-code">${escH(u.code)}</span></div></div>
-      <button class="song-del" onclick="confirmDelete('user','${escH(u.code)}','${escH(u.name)}')" title="Eliminar">&#10005;</button>
+      <div class="user-info"><div class="user-name-text">${escH(u.name)} ${roleIcon[u.role]||''}</div><div class="user-role-text">${roleLabel[u.role]||u.role} · código: <span class="user-code">${escH(u.code)}</span></div></div>
+      <button class="song-del" onclick="confirmDelete('user','${escH(u.code)}','${escH(u.name)}')" title="Eliminar">✕</button>
     </div>`).join('');
 }
 async function addUserAction(){
-  const name=document.getElementById('u-name').value.trim();
-  const code=document.getElementById('u-code').value.trim();
-  const role=document.getElementById('u-role').value;
+  const name=document.getElementById('u-name').value.trim();const code=document.getElementById('u-code').value.trim();const role=document.getElementById('u-role').value;
   if(!name||!code){toast('Nombre y código son obligatorios');return;}
   const r=await api({action:'add_user',user:{name,code,role,active:true}});
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
@@ -438,39 +440,24 @@ async function addUserAction(){
 }
 function showView(v){['list-view','song-view','add-view','users-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
 function showList(){showView('list-view');renderList();}
-function parseBody(text){
-  const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
-  lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
-  if(current.lines.length||current.label)sections.push(current);if(!sections.length)sections.push({label:'',lines:[]});return sections;
+function saveSetupURL(){
+  const url=(document.getElementById('setup-url').value||'').trim();
+  if(!url||!url.startsWith('https://')){toast('Pega una URL válida que empiece con https://');return;}
+  SCRIPT_URL=url;
+  localStorage.setItem('cancionero_script_url',SCRIPT_URL);
+  document.getElementById('no-sheet-warn').style.display='none';
+  document.getElementById('login-fields').style.display='block';
+  toast('URL guardada. Ahora ingresa tu código.');
 }
-function parseLine(line){
-  const chords=[],re=/\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:\/[A-G][b#]?)?)\]/g;
-  let clean='',last=0,m;
-  while((m=re.exec(line))!==null){clean+=line.slice(last,m.index);chords.push({ch:m[1],pos:clean.length});last=m.index+m[0].length;}
-  clean+=line.slice(last);return{chords,lyric:clean};
-}
-function songToText(s){
-  let out='';s.sections.forEach(sec=>{if(sec.label)out+='# '+sec.label+'\n';sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length){out+='\n';return;}let row=line.lyric;[...line.chords].sort((a,b)=>b.pos-a.pos).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});out+=row+'\n';});});return out.trim();
-}
+function showSetup(){}
+function parseBody(text){const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});if(current.lines.length||current.label)sections.push(current);if(!sections.length)sections.push({label:'',lines:[]});return sections;}
+function parseLine(line){const chords=[],re=/\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:\/[A-G][b#]?)?)\]/g;let clean='',last=0,m;while((m=re.exec(line))!==null){clean+=line.slice(last,m.index);chords.push({ch:m[1],pos:clean.length});last=m.index+m[0].length;}clean+=line.slice(last);return{chords,lyric:clean};}
+function songToText(s){let out='';s.sections.forEach(sec=>{if(sec.label)out+='# '+sec.label+'\n';sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length){out+='\n';return;}let row=line.lyric;[...line.chords].sort((a,b)=>b.pos-a.pos).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});out+=row+'\n';});});return out.trim();}
 function exportPDF(){
-  const s=currentSong,st=semitones;
-  const badge=st===0?'Tono original':(st>0?'+':'')+st+' semitonos desde '+s.key;
-  const bpmInfo=s.bpm?` · ${s.bpm} BPM`:'';
-  let secs='';
-  s.sections.forEach(sec=>{
-    if(sec.label)secs+=`<div class="sec">${sec.label}</div>`;
-    sec.lines.forEach(line=>{
-      if(!line.lyric&&!line.chords.length)return;
-      secs+=`<div class="block"><div class="cline">`;
-      line.chords.forEach(c=>{secs+=`<span class="ch" style="left:${c.pos*8.2}px">${txChord(c.ch,st)}</span>`;});
-      secs+=`</div><div class="ly">${line.lyric||'&nbsp;'}</div></div>`;
-    });
-  });
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.title}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#1a1033;max-width:700px;margin:auto}h1{font-size:26px;color:#1a1033;margin-bottom:4px}.meta{font-size:13px;color:#6b63a0;margin-bottom:6px}.badge{display:inline-block;background:#eeeeff;color:#534ab7;border-radius:5px;font-size:11px;padding:2px 8px;margin-bottom:24px}.sec{font-size:10px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#9b93c4;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e8e5f5}.block{margin-bottom:2px}.cline{position:relative;height:22px}.ch{position:absolute;top:0;font-size:12px;font-weight:bold;color:#534ab7;background:#eeeeff;border-radius:4px;padding:1px 5px;white-space:nowrap}.ly{font-family:monospace;font-size:14px;color:#1a1033;line-height:1.6;padding-bottom:3px}@media print{body{padding:20px}}</style></head><body><h1>${s.title}</h1><div class="meta">${s.artist}${bpmInfo}</div><div class="badge">${badge}</div>${secs}<div style="margin-top:32px;text-align:right;font-size:11px;color:#c4c0d8">Cancionero Católico</div></body></html>`;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download=s.title.replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_')+'.html';
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+  const s=currentSong,st=semitones;const badge=st===0?'Tono original':(st>0?'+':'')+st+' semitonos desde '+s.key;
+  let secs='';s.sections.forEach(sec=>{if(sec.label)secs+=`<div class="sec">${sec.label}</div>`;sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length)return;secs+=`<div class="block"><div class="cline">`;line.chords.forEach(c=>{secs+=`<span class="ch" style="left:${c.pos*8.2}px">${txChord(c.ch,st)}</span>`;});secs+=`</div><div class="ly">${line.lyric||'&nbsp;'}</div></div>`;});});
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.title}</title><style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap');body{font-family:'DM Sans',sans-serif;padding:40px;color:#1a1033;max-width:700px;margin:auto}h1{font-family:'Playfair Display',serif;font-size:26px;color:#1a1033;margin-bottom:4px}.meta{font-size:13px;color:#6b63a0;margin-bottom:6px}.badge{display:inline-block;background:#eeeeff;color:#534ab7;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;padding:2px 8px;margin-bottom:24px}.sec{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9b93c4;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e8e5f5}.block{margin-bottom:2px}.cline{position:relative;height:22px}.ch{position:absolute;top:0;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#534ab7;background:#eeeeff;border-radius:4px;padding:1px 5px;white-space:nowrap}.ly{font-family:'DM Mono',monospace;font-size:14px;color:#1a1033;line-height:1.6;padding-bottom:3px}@media print{body{padding:20px}}</style></head><body><h1>${s.title}</h1><div class="meta">${s.artist}</div><div class="badge">${badge}</div>${secs}<div style="margin-top:32px;text-align:right;font-size:11px;color:#c4c0d8">Cancionero Católico</div><scr"+"ipt>window.onload=function(){window.print();}<\/scr"+"ipt></body></html>`;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=s.title.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g,'').replace(/\s+/g,'_')+'.html';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
 init();
