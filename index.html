@@ -25,7 +25,7 @@
 html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
 #app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 80px}
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;width:100vw;margin-left:calc(-50vw + 50%)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:340px}
 .login-logo{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px}
 .login-logo span{color:var(--accent)}
@@ -219,23 +219,15 @@ const CH=8.4;
 function txChord(ch,st){const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;return NS[((i+st)%12+12)%12]+m[2];}
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
-
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-
 async function api(params){
-  try{
-    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});
-    return await res.json();
-  }catch(e){return{ok:false,error:'Error de red: '+e.message};}
+  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
+  catch(e){return{ok:false,error:'Error de red'};}
 }
 async function apiGet(params){
-  try{
-    const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();
-    const res=await fetch(SCRIPT_URL+'?'+qs);
-    return await res.json();
-  }catch(e){return{ok:false,error:'Error de red: '+e.message};}
+  try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
+  catch(e){return{ok:false,error:'Error de red'};}
 }
-
 function init(){
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
@@ -249,11 +241,9 @@ function init(){
   document.getElementById('loading').classList.remove('show');
   document.getElementById('login-view').style.display='flex';
 }
-
 async function doLogin(){
   const code=document.getElementById('login-code').value.trim();
-  const err=document.getElementById('login-err');
-  const btn=document.getElementById('login-btn');
+  const err=document.getElementById('login-err');const btn=document.getElementById('login-btn');
   if(!code){err.textContent='Ingresa tu código';return;}
   btn.disabled=true;btn.textContent='Verificando...';err.textContent='';
   const r=await apiGet({action:'login',code});
@@ -263,41 +253,30 @@ async function doLogin(){
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
     showApp();loadSongs();
-  }else{
-    err.textContent=r.error||'Código incorrecto';
-  }
+  }else{err.textContent=r.error||'Código incorrecto';}
 }
-
 function doLogout(){
-  currentUser=null;songs=[];
-  localStorage.removeItem('cancionero_session');
+  currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
   document.getElementById('app').style.display='none';
   document.getElementById('login-code').value='';
   document.getElementById('login-err').textContent='';
   document.getElementById('login-view').style.display='flex';
 }
-
 function showApp(){
-  document.getElementById('app').style.display='flex';
+  document.getElementById('app').style.display='block';
   const role=currentUser.role;
-  const isAdmin=role==='admin';
-  const canEdit=isAdmin||role==='editor';
+  const isAdmin=role==='admin';const canEdit=isAdmin||role==='editor';
   document.getElementById('admin-btn').style.display=isAdmin?'flex':'none';
   document.getElementById('add-song-btn').style.display=canEdit?'block':'none';
   const badge=document.getElementById('role-badge');
   badge.textContent=role;badge.className='role-badge role-'+role;
   document.getElementById('user-name-display').textContent=currentUser.name;
 }
-
 async function loadSongs(){
-  const icon=document.getElementById('sync-icon');
-  icon.style.display='inline-block';icon.classList.add('spin');
-  const r=await apiGet({action:'songs'});
-  icon.classList.remove('spin');
-  if(r.ok){songs=r.songs||[];renderList();}
-  else toast('Error al cargar: '+r.error);
+  const icon=document.getElementById('sync-icon');icon.classList.add('spin');
+  const r=await apiGet({action:'songs'});icon.classList.remove('spin');
+  if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
 }
-
 function renderList(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
   const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
@@ -309,23 +288,14 @@ function renderList(){
   list.innerHTML=filtered.map((s,i)=>`
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
-      <div class="song-info">
-        <div class="song-title-text">${escH(s.title)}</div>
-        <div class="song-artist-text">${escH(s.artist)}</div>
-      </div>
+      <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text">${escH(s.artist)}</div></div>
       <span class="song-key-badge">${escH(s.key)}</span>
       ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();confirmDelete('song','${s.id}','${escH(s.title)}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-
-function openSong(id){
-  currentSong=songs.find(s=>String(s.id)===String(id));
-  if(!currentSong)return;
-  semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);
-}
-
+function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
@@ -350,29 +320,19 @@ function drawSong(){
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
       </div>
       <div class="sv-controls">
-        <div class="t-group">
-          <span class="t-label">Tono</span>
-          <button class="t-btn" onclick="doTranspose(-1)">&#8722;</button>
-          <span class="t-badge">${badge}</span>
-          <button class="t-btn" onclick="doTranspose(1)">+</button>
-        </div>
+        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
       <div class="lyrics-wrap">${secs}</div>
     </div>`;
 }
-
 function doTranspose(d){semitones+=d;drawSong();}
-
 function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);}
 function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);}
-
 function formHTML(s){
-  const isEdit=!!s;
-  const body=s?songToText(s):'';
-  return `
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+  const isEdit=!!s;const body=s?songToText(s):'';
+  return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="form-card">
       <div class="form-title">${isEdit?'Editar canción':'Nueva canción'}</div>
       <div class="row-2">
@@ -383,8 +343,7 @@ function formHTML(s){
         <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
       </div>
-      <div class="field">
-        <label>Letra con acordes *</label>
+      <div class="field"><label>Letra con acordes *</label>
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
         <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
       </div>
@@ -394,19 +353,17 @@ function formHTML(s){
       </div>
     </div>`;
 }
-
 function getFormValues(){
   const title=document.getElementById('f-title').value.trim();
   const artist=document.getElementById('f-artist').value.trim()||'Desconocido';
   const key=document.getElementById('f-key').value.trim()||'?';
   const body=document.getElementById('f-body').value.trim();
-  const bpmInput=document.getElementById('f-bpm');
-  const bpm=bpmInput&&bpmInput.value?parseInt(bpmInput.value)||'':'';
+  const bpmEl=document.getElementById('f-bpm');
+  const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
   return{title,artist,key,bpm,body};
 }
-
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
@@ -415,7 +372,6 @@ async function saveSongNew(){
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
-
 async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
@@ -424,11 +380,9 @@ async function saveSongEdit(id){
   if(r.ok){
     const idx=songs.findIndex(s=>String(s.id)===String(id));
     if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
-    currentSong=songs[idx];semitones=0;
-    showView('song-view');drawSong();toast('✓ Cambios guardados');
+    currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
-
 function confirmDelete(type,id,name){
   pendingDeleteId=id;pendingDeleteType=type;
   document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
@@ -448,7 +402,6 @@ document.getElementById('confirm-ok-btn').onclick=async function(){
     else toast('Error: '+r.error);
   }
 };
-
 async function openUsers(){
   showView('users-view');
   document.getElementById('users-view').innerHTML=`
@@ -479,7 +432,6 @@ async function openUsers(){
   else document.getElementById('users-list').innerHTML=`<div style="color:var(--red);font-size:13px">${r.error}</div>`;
   window.scrollTo(0,0);
 }
-
 function renderUsersList(users){
   const wrap=document.getElementById('users-list');
   if(!users.length){wrap.innerHTML='<div style="color:var(--text3);font-size:14px">No hay usuarios</div>';return;}
@@ -487,48 +439,25 @@ function renderUsersList(users){
   wrap.innerHTML=users.map(u=>`
     <div class="user-card">
       <div class="user-avatar ua-${u.role}">${(u.name||'?')[0].toUpperCase()}</div>
-      <div class="user-info">
-        <div class="user-name-text">${escH(u.name)}</div>
-        <div class="user-role-text">${roleLabel[u.role]||u.role} · código: <span class="user-code">${escH(u.code)}</span></div>
-      </div>
+      <div class="user-info"><div class="user-name-text">${escH(u.name)}</div><div class="user-role-text">${roleLabel[u.role]||u.role} · código: <span class="user-code">${escH(u.code)}</span></div></div>
       <button class="song-del" onclick="confirmDelete('user','${escH(u.code)}','${escH(u.name)}')" title="Eliminar">&#10005;</button>
     </div>`).join('');
 }
-
 async function addUserAction(){
   const name=document.getElementById('u-name').value.trim();
   const code=document.getElementById('u-code').value.trim();
   const role=document.getElementById('u-role').value;
   if(!name||!code){toast('Nombre y código son obligatorios');return;}
   const r=await api({action:'add_user',user:{name,code,role,active:true}});
-  if(r.ok){
-    toast('✓ Usuario agregado');
-    document.getElementById('u-name').value='';
-    document.getElementById('u-code').value='';
-    const r2=await api({action:'users'});
-    if(r2.ok)renderUsersList(r2.users||[]);
-  }else toast('Error: '+r.error);
+  if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
+  else toast('Error: '+r.error);
 }
-
-function showView(v){
-  ['list-view','song-view','add-view','users-view'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.style.display='none';
-  });
-  const t=document.getElementById(v);if(t)t.style.display='block';
-}
+function showView(v){['list-view','song-view','add-view','users-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
 function showList(){showView('list-view');renderList();}
-
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
-  lines.forEach(raw=>{
-    const t=raw.trim();
-    if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}
-    if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}
-    current.lines.push(parseLine(t));
-  });
-  if(current.lines.length||current.label)sections.push(current);
-  if(!sections.length)sections.push({label:'',lines:[]});
-  return sections;
+  lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
+  if(current.lines.length||current.label)sections.push(current);if(!sections.length)sections.push({label:'',lines:[]});return sections;
 }
 function parseLine(line){
   const chords=[],re=/\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:\/[A-G][b#]?)?)\]/g;
@@ -537,22 +466,12 @@ function parseLine(line){
   clean+=line.slice(last);return{chords,lyric:clean};
 }
 function songToText(s){
-  let out='';
-  s.sections.forEach(sec=>{
-    if(sec.label)out+='# '+sec.label+'\n';
-    sec.lines.forEach(line=>{
-      if(!line.lyric&&!line.chords.length){out+='\n';return;}
-      let row=line.lyric;
-      [...line.chords].sort((a,b)=>b.pos-a.pos).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});
-      out+=row+'\n';
-    });
-  });
-  return out.trim();
+  let out='';s.sections.forEach(sec=>{if(sec.label)out+='# '+sec.label+'\n';sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length){out+='\n';return;}let row=line.lyric;[...line.chords].sort((a,b)=>b.pos-a.pos).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});out+=row+'\n';});});return out.trim();
 }
-
 function exportPDF(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Tono original':(st>0?'+':'')+st+' semitonos desde '+s.key;
+  const bpmInfo=s.bpm?` · ${s.bpm} BPM`:'';
   let secs='';
   s.sections.forEach(sec=>{
     if(sec.label)secs+=`<div class="sec">${sec.label}</div>`;
@@ -563,34 +482,13 @@ function exportPDF(){
       secs+=`</div><div class="ly">${line.lyric||'&nbsp;'}</div></div>`;
     });
   });
-  const bpmInfo=s.bpm?` · ${s.bpm} BPM`:'';
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.title}</title>
-  <style>
-    body{font-family:Arial,sans-serif;padding:40px;color:#1a1033;max-width:700px;margin:auto}
-    h1{font-size:26px;color:#1a1033;margin-bottom:4px}
-    .meta{font-size:13px;color:#6b63a0;margin-bottom:6px}
-    .badge{display:inline-block;background:#eeeeff;color:#534ab7;border-radius:5px;font-size:11px;padding:2px 8px;margin-bottom:24px}
-    .sec{font-size:10px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#9b93c4;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e8e5f5}
-    .block{margin-bottom:2px}.cline{position:relative;height:22px}
-    .ch{position:absolute;top:0;font-size:12px;font-weight:bold;color:#534ab7;background:#eeeeff;border-radius:4px;padding:1px 5px;white-space:nowrap}
-    .ly{font-family:monospace;font-size:14px;color:#1a1033;line-height:1.6;padding-bottom:3px}
-    @media print{body{padding:20px}}
-  </style></head><body>
-  <h1>${s.title}</h1>
-  <div class="meta">${s.artist}${bpmInfo}</div>
-  <div class="badge">${badge}</div>
-  ${secs}
-  <div style="margin-top:32px;text-align:right;font-size:11px;color:#c4c0d8">Cancionero Católico</div>
-  </body></html>`;
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.title}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#1a1033;max-width:700px;margin:auto}h1{font-size:26px;color:#1a1033;margin-bottom:4px}.meta{font-size:13px;color:#6b63a0;margin-bottom:6px}.badge{display:inline-block;background:#eeeeff;color:#534ab7;border-radius:5px;font-size:11px;padding:2px 8px;margin-bottom:24px}.sec{font-size:10px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#9b93c4;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e8e5f5}.block{margin-bottom:2px}.cline{position:relative;height:22px}.ch{position:absolute;top:0;font-size:12px;font-weight:bold;color:#534ab7;background:#eeeeff;border-radius:4px;padding:1px 5px;white-space:nowrap}.ly{font-family:monospace;font-size:14px;color:#1a1033;line-height:1.6;padding-bottom:3px}@media print{body{padding:20px}}</style></head><body><h1>${s.title}</h1><div class="meta">${s.artist}${bpmInfo}</div><div class="badge">${badge}</div>${secs}<div style="margin-top:32px;text-align:right;font-size:11px;color:#c4c0d8">Cancionero Católico</div></body></html>`;
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download=s.title.replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_')+'.html';
-  document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
-
 init();
 </script>
 </body>
