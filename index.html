@@ -210,25 +210,23 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.8</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
-    <div class="tp-bar" id="tp-bar" style="display:none;margin:10px 0 0">
-      <button class="tp-btn" id="tp-play-btn" onclick="tpToggle()" title="Play">&#9654;</button>
-      <div class="tp-speed">
-        <span>Seg/línea</span>
-        <input type="range" id="tp-speed" min="0.5" max="5" value="2" step="0.1" oninput="tpUpdateSpeed()">
-        <span id="tp-speed-val">2.0s</span>
-      </div>
-      <span style="font-size:11px;color:var(--text3)">Toca para pausar</span>
-    </div>
+    <div id="tp-bar" style="display:none"></div>
     <div id="song-content"></div>
   </div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="tp-float" style="display:none;position:fixed;bottom:24px;right:16px;z-index:150;display:none;flex-direction:column;align-items:center;gap:8px">
+  <button onclick="tpSpeedUp()" style="width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+  <button onclick="tpToggle()" id="tp-play-btn" style="width:52px;height:52px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9654;</button>
+  <span id="tp-speed-val" style="font-family:var(--font-mono);font-size:11px;color:var(--text2);background:var(--surface2);border-radius:6px;padding:2px 6px">2.0s</span>
+  <button onclick="tpSpeedDown()" style="width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+</div>
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
     <p id="confirm-title">¿Eliminar?</p>
@@ -595,37 +593,45 @@ function exportPDF(){
 }
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null;let tpActive=false;
+let tpSpeed=2.0;
 function tpToggle(){
   tpActive=!tpActive;
   const btn=document.getElementById('tp-play-btn');
+  const fl=document.getElementById('tp-float');
   if(!btn)return;
   if(tpActive){
-    btn.innerHTML='&#9646;&#9646;';btn.classList.add('pause');
+    btn.innerHTML='&#9646;&#9646;';
+    if(fl)fl.style.display='flex';
     tpStart();
-    document.getElementById('sv-card-wrap')?.addEventListener('touchstart',tpPause,{passive:true});
-    document.getElementById('sv-card-wrap')?.addEventListener('click',tpPause);
   }else{
     tpPause();
   }
 }
 function tpStart(){
   if(tpInterval)clearInterval(tpInterval);
-  const secs=parseFloat(document.getElementById('tp-speed')?.value||2);
   const lineH=32;
-  const msPerPx=(secs*1000)/lineH;
+  const msPerPx=(tpSpeed*1000)/lineH;
   tpInterval=setInterval(()=>{window.scrollBy({top:1,behavior:'instant'});},msPerPx);
 }
 function tpPause(){
   tpActive=false;
   if(tpInterval){clearInterval(tpInterval);tpInterval=null;}
   const btn=document.getElementById('tp-play-btn');
-  if(btn){btn.innerHTML='&#9654;';btn.classList.remove('pause');}
+  if(btn){btn.innerHTML='&#9654;';}
+  const fl=document.getElementById('tp-float');
+  if(fl)fl.style.display='none';
 }
-function tpUpdateSpeed(){
-  const val=parseFloat(document.getElementById('tp-speed')?.value||2);
-  const display=document.getElementById('tp-speed-val');
-  if(display)display.textContent=val.toFixed(1)+'s';
-  if(tpActive)tpStart();
+function tpSpeedUp(){
+  tpSpeed=Math.min(5,parseFloat((tpSpeed+0.1).toFixed(1)));
+  tpUpdateDisplay();if(tpActive)tpStart();
+}
+function tpSpeedDown(){
+  tpSpeed=Math.max(0.3,parseFloat((tpSpeed-0.1).toFixed(1)));
+  tpUpdateDisplay();if(tpActive)tpStart();
+}
+function tpUpdateDisplay(){
+  const d=document.getElementById('tp-speed-val');
+  if(d)d.textContent=tpSpeed.toFixed(1)+'s';
 }
 // Stop teleprompter when leaving song view
 const _origShowList=showList;
