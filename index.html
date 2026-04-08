@@ -210,18 +210,18 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.7</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
     <div class="tp-bar" id="tp-bar" style="display:none;margin:10px 0 0">
       <button class="tp-btn" id="tp-play-btn" onclick="tpToggle()" title="Play">&#9654;</button>
       <div class="tp-speed">
-        <span>Velocidad</span>
-        <input type="range" id="tp-speed" min="1" max="10" value="3" step="1" oninput="tpUpdateSpeed()">
-        <span id="tp-speed-val">3</span>
+        <span>Seg/línea</span>
+        <input type="range" id="tp-speed" min="0.5" max="5" value="2" step="0.1" oninput="tpUpdateSpeed()">
+        <span id="tp-speed-val">2.0s</span>
       </div>
-      <span style="font-size:11px;color:var(--text3)">Toca la pantalla para pausar</span>
+      <span style="font-size:11px;color:var(--text3)">Toca para pausar</span>
     </div>
     <div id="song-content"></div>
   </div>
@@ -610,9 +610,10 @@ function tpToggle(){
 }
 function tpStart(){
   if(tpInterval)clearInterval(tpInterval);
-  const speed=parseInt(document.getElementById('tp-speed')?.value||3);
-  const px=speed*0.15;
-  tpInterval=setInterval(()=>{window.scrollBy({top:px,behavior:'instant'});},16);
+  const secs=parseFloat(document.getElementById('tp-speed')?.value||2);
+  const lineH=32;
+  const msPerPx=(secs*1000)/lineH;
+  tpInterval=setInterval(()=>{window.scrollBy({top:1,behavior:'instant'});},msPerPx);
 }
 function tpPause(){
   tpActive=false;
@@ -621,9 +622,9 @@ function tpPause(){
   if(btn){btn.innerHTML='&#9654;';btn.classList.remove('pause');}
 }
 function tpUpdateSpeed(){
-  const val=document.getElementById('tp-speed')?.value;
+  const val=parseFloat(document.getElementById('tp-speed')?.value||2);
   const display=document.getElementById('tp-speed-val');
-  if(display)display.textContent=val;
+  if(display)display.textContent=val.toFixed(1)+'s';
   if(tpActive)tpStart();
 }
 // Stop teleprompter when leaving song view
