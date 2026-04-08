@@ -203,7 +203,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.1</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -507,7 +507,7 @@ function parseBody(text){
   if(current.lines.length||current.label)sections.push(current);if(!sections.length)sections.push({label:'',lines:[]});return sections;
 }
 function parseLine(line){
-  const chords=[],re=/\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:\/[A-G][b#]?)?)\]/g;
+  const chords=[],re=/\[([A-G][b#]?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:b[0-9]+)?(?:\/[A-G][b#]?)?)\]/g;
   let clean='',last=0,m;
   while((m=re.exec(line))!==null){clean+=line.slice(last,m.index);chords.push({ch:m[1],pos:clean.length});last=m.index+m[0].length;}
   clean+=line.slice(last);return{chords,lyric:clean};
