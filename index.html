@@ -210,10 +210,21 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.5</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.6</div>
     </div>
   </div>
-  <div id="song-view" style="display:none"></div>
+  <div id="song-view" style="display:none">
+    <div class="tp-bar" id="tp-bar" style="display:none;margin:10px 0 0">
+      <button class="tp-btn" id="tp-play-btn" onclick="tpToggle()" title="Play">&#9654;</button>
+      <div class="tp-speed">
+        <span>Velocidad</span>
+        <input type="range" id="tp-speed" min="1" max="10" value="3" step="1" oninput="tpUpdateSpeed()">
+        <span id="tp-speed-val">3</span>
+      </div>
+      <span style="font-size:11px;color:var(--text3)">Toca la pantalla para pausar</span>
+    </div>
+    <div id="song-content"></div>
+  </div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
 </div>
@@ -380,22 +391,14 @@ function drawSong(){
     });
     secs+='<div style="height:2px"></div>';
   });
-  document.getElementById('song-view').innerHTML=`
+  document.getElementById('tp-bar').style.display='flex';
+  document.getElementById('song-content').innerHTML=`
     <button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="sv-card" id="sv-card-wrap">
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
         <span class="sv-artist">${escH(s.artist)}</span>
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
-      </div>
-      <div class="tp-bar">
-        <button class="tp-btn" id="tp-play-btn" onclick="tpToggle()" title="Teleprompter">&#9654;</button>
-        <div class="tp-speed">
-          <span>Velocidad</span>
-          <input type="range" id="tp-speed" min="1" max="10" value="3" step="1" oninput="tpUpdateSpeed()">
-          <span id="tp-speed-val">3</span>
-        </div>
-        <span style="font-size:11px;color:var(--text3)">Toca la pantalla para pausar</span>
       </div>
       <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
