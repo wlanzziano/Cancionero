@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.6</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.7</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -611,7 +611,7 @@ function tpToggle(){
 function tpStart(){
   if(tpInterval)clearInterval(tpInterval);
   const speed=parseInt(document.getElementById('tp-speed')?.value||3);
-  const px=speed*0.6;
+  const px=speed*0.15;
   tpInterval=setInterval(()=>{window.scrollBy({top:px,behavior:'instant'});},16);
 }
 function tpPause(){
