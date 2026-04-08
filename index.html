@@ -203,7 +203,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.9</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -345,7 +345,7 @@ function drawSong(){
       segments.forEach((seg,i)=>{
         const chordLen=seg.chord?seg.chord.length:0;
         const lyricLen=seg.lyric?seg.lyric.length:0;
-        const minWidth=chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
+        const minWidth=`${(Math.max(chordLen,lyricLen)+1)*0.65}em`;
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth}">`;
         cells+=`<div class="chord-cell">${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
         cells+=`<div class="lyric-cell">${seg.lyric?escH(seg.lyric):'&nbsp;'}</div>`;
@@ -540,7 +540,7 @@ function exportPDF(){
       segments.forEach((seg,i)=>{
         const chordLen=seg.chord?seg.chord.length:0;
         const lyricLen=seg.lyric?seg.lyric.length:0;
-        const minWidth=chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
+        const minWidth=`${(Math.max(chordLen,lyricLen)+1)*0.65}em`;
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth};font-family:monospace;font-size:14px">`;
         cells+=`<div style="color:#534ab7;font-weight:bold;line-height:1.3;min-width:4px">${seg.chord||'&nbsp;'}</div>`;
         cells+=`<div style="color:#1a1033;line-height:1.5;min-width:4px">${seg.lyric||'&nbsp;'}</div>`;
