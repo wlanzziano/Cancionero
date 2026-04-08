@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.9</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -400,6 +400,7 @@ function drawSong(){
       </div>
       <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
+        <button class="sv-action-btn" onclick="tpShowFloat()" style="background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.25);color:var(--accent)">&#9654; Auto</button>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
@@ -594,6 +595,10 @@ function exportPDF(){
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null;let tpActive=false;
 let tpSpeed=2.0;
+function tpShowFloat(){
+  const fl=document.getElementById('tp-float');
+  if(fl){fl.style.display='flex';}
+}
 function tpToggle(){
   tpActive=!tpActive;
   const btn=document.getElementById('tp-play-btn');
