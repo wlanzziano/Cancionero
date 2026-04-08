@@ -203,7 +203,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v3.2</div>
+      <div class="footer">Powered by <span>Nano</span> · v3.4</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -235,7 +235,25 @@ function calcCH(){
   document.body.removeChild(el);
 }
 window.addEventListener('resize',()=>{calcCH();if(currentSong)drawSong();});
-function txChord(ch,st){const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;return NS[((i+st)%12+12)%12]+m[2];}
+function txChord(ch,st){
+  const m=ch.match(/^([A-G][b#]?)(.*)/);
+  if(!m)return ch;
+  let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;
+  const root=NS[((i+st)%12+12)%12];
+  const suffix=m[2];
+  // Transpose bass note if present (e.g. Am/G -> root stays, bass transposes)
+  const bassMatch=suffix.match(/^(.*)\/([A-G][b#]?)$/);
+  if(bassMatch){
+    const pre=bassMatch[1];
+    const bass=bassMatch[2];
+    let bi=NS.indexOf(bass);if(bi===-1)bi=NF.indexOf(bass);
+    if(bi!==-1){
+      const newBass=NS[((bi+st)%12+12)%12];
+      return root+pre+'/'+newBass;
+    }
+  }
+  return root+suffix;
+}
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -345,7 +363,7 @@ function drawSong(){
       segments.forEach((seg,i)=>{
         const chordLen=seg.chord?seg.chord.length:0;
         const lyricLen=seg.lyric?seg.lyric.trim().length:0;
-        const minWidth=seg.chord&&lyricLen<=1?`${(chordLen+1)*0.65}em`:'auto';
+        const minWidth=seg.chord&&chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth}">`;
         cells+=`<div class="chord-cell">${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
         cells+=`<div class="lyric-cell">${seg.lyric?escH(seg.lyric):'&nbsp;'}</div>`;
@@ -540,7 +558,7 @@ function exportPDF(){
       segments.forEach((seg,i)=>{
         const chordLen=seg.chord?seg.chord.length:0;
         const lyricLen=seg.lyric?seg.lyric.trim().length:0;
-        const minWidth=seg.chord&&lyricLen<=1?`${(chordLen+1)*0.65}em`:'auto';
+        const minWidth=seg.chord&&chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth};font-family:monospace;font-size:14px">`;
         cells+=`<div style="color:#534ab7;font-weight:bold;line-height:1.3;min-width:4px">${seg.chord||'&nbsp;'}</div>`;
         cells+=`<div style="color:#1a1033;line-height:1.5;min-width:4px">${seg.lyric||'&nbsp;'}</div>`;
