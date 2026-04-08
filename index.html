@@ -203,7 +203,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.8</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -343,13 +343,12 @@ function drawSong(){
       }
       let cells='';
       segments.forEach((seg,i)=>{
-        const isLast=i===segments.length-1;
-        const hasLyric=seg.lyric&&seg.lyric.trim().length>0;
-        const nextHasChord=!isLast&&segments[i+1].chord;
-        const showSep=seg.chord&&!hasLyric&&nextHasChord;
-        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre">`;
+        const chordLen=seg.chord?seg.chord.length:0;
+        const lyricLen=seg.lyric?seg.lyric.length:0;
+        const minWidth=chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
+        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth}">`;
         cells+=`<div class="chord-cell">${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
-        cells+=`<div class="lyric-cell">${hasLyric?escH(seg.lyric):showSep?'<span style="color:var(--text3);font-size:11px"> - </span>':'&nbsp;'}</div>`;
+        cells+=`<div class="lyric-cell">${seg.lyric?escH(seg.lyric):'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
       secs+=`<div class="line-block"><table class="chord-table"><tr>${cells}</tr></table></div>`;}
@@ -539,13 +538,12 @@ function exportPDF(){
       }
       let cells='';
       segments.forEach((seg,i)=>{
-        const isLast=i===segments.length-1;
-        const hasLyric=seg.lyric&&seg.lyric.trim().length>0;
-        const nextHasChord=!isLast&&segments[i+1].chord;
-        const showSep=seg.chord&&!hasLyric&&nextHasChord;
-        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;font-family:monospace;font-size:14px">`;
-        cells+=`<div style="color:#534ab7;font-weight:bold;line-height:1.3;white-space:pre;min-width:4px">${seg.chord||'&nbsp;'}</div>`;
-        cells+=`<div style="color:#1a1033;line-height:1.5;white-space:pre;min-width:4px">${hasLyric?seg.lyric:showSep?' - ':'&nbsp;'}</div>`;
+        const chordLen=seg.chord?seg.chord.length:0;
+        const lyricLen=seg.lyric?seg.lyric.length:0;
+        const minWidth=chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
+        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth};font-family:monospace;font-size:14px">`;
+        cells+=`<div style="color:#534ab7;font-weight:bold;line-height:1.3;min-width:4px">${seg.chord||'&nbsp;'}</div>`;
+        cells+=`<div style="color:#1a1033;line-height:1.5;min-width:4px">${seg.lyric||'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
       secs+=`<div class="block"><table style="border-collapse:collapse;margin-bottom:4px"><tr>${cells}</tr></table></div>`;
