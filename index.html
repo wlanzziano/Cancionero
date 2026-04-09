@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.7</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -605,16 +605,10 @@ let chordPositionIdx = 0;
 
 async function loadChordsDB() {
   if (chordsDB) return chordsDB;
-  const urls = [
-    'https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.3.0/lib/guitar.json',
-    'https://unpkg.com/@tombatossals/chords-db@1.3.0/lib/guitar.json'
-  ];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url);
-      if (r.ok) { chordsDB = await r.json(); return chordsDB; }
-    } catch(e) {}
-  }
+  try {
+    const r = await fetch('guitar.json');
+    if (r.ok) { chordsDB = await r.json(); return chordsDB; }
+  } catch(e) {}
   chordsDB = null;
   return null;
 }
