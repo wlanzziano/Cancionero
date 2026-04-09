@@ -164,6 +164,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sl-item.drag-over{border-color:var(--accent);background:rgba(167,139,250,.1)}
 .sl-num{font-family:var(--font-mono);font-size:13px;color:var(--text3);min-width:22px;text-align:center}
 .sl-drag{color:var(--text3);font-size:18px;cursor:grab;padding:0 4px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);color:var(--accent);border-radius:20px;font-size:11px;font-weight:500;padding:2px 8px;cursor:pointer;transition:all .15s}
+.tag:hover{background:rgba(167,139,250,.25)}
+.tag-filter{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:20px;font-size:12px;padding:4px 12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tag-filter.active{background:rgba(167,139,250,.15);border-color:rgba(167,139,250,.4);color:var(--accent)}
 .tp-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r-sm);flex-wrap:wrap}
 .tp-btn{background:var(--accent);border:none;border-radius:var(--r-sm);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#fff;flex-shrink:0}
 .tp-btn:hover{background:var(--accent2)}
@@ -218,8 +222,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       </div>
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
-      <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.6</div>
+      <div id="tag-filter-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 0 4px;overflow-x:auto"></div>
+    <div id="song-list"></div>
+      <div class="footer">Powered by <span>Nano</span> · v5.7</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -297,7 +302,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxsWUCQGi3a_9K3vsTS2dbJqhnZGGG-QZj6NHD99DAAYwyUtGGk_Utu0AM82dEkDfkouQ/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycby5BvaMDgpChlGPfqeUWhJKj07ApYBS1Bm4bYXLslkhsH-3SkSSfaLCJr1J3H4duUTM-w/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -398,7 +403,7 @@ async function loadCustomChords(){
     });
   }
 }
-function renderList(){
+function renderList(){renderTagFilterBar();
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
   const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
@@ -475,6 +480,39 @@ function drawSong(){
     </div>`;
 }
 function doTranspose(d){semitones+=d;drawSong();}
+function renderTagSelector(selectedTags=[]) {
+  const el = document.getElementById('tag-selector');
+  if(!el) return;
+  const all = getAllTags();
+  el.innerHTML = all.map(t => {
+    const active = selectedTags.includes(t);
+    return `<span class="tag${active?'':''}" style="${active?'background:rgba(167,139,250,.3);border-color:var(--accent)':''};cursor:pointer" onclick="toggleTag('${escH(t)}')" id="tag-opt-${escH(t).replace(/[^a-z0-9]/gi,'_')}">${escH(t)}</span>`;
+  }).join('');
+}
+
+function toggleTag(tag) {
+  const el = document.getElementById('f-tags');
+  if(!el) return;
+  let tags = JSON.parse(el.value||'[]');
+  if(tags.includes(tag)) tags = tags.filter(t=>t!==tag);
+  else tags.push(tag);
+  el.value = JSON.stringify(tags);
+  renderTagSelector(tags);
+}
+
+function addCustomTag() {
+  const input = document.getElementById('f-tag-input');
+  if(!input||!input.value.trim()) return;
+  const tag = input.value.trim();
+  input.value = '';
+  const el = document.getElementById('f-tags');
+  if(!el) return;
+  let tags = JSON.parse(el.value||'[]');
+  if(!tags.includes(tag)) tags.push(tag);
+  el.value = JSON.stringify(tags);
+  renderTagSelector(tags);
+}
+
 function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);}
 function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);}
 function formHTML(s){
@@ -484,11 +522,19 @@ function formHTML(s){
       <div class="form-title">${isEdit?'Editar canción':'Nueva canción'}</div>
       <div class="row-2">
         <div class="field"><label>Título *</label><input type="text" id="f-title" value="${escH(s?s.title:'')}" placeholder="Ej: Pescador de hombres"></div>
-        <div class="field"><label>Tono *</label><input type="text" id="f-key" value="${escH(s?s.key:'')}" placeholder="G" maxlength="3"></div>
+        <input type="hidden" id="f-tags" value="[]">
+      <div class="field"><label>Tono *</label><input type="text" id="f-key" value="${escH(s?s.key:'')}" placeholder="G" maxlength="3"></div>
       </div>
       <div class="row-2b">
         <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
+      </div>
+      <div class="field"><label>Tags</label>
+        <div id="tag-selector" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="f-tag-input" placeholder="Agregar tag personalizado..." style="flex:1">
+          <button type="button" onclick="addCustomTag()" class="btn-cancel" style="padding:8px 12px;flex-shrink:0">+ Agregar</button>
+        </div>
       </div>
       <div class="field"><label>Letra con acordes *</label>
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
@@ -509,13 +555,13 @@ function getFormValues(){
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
-  return{title,artist,key,bpm,body};
+  return{title,artist,key,bpm,tags,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,tags,sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -523,7 +569,7 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags,sections:parseBody(body)}});
   if(r.ok){
     const idx=songs.findIndex(s=>String(s.id)===String(id));
     if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
@@ -659,6 +705,35 @@ function exportPDF(){
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
+// ── Tags ─────────────────────────────────────────────────
+const DEFAULT_TAGS = ['Adoración','Santísimo','Sanación','Perdón','Alabanza','Ofertorio','Comunión','Entrada','Salida','Popurrí','Navidad','Semana Santa','Bautismo','Matrimonio','Misa de niños'];
+let activeTagFilter = null;
+
+function getAllTags() {
+  const set = new Set(DEFAULT_TAGS);
+  songs.forEach(s => (s.tags||[]).forEach(t => set.add(t)));
+  return [...set].sort();
+}
+
+function renderTagFilterBar() {
+  const used = new Set();
+  songs.forEach(s => (s.tags||[]).forEach(t => used.add(t)));
+  const bar = document.getElementById('tag-filter-bar');
+  if(!bar) return;
+  if(used.size === 0){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  bar.innerHTML = [
+    `<span class="tag-filter${!activeTagFilter?' active':''}" onclick="setTagFilter(null)">Todas</span>`,
+    ...[...used].sort().map(t => `<span class="tag-filter${activeTagFilter===t?' active':''}" onclick="setTagFilter('${escH(t)}')">${escH(t)}</span>`)
+  ].join('');
+}
+
+function setTagFilter(tag) {
+  activeTagFilter = tag;
+  renderTagFilterBar();
+  renderList();
+}
+
 // ── Setlists ─────────────────────────────────────────────
 let setlists = [];
 let currentSetlist = null;
