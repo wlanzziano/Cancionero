@@ -224,7 +224,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 0 4px;overflow-x:auto"></div>
     <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v6.1</div>
+      <div class="footer">Powered by <span>Nano</span> · v6.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -558,6 +558,7 @@ function getFormValues(){
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
+  const tagsEl=document.getElementById('f-tags');const tags=tagsEl?JSON.parse(tagsEl.value||'[]'):[];
   return{title,artist,key,bpm,tags,body};
 }
 async function saveSongNew(){
