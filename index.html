@@ -224,7 +224,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 0 4px;overflow-x:auto"></div>
     <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v6.2</div>
+      <div class="footer">Powered by <span>Nano</span> · v6.3</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -405,7 +405,7 @@ async function loadCustomChords(){
 }
 function renderList(){renderTagFilterBar();
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
+  const filtered=songs.filter(s=>(!q||[s.title,s.artist,...(s.tags||[])].join(' ').toLowerCase().includes(q))&&(!activeTagFilter||(s.tags||[]).includes(activeTagFilter)));
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   const canDel=currentUser.role==='admin';
@@ -469,9 +469,8 @@ function drawSong(){
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
         <span class="sv-artist">${escH(s.artist)}</span>
-        ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
-      </div>
-      <div class="sv-controls">
+        ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:\'\'}\n        ${(s.tags||[]).map(t=>`<span class=\'tag\' style=\'font-size:11px;padding:2px 8px\'>${escH(t)}</span>`).join(\'\')}
+      </div>class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
