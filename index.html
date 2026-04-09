@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.1</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -238,7 +238,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzmnLDDamecdnF1jW4_vAXVH1kk2IfWjcNFtvJzwM6uOtvGnVenRrBxD27CuZoRYrPfsg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx66C_KUZZ3vfUE6hQAjH4hi32EYEd0mnNmcvhS27MTUgCxZS1W80peENRs-63HPqtzeA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -641,14 +641,12 @@ function tpUpdateDisplay(){
 }
 function tpSaveSpeed(){
   if(!currentSong)return;
-  const key='tp_speed_'+currentUser.name+'_'+currentSong.id;
-  localStorage.setItem(key,tpSpeed);
+  currentSong.tpSpeed=tpSpeed;
+  apiGet({action:'saveTpSpeed',id:currentSong.id,speed:tpSpeed});
 }
 function tpLoadSpeed(){
   if(!currentSong)return;
-  const key='tp_speed_'+currentUser.name+'_'+currentSong.id;
-  const saved=localStorage.getItem(key);
-  tpSpeed=saved?parseFloat(saved):2.0;
+  tpSpeed=currentSong.tpSpeed?parseFloat(currentSong.tpSpeed):2.0;
   tpUpdateDisplay();
 }
 // Stop teleprompter when leaving song view
