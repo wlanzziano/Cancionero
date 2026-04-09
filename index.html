@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.4</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.5</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -221,10 +221,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div id="users-view" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div id="tp-float" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border2);padding:10px 16px;flex-direction:row;align-items:center;justify-content:center;gap:16px">
+<div id="tp-float" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border2);padding:10px 16px;flex-direction:row;align-items:center;justify-content:center;gap:12px">
   <button onclick="tpSpeedDown()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
   <span id="tp-speed-val" style="font-family:var(--font-mono);font-size:14px;color:var(--accent);min-width:44px;text-align:center">2.0s</span>
   <button onclick="tpSpeedUp()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+  <button id="tp-auto-btn" onclick="tpToggle()" style="height:38px;padding:0 16px;border-radius:var(--r-sm);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);color:var(--accent);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer">&#9654; Auto</button>
 </div>
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
@@ -399,7 +400,6 @@ function drawSong(){
       </div>
       <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
-        <button class="sv-action-btn" id="tp-auto-btn" onclick="tpToggle()" style="background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.25);color:var(--accent)">&#9654; Auto</button>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
