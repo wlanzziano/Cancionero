@@ -157,6 +157,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .loading-dots span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .loading-text{font-size:13px;color:var(--text3)}
+.menu-item{padding:12px 20px;font-size:15px;color:var(--text2);cursor:pointer;transition:background .15s}
+.menu-item:hover{background:var(--surface2);color:var(--text)}
 .tp-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r-sm);flex-wrap:wrap}
 .tp-btn{background:var(--accent);border:none;border-radius:var(--r-sm);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#fff;flex-shrink:0}
 .tp-btn:hover{background:var(--accent2)}
@@ -191,6 +193,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 </div>
 <div id="app" style="display:none">
   <div class="header">
+    <button onclick="toggleMenu()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1">&#9776;</button>
     <div class="header-title">&#9834; <span>Cancionero</span> Católico</div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
@@ -211,7 +214,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.1</div>
+      <div class="footer">Powered by <span>Nano</span> · v5.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -220,8 +223,27 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
+  <div id="chords-view" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="side-menu" style="display:none;position:fixed;inset:0;z-index:300">
+  <div onclick="toggleMenu()" style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
+  <div style="position:absolute;top:0;left:0;bottom:0;width:260px;background:var(--surface);padding:24px 0;display:flex;flex-direction:column">
+    <div style="padding:0 20px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)">&#9834; Cancionero</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px" id="menu-user-info"></div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px 0">
+      <div class="menu-item" onclick="menuGo('songs')">&#127925; Canciones</div>
+      <div class="menu-item" id="menu-chords-item" onclick="menuGo('chords')" style="display:none">&#127928; Gestionar acordes</div>
+      <div class="menu-item" id="menu-users-item" onclick="menuGo('users')" style="display:none">&#128101; Usuarios</div>
+      <div class="menu-item" onclick="openThemes()">&#127752; Personalizar tema</div>
+    </div>
+    <div style="padding:16px 20px;border-top:1px solid var(--border)">
+      <div class="menu-item" style="color:var(--red)" onclick="doLogout()">&#8592; Cerrar sesión</div>
+    </div>
+  </div>
+</div>
 <div id="theme-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;padding:0">
   <div style="background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:24px;width:100%;max-width:680px;max-height:85vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
@@ -563,7 +585,7 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
-function showView(v){['list-view','song-view','add-view','users-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
+function showView(v){['list-view','song-view','add-view','users-view','chords-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
 function showList(){showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
@@ -620,6 +642,111 @@ function exportPDF(){
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
+// ── Menú lateral ─────────────────────────────────────────
+function toggleMenu(){
+  const m=document.getElementById('side-menu');
+  m.style.display=m.style.display==='none'?'block':'none';
+  if(m.style.display==='block'){
+    document.getElementById('menu-user-info').textContent=currentUser?currentUser.name+' · '+currentUser.role:'';
+    const isAdmin=currentUser&&currentUser.role==='admin';
+    document.getElementById('menu-chords-item').style.display=isAdmin?'block':'none';
+    document.getElementById('menu-users-item').style.display=isAdmin?'block':'none';
+  }
+}
+function menuGo(section){
+  toggleMenu();
+  if(section==='songs'){showList();}
+  else if(section==='users'){openUsers();}
+  else if(section==='chords'){openChordsManager();}
+}
+
+// ── Gestor de acordes ─────────────────────────────────────
+let customChordsLocal = JSON.parse(localStorage.getItem('cancionero_custom_chords')||'{}');
+
+function openChordsManager(){
+  tpPause();
+  ['list-view','song-view','add-view','users-view','chords-view'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  const fl=document.getElementById('tp-float');if(fl)fl.style.display='none';
+  const cv=document.getElementById('chords-view');
+  cv.style.display='block';
+  renderChordsManager();
+  window.scrollTo(0,0);
+}
+
+function renderChordsManager(){
+  const all={...CUSTOM_CHORDS,...customChordsLocal};
+  const cv=document.getElementById('chords-view');
+  cv.innerHTML=`
+    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <div class="form-card">
+      <div class="form-title" style="margin-bottom:16px">Gestionar acordes</div>
+      <div id="chords-list" style="margin-bottom:20px">
+        ${Object.keys(all).length===0?'<div style="color:var(--text3);font-size:14px">No hay acordes personalizados</div>':
+          Object.entries(all).map(([name,data])=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span style="font-family:var(--font-mono);font-size:15px;color:var(--text)">${escH(name)}</span>
+            <div style="display:flex;gap:8px">
+              <button onclick="previewChord('${escH(name)}')" class="btn-cancel" style="padding:4px 10px;font-size:12px">Ver</button>
+              ${customChordsLocal[name]?`<button onclick="deleteCustomChord('${escH(name)}')" class="song-del">&#10005;</button>`:'<span style="font-size:11px;color:var(--text3);padding:4px 8px">predefinido</span>'}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Agregar acorde</div>
+        <div class="field"><label>Nombre del acorde</label><input type="text" id="ca-name" placeholder="Ej: D/F# · Gsus4 · Cadd9"></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px">
+          ${['E','A','D','G','B','e'].map((s,i)=>`
+          <div class="field">
+            <label style="font-size:10px">${s}</label>
+            <input type="text" id="ca-s${i}" placeholder="0" style="text-align:center;padding:8px 4px">
+          </div>`).join('')}
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Usa números para trastes, 0 para cuerda al aire, -1 para cuerda muda (x)</div>
+        <div class="field"><label>Dedo por cuerda (opcional)</label>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+            ${['E','A','D','G','B','e'].map((s,i)=>`
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:3px">${s}</div>
+              <input type="text" id="ca-f${i}" placeholder="0" style="text-align:center;padding:8px 4px;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;outline:none">
+            </div>`).join('')}
+          </div>
+        </div>
+        <div class="field"><label>Traste base</label><input type="number" id="ca-base" value="1" min="1" max="12" style="max-width:80px"></div>
+        <div class="form-actions" style="margin-top:12px;padding-top:12px">
+          <button class="btn-save" onclick="saveCustomChord()">Agregar acorde</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function saveCustomChord(){
+  const name=document.getElementById('ca-name').value.trim();
+  if(!name){toast('El nombre es obligatorio');return;}
+  const frets=[0,1,2,3,4,5].map(i=>{
+    const v=document.getElementById('ca-s'+i).value.trim();
+    return v===''||v==='x'||v==='X'?-1:parseInt(v)||0;
+  });
+  const fingers=[0,1,2,3,4,5].map(i=>parseInt(document.getElementById('ca-f'+i).value)||0);
+  const baseFret=parseInt(document.getElementById('ca-base').value)||1;
+  customChordsLocal[name]={positions:[{frets,fingers,baseFret,barres:[]}]};
+  localStorage.setItem('cancionero_custom_chords',JSON.stringify(customChordsLocal));
+  toast('✓ Acorde guardado');
+  renderChordsManager();
+}
+
+function deleteCustomChord(name){
+  delete customChordsLocal[name];
+  localStorage.setItem('cancionero_custom_chords',JSON.stringify(customChordsLocal));
+  renderChordsManager();
+  toast('Acorde eliminado');
+}
+
+function previewChord(name){
+  showChordDiagram(name);
+}
+
 // ── Temas ────────────────────────────────────────────────
 const THEMES = {
   'Oscuro': {'--bg':'#0f0c1d','--surface':'#1a1533','--surface2':'#231d45','--text':'#f0ecff','--text2':'#9b93c4','--text3':'#5e577d','--accent':'#a78bfa','--accent2':'#7c3aed'},
@@ -733,6 +860,12 @@ const CUSTOM_CHORDS = {
     { frets:[3,2,0,0,0,2], fingers:[3,2,0,0,0,1], baseFret:1, barres:[] }
   ]},
 };
+
+// Merge localStorage custom chords into CUSTOM_CHORDS at runtime
+function getMergedChords(){
+  const local=JSON.parse(localStorage.getItem('cancionero_custom_chords')||'{}');
+  return {...CUSTOM_CHORDS,...local};
+}
 
 async function loadChordsDB() {
   if (chordsDB) return chordsDB;
@@ -888,8 +1021,9 @@ async function showChordDiagram(chordName) {
   let positions = [];
 
   // Add custom positions first
-  if (CUSTOM_CHORDS[chordName]) {
-    positions = [...CUSTOM_CHORDS[chordName].positions];
+  const mergedChords=getMergedChords();
+  if (mergedChords[chordName]) {
+    positions = [...mergedChords[chordName].positions];
   }
 
   // Then add positions from guitar.json
