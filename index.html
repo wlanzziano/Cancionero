@@ -199,6 +199,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <div class="header-actions">
       <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">&#128101;</div>
       <button class="btn-add" id="add-song-btn" onclick="openAdd()" style="display:none">+ Nueva</button>
+    <div class="btn-icon" onclick="openThemes()" title="Temas" style="flex-shrink:0">&#127752;</div>
     </div>
   </div>
   <div id="list-view">
@@ -210,7 +211,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.8</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -221,6 +222,26 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div id="users-view" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="theme-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;padding:0">
+  <div style="background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:24px;width:100%;max-width:680px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <span style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)">Personalizar tema</span>
+      <button onclick="closeThemes()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:10px">Temas predefinidos</div>
+      <div id="theme-presets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:12px">Personalizar colores</div>
+      <div id="theme-custom" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <button onclick="resetTheme()" style="flex:1;background:transparent;border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px;color:var(--text2);font-family:var(--font-body);font-size:14px;cursor:pointer">Restablecer</button>
+      <button onclick="closeThemes()" style="flex:1;background:var(--accent);border:none;border-radius:var(--r-sm);padding:9px;color:#fff;font-family:var(--font-body);font-size:14px;cursor:pointer">Listo</button>
+    </div>
+  </div>
+</div>
 <div id="chord-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:24px;max-width:320px;width:100%;position:relative">
     <button onclick="closeChordModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1">&#10005;</button>
@@ -289,7 +310,7 @@ async function apiGet(params){
   try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
   catch(e){return{ok:false,error:'Error de red'};}
 }
-function init(){calcCH();
+function init(){loadTheme();calcCH();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
     try{
@@ -599,6 +620,88 @@ function exportPDF(){
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
+// ── Temas ────────────────────────────────────────────────
+const THEMES = {
+  'Oscuro': {'--bg':'#0f0c1d','--surface':'#1a1533','--surface2':'#231d45','--text':'#f0ecff','--text2':'#9b93c4','--text3':'#5e577d','--accent':'#a78bfa','--accent2':'#7c3aed'},
+  'Claro': {'--bg':'#f8f7ff','--surface':'#ffffff','--surface2':'#f0eeff','--text':'#1a1033','--text2':'#5e577d','--text3':'#9b93c4','--accent':'#7c3aed','--accent2':'#5b21b6'},
+  'Sepia': {'--bg':'#1c1710','--surface':'#2a2218','--surface2':'#352b1e','--text':'#f5ead0','--text2':'#c4a96e','--text3':'#7a6440','--accent':'#e8a44a','--accent2':'#c4832a'},
+  'Azul': {'--bg':'#0a0f1e','--surface':'#111827','--surface2':'#1e2d45','--text':'#e8f0fe','--text2':'#7ba3d4','--text3':'#3d5a80','--accent':'#4a9eff','--accent2':'#1a6fcf'},
+  'Verde': {'--bg':'#0a1a0f','--surface':'#0f2417','--surface2':'#1a3525','--text':'#e8f5e9','--text2':'#7bc47a','--text3':'#3a6b3a','--accent':'#4caf50','--accent2':'#2e7d32'},
+  'Rosado': {'--bg':'#1a0f18','--surface':'#2a1525','--surface2':'#3d1f38','--text':'#fce8f5','--text2':'#c47ab8','--text3':'#7a3d70','--accent':'#e040fb','--accent2':'#aa00ff'},
+};
+
+const COLOR_LABELS = {
+  '--bg': 'Fondo',
+  '--surface': 'Superficie',
+  '--surface2': 'Superficie 2',
+  '--text': 'Texto',
+  '--text2': 'Texto secundario',
+  '--text3': 'Texto sutil',
+  '--accent': 'Acento',
+  '--accent2': 'Acento oscuro',
+};
+
+function applyTheme(vars) {
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([k,v]) => root.style.setProperty(k, v));
+  localStorage.setItem('cancionero_theme', JSON.stringify(vars));
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('cancionero_theme');
+  if (saved) {
+    try { applyTheme(JSON.parse(saved)); } catch(e) {}
+  }
+}
+
+function resetTheme() {
+  Object.keys(COLOR_LABELS).forEach(k => document.documentElement.style.removeProperty(k));
+  localStorage.removeItem('cancionero_theme');
+  renderThemePanel();
+}
+
+function openThemes() {
+  document.getElementById('theme-modal').style.display = 'flex';
+  renderThemePanel();
+}
+
+function closeThemes() {
+  document.getElementById('theme-modal').style.display = 'none';
+}
+
+function renderThemePanel() {
+  const presetsEl = document.getElementById('theme-presets');
+  const customEl = document.getElementById('theme-custom');
+
+  // Presets
+  presetsEl.innerHTML = Object.entries(THEMES).map(([name, vars]) => `
+    <div onclick="applyTheme(JSON.parse(this.dataset.vars));renderThemePanel()" data-vars='${JSON.stringify(vars).replace(/'/g,'&apos;')}'" style="cursor:pointer;border-radius:var(--r-sm);overflow:hidden;border:2px solid var(--border);text-align:center">
+      <div style="height:40px;background:${vars['--bg']};display:flex;align-items:center;justify-content:center;gap:4px">
+        <div style="width:12px;height:12px;border-radius:50%;background:${vars['--accent']}"></div>
+        <div style="width:12px;height:12px;border-radius:50%;background:${vars['--surface']}"></div>
+      </div>
+      <div style="padding:4px;font-size:11px;color:var(--text2);background:var(--surface2)">${name}</div>
+    </div>`).join('');
+
+  // Custom color pickers
+  customEl.innerHTML = Object.entries(COLOR_LABELS).map(([key, label]) => {
+    const current = getComputedStyle(document.documentElement).getPropertyValue(key).trim();
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <input type="color" value="${current}" oninput="applyColorVar('${key}',this.value)" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);cursor:pointer;padding:2px;background:var(--surface2)">
+      <span style="font-size:13px;color:var(--text2)">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+function applyColorVar(key, value) {
+  document.documentElement.style.setProperty(key, value);
+  const saved = {};
+  Object.keys(COLOR_LABELS).forEach(k => {
+    saved[k] = getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  });
+  localStorage.setItem('cancionero_theme', JSON.stringify(saved));
+}
+
 // ── Diagramas de acordes ─────────────────────────────────
 let chordsDB = null;
 let chordPositionIdx = 0;
