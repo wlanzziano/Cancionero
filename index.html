@@ -211,7 +211,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.0</div>
+      <div class="footer">Powered by <span>Nano</span> · v5.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -884,32 +884,31 @@ async function showChordDiagram(chordName) {
     return;
   }
 
-  // Check custom chords first
-  if (CUSTOM_CHORDS[chordName]) {
-    currentChordPositions = CUSTOM_CHORDS[chordName].positions;
-    renderChordPosition();
-    return;
-  }
-
   const parsed = parseChordName(chordName);
-  if (!parsed) {
-    body.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px">Acorde no reconocido</div>';
-    return;
+  let positions = [];
+
+  // Add custom positions first
+  if (CUSTOM_CHORDS[chordName]) {
+    positions = [...CUSTOM_CHORDS[chordName].positions];
   }
 
-  const keyChords = db.chords[parsed.key];
-  if (!keyChords) {
+  // Then add positions from guitar.json
+  if (db && parsed) {
+    const keyChords = db.chords[parsed.key];
+    if (keyChords) {
+      const chordData = keyChords.find(c => c.suffix === parsed.suffix);
+      if (chordData && chordData.positions && chordData.positions.length) {
+        positions = [...positions, ...chordData.positions];
+      }
+    }
+  }
+
+  if (!positions.length) {
     body.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px">No encontrado: ${chordName}</div>`;
     return;
   }
 
-  const chordData = keyChords.find(c => c.suffix === parsed.suffix);
-  if (!chordData || !chordData.positions || !chordData.positions.length) {
-    body.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px">No encontrado: ${chordName}</div>`;
-    return;
-  }
-
-  currentChordPositions = chordData.positions;
+  currentChordPositions = positions;
   renderChordPosition();
 }
 
