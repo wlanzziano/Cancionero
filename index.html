@@ -224,7 +224,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 0 4px;overflow-x:auto"></div>
     <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.8</div>
+      <div class="footer">Powered by <span>Nano</span> · v5.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -486,8 +486,11 @@ function renderTagSelector(selectedTags=[]) {
   const all = getAllTags();
   el.innerHTML = all.map(t => {
     const active = selectedTags.includes(t);
-    return `<span class="tag${active?'':''}" style="${active?'background:rgba(167,139,250,.3);border-color:var(--accent)':''};cursor:pointer" onclick="toggleTag('${escH(t)}')" id="tag-opt-${escH(t).replace(/[^a-z0-9]/gi,'_')}">${escH(t)}</span>`;
+    return `<span class="tag" data-tag="${escH(t)}" style="cursor:pointer;${active?'background:rgba(167,139,250,.3);border-color:var(--accent);color:var(--accent)':''}">${escH(t)}</span>`;
   }).join('');
+  el.querySelectorAll('.tag[data-tag]').forEach(span=>{
+    span.onclick=()=>toggleTag(span.dataset.tag);
+  });
 }
 
 function toggleTag(tag) {
@@ -559,7 +562,7 @@ function getFormValues(){
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,bpm,tags,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
   const r=await api({action:'add',song:{title,artist,key,bpm,tags,sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
@@ -567,7 +570,7 @@ async function saveSongNew(){
 }
 async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,bpm,tags,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
   const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags,sections:parseBody(body)}});
   if(r.ok){
