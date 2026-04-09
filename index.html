@@ -214,7 +214,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.2</div>
+      <div class="footer">Powered by <span>Nano</span> · v5.4</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx66C_KUZZ3vfUE6hQAjH4hi32EYEd0mnNmcvhS27MTUgCxZS1W80peENRs-63HPqtzeA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxORJM-BMntH_tr8bWNu0cVr3a9wX6F7Tuz20IIsvqgPVYHDMD5EoqFPfDXwpPXgEIrJg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -339,7 +339,7 @@ function init(){loadTheme();calcCH();
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();return;
+      showApp();loadSongs();loadCustomChords();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -356,7 +356,7 @@ async function doLogin(){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
-    showApp();loadSongs();
+    showApp();loadSongs();loadCustomChords();
   }else{err.textContent=r.error||'Código incorrecto';}
 }
 function doLogout(){
@@ -380,6 +380,15 @@ async function loadSongs(){
   const icon=document.getElementById('sync-icon');icon.classList.add('spin');
   const r=await apiGet({action:'songs'});icon.classList.remove('spin');
   if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
+}
+async function loadCustomChords(){
+  const r=await apiGet({action:'chords'});
+  if(r.ok){
+    customChordsLocal={};
+    (r.chords||[]).forEach(c=>{
+      customChordsLocal[c.name]={positions:c.positions.map(p=>({frets:p.frets,fingers:p.fingers,baseFret:p.baseFret,barres:[],rowIndex:p.rowIndex}))};
+    });
+  }
 }
 function renderList(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
@@ -661,7 +670,7 @@ function menuGo(section){
 }
 
 // ── Gestor de acordes ─────────────────────────────────────
-let customChordsLocal = JSON.parse(localStorage.getItem('cancionero_custom_chords')||'{}');
+let customChordsLocal = {}; // Loaded from Sheet
 
 function openChordsManager(){
   tpPause();
@@ -684,14 +693,25 @@ function renderChordsManager(){
       <div class="form-title" style="margin-bottom:16px">Gestionar acordes</div>
       <div id="chords-list" style="margin-bottom:20px">
         ${Object.keys(all).length===0?'<div style="color:var(--text3);font-size:14px">No hay acordes personalizados</div>':
-          Object.entries(all).map(([name,data])=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-            <span style="font-family:var(--font-mono);font-size:15px;color:var(--text)">${escH(name)}</span>
-            <div style="display:flex;gap:8px">
-              <button onclick="previewChord('${escH(name)}')" class="btn-cancel" style="padding:4px 10px;font-size:12px">Ver</button>
-              ${customChordsLocal[name]?`<button onclick="deleteCustomChord('${escH(name)}')" class="song-del">&#10005;</button>`:'<span style="font-size:11px;color:var(--text3);padding:4px 8px">predefinido</span>'}
-            </div>
-          </div>`).join('')}
+          Object.entries(all).map(([name,data])=>{
+            const isCustom=!!customChordsLocal[name];
+            const posCount=data.positions?data.positions.length:1;
+            return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <span style="font-family:var(--font-mono);font-size:15px;color:var(--text)">${escH(name)}</span>
+                  <span style="font-size:11px;color:var(--text3);margin-left:8px">${posCount} posición${posCount!==1?'es':''}</span>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button onclick="previewChord('${escH(name)}')" class="btn-cancel" style="padding:4px 10px;font-size:12px">Ver</button>
+                  ${isCustom?`<button onclick="deleteAllChordPositions('${escH(name)}')" class="song-del" title="Eliminar todas las posiciones">&#10005;</button>`:'<span style="font-size:11px;color:var(--text3);padding:4px 6px">predefinido</span>'}
+                </div>
+              </div>
+              ${isCustom&&posCount>1?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+                ${data.positions.map((p,i)=>`<button onclick="deleteCustomChordPos('${escH(name)}',${p.rowIndex})" style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer">Pos ${i+1} ✕</button>`).join('')}
+              </div>`:''}
+            </div>`;
+          }).join('')}
       </div>
       <div style="border-top:1px solid var(--border);padding-top:16px">
         <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Agregar acorde</div>
@@ -721,7 +741,7 @@ function renderChordsManager(){
     </div>`;
 }
 
-function saveCustomChord(){
+async function saveCustomChord(){
   const name=document.getElementById('ca-name').value.trim();
   if(!name){toast('El nombre es obligatorio');return;}
   const frets=[0,1,2,3,4,5].map(i=>{
@@ -730,17 +750,29 @@ function saveCustomChord(){
   });
   const fingers=[0,1,2,3,4,5].map(i=>parseInt(document.getElementById('ca-f'+i).value)||0);
   const baseFret=parseInt(document.getElementById('ca-base').value)||1;
-  customChordsLocal[name]={positions:[{frets,fingers,baseFret,barres:[]}]};
-  localStorage.setItem('cancionero_custom_chords',JSON.stringify(customChordsLocal));
-  toast('✓ Acorde guardado');
-  renderChordsManager();
+  const r=await api({action:'add_chord',chord:{name,frets,fingers,baseFret}});
+  if(r.ok){
+    customChordsLocal[name]={positions:[{frets,fingers,baseFret,barres:[]}]};
+    toast('✓ Acorde guardado');
+    renderChordsManager();
+  } else toast('Error: '+r.error);
 }
 
-function deleteCustomChord(name){
-  delete customChordsLocal[name];
-  localStorage.setItem('cancionero_custom_chords',JSON.stringify(customChordsLocal));
-  renderChordsManager();
-  toast('Acorde eliminado');
+async function deleteAllChordPositions(name){
+  const r=await apiGet({action:'delete_chord',name:name});
+  if(r.ok){
+    delete customChordsLocal[name];
+    renderChordsManager();
+    toast('Acorde eliminado');
+  } else toast('Error: '+r.error);
+}
+async function deleteCustomChordPos(name,rowIndex){
+  const r=await apiGet({action:'delete_chord',name:name,rowIndex:rowIndex});
+  if(r.ok){
+    await loadCustomChords();
+    renderChordsManager();
+    toast('Posición eliminada');
+  } else toast('Error: '+r.error);
 }
 
 function previewChord(name){
@@ -863,8 +895,7 @@ const CUSTOM_CHORDS = {
 
 // Merge localStorage custom chords into CUSTOM_CHORDS at runtime
 function getMergedChords(){
-  const local=JSON.parse(localStorage.getItem('cancionero_custom_chords')||'{}');
-  return {...CUSTOM_CHORDS,...local};
+  return {...CUSTOM_CHORDS,...customChordsLocal};
 }
 
 async function loadChordsDB() {
