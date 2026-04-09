@@ -210,7 +210,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.3</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.4</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -347,7 +347,7 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
+function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();tpShowFloat();window.scrollTo(0,0);}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
