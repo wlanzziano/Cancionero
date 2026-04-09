@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="Cancionero Católico">
 <meta name="theme-color" content="#1a1033">
 <title>Cancionero Católico</title>
+<script src="https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.3.0/lib/guitar.json" type="application/json" id="chords-db-json"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -210,7 +211,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v4.5</div>
+      <div class="footer">Powered by <span>Nano</span> · v4.6</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -221,6 +222,14 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div id="users-view" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="chord-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:24px;max-width:320px;width:100%;position:relative">
+    <button onclick="closeChordModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1">&#10005;</button>
+    <div id="chord-modal-title" style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center"></div>
+    <div id="chord-modal-body" style="display:flex;justify-content:center"></div>
+    <div id="chord-modal-nav" style="display:flex;justify-content:center;gap:8px;margin-top:12px"></div>
+  </div>
+</div>
 <div id="tp-float" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border2);padding:10px 16px;flex-direction:row;align-items:center;justify-content:center;gap:12px">
   <button onclick="tpSpeedDown()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
   <span id="tp-speed-val" style="font-family:var(--font-mono);font-size:14px;color:var(--accent);min-width:44px;text-align:center">2.0s</span>
@@ -381,7 +390,7 @@ function drawSong(){
         const lyricLen=seg.lyric?seg.lyric.trim().length:0;
         const minWidth=seg.chord&&chordLen>lyricLen?`${(chordLen+1)*0.65}em`:'auto';
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minWidth}">`;
-        cells+=`<div class="chord-cell">${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
+        cells+=`<div class="chord-cell" ${seg.chord?`onclick="showChordDiagram('${seg.chord}')" style="cursor:pointer" title="Ver diagrama"`:''} >${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
         cells+=`<div class="lyric-cell">${seg.lyric?escH(seg.lyric):'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
@@ -591,6 +600,205 @@ function exportPDF(){
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
   toast('Abre el archivo y usa Ctrl+P para guardar como PDF');
 }
+// ── Diagramas de acordes ─────────────────────────────────
+let chordsDB = null;
+let chordPositionIdx = 0;
+
+async function loadChordsDB() {
+  if (chordsDB) return chordsDB;
+  try {
+    const r = await fetch('https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.3.0/lib/guitar.json');
+    chordsDB = await r.json();
+  } catch(e) { chordsDB = null; }
+  return chordsDB;
+}
+
+function parseChordName(chord) {
+  // Normalize: Am/G -> key=A, suffix=m/G
+  // G -> key=G, suffix=major
+  // Gsus4 -> key=G, suffix=sus4
+  // C#m -> key=C#, suffix=minor
+  const m = chord.match(/^([A-G][b#]?)(.*)/);
+  if (!m) return null;
+  let key = m[1].replace('b', 'b');
+  let rest = m[2] || '';
+
+  // Normalize key: Bb->Bb, Ab->Ab, C#->C#, etc.
+  const keyMap = {'Db':'C#','Eb':'Eb','Gb':'F#','Ab':'Ab','Bb':'Bb'};
+  if (keyMap[key]) key = keyMap[key];
+
+  // Map suffix
+  let suffix = 'major';
+  if (!rest) suffix = 'major';
+  else if (rest === 'm') suffix = 'minor';
+  else if (rest.startsWith('m/')) suffix = rest; // m/G etc
+  else if (rest.startsWith('/')) suffix = rest;  // /G etc
+  else if (rest === 'maj7') suffix = 'maj7';
+  else if (rest === 'maj9') suffix = 'maj9';
+  else if (rest === 'm7') suffix = 'm7';
+  else if (rest === 'm9') suffix = 'm9';
+  else if (rest === '7') suffix = '7';
+  else if (rest === '9') suffix = '9';
+  else if (rest === 'sus2') suffix = 'sus2';
+  else if (rest === 'sus4') suffix = 'sus4';
+  else if (rest === 'dim') suffix = 'dim';
+  else if (rest === 'dim7') suffix = 'dim7';
+  else if (rest === 'aug') suffix = 'aug';
+  else if (rest === 'add9') suffix = 'add9';
+  else if (rest === '6') suffix = '6';
+  else if (rest === 'm6') suffix = 'm6';
+  else if (rest === '5') suffix = '5';
+  else if (rest === 'sus') suffix = 'sus';
+  else if (rest.match(/^m\d/)) suffix = 'm' + rest.slice(1);
+  else suffix = rest;
+
+  return { key, suffix };
+}
+
+function drawChordSVG(position) {
+  const { frets, fingers, baseFret, barres } = position;
+  const W = 200, H = 220;
+  const top = 50, left = 30, right = W - 30;
+  const strW = (right - left) / 5;
+  const fretH = 32;
+  const strings = 6;
+  const fretCount = 4;
+
+  let svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:var(--font-mono)">`;
+
+  // Base fret label
+  if (baseFret > 1) {
+    svg += `<text x="${left - 8}" y="${top + fretH * 0.7}" text-anchor="end" font-size="13" fill="var(--text2)">${baseFret}fr</text>`;
+  }
+
+  // Nut or top bar
+  if (baseFret === 1) {
+    svg += `<rect x="${left}" y="${top - 4}" width="${right - left}" height="6" rx="2" fill="var(--text2)"/>`;
+  } else {
+    svg += `<line x1="${left}" y1="${top}" x2="${right}" y2="${top}" stroke="var(--border2)" stroke-width="2"/>`;
+  }
+
+  // Fret lines
+  for (let f = 1; f <= fretCount; f++) {
+    const y = top + f * fretH;
+    svg += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>`;
+  }
+
+  // String lines
+  for (let s = 0; s < strings; s++) {
+    const x = left + s * strW;
+    svg += `<line x1="${x}" y1="${top}" x2="${x}" y2="${top + fretCount * fretH}" stroke="var(--text2)" stroke-width="1.5"/>`;
+  }
+
+  // Barres
+  if (barres && barres.length) {
+    barres.forEach(barre => {
+      const y = top + (barre - 0.5) * fretH;
+      const firstStr = frets.indexOf(barre);
+      const lastStr = frets.lastIndexOf(barre);
+      if (firstStr >= 0 && lastStr >= 0) {
+        const x1 = left + firstStr * strW;
+        const x2 = left + lastStr * strW;
+        svg += `<rect x="${x1 - 6}" y="${y - 10}" width="${x2 - x1 + 12}" height="20" rx="10" fill="var(--accent)"/>`;
+      }
+    });
+  }
+
+  // Finger dots
+  frets.forEach((fret, s) => {
+    const x = left + s * strW;
+    if (fret === -1 || fret === 0) {
+      // Open or muted above nut
+      const sym = fret === -1 ? '✕' : '○';
+      const color = fret === -1 ? 'var(--red)' : 'var(--text2)';
+      svg += `<text x="${x}" y="${top - 10}" text-anchor="middle" font-size="13" fill="${color}">${sym}</text>`;
+    } else if (!barres || !barres.includes(fret)) {
+      const cy = top + (fret - 0.5) * fretH;
+      const finger = fingers ? fingers[s] : 0;
+      svg += `<circle cx="${x}" cy="${cy}" r="10" fill="var(--accent)"/>`;
+      if (finger && finger > 0) {
+        svg += `<text x="${x}" y="${cy + 4}" text-anchor="middle" font-size="11" fill="white">${finger}</text>`;
+      }
+    }
+  });
+
+  // String names at bottom
+  const strNames = ['E','A','D','G','B','e'];
+  strNames.forEach((n, s) => {
+    const x = left + s * strW;
+    svg += `<text x="${x}" y="${top + fretCount * fretH + 18}" text-anchor="middle" font-size="11" fill="var(--text3)">${n}</text>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+let currentChordPositions = [];
+
+async function showChordDiagram(chordName) {
+  chordPositionIdx = 0;
+  const db = await loadChordsDB();
+  const modal = document.getElementById('chord-modal');
+  const title = document.getElementById('chord-modal-title');
+  const body = document.getElementById('chord-modal-body');
+  const nav = document.getElementById('chord-modal-nav');
+
+  modal.style.display = 'flex';
+  title.textContent = chordName;
+  body.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px">Buscando...</div>';
+  nav.innerHTML = '';
+
+  if (!db) {
+    body.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px">Sin conexión — diagrama no disponible</div>';
+    return;
+  }
+
+  const parsed = parseChordName(chordName);
+  if (!parsed) {
+    body.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px">Acorde no reconocido</div>';
+    return;
+  }
+
+  const keyChords = db.chords[parsed.key];
+  if (!keyChords) {
+    body.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px">No encontrado: ${chordName}</div>`;
+    return;
+  }
+
+  const chordData = keyChords.find(c => c.suffix === parsed.suffix);
+  if (!chordData || !chordData.positions || !chordData.positions.length) {
+    body.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px">No encontrado: ${chordName}</div>`;
+    return;
+  }
+
+  currentChordPositions = chordData.positions;
+  renderChordPosition();
+}
+
+function renderChordPosition() {
+  const body = document.getElementById('chord-modal-body');
+  const nav = document.getElementById('chord-modal-nav');
+  const pos = currentChordPositions[chordPositionIdx];
+  body.innerHTML = drawChordSVG(pos);
+
+  if (currentChordPositions.length > 1) {
+    nav.innerHTML = currentChordPositions.map((_, i) =>
+      `<button onclick="setChordPos(${i})" style="width:10px;height:10px;border-radius:50%;border:none;cursor:pointer;background:${i===chordPositionIdx?'var(--accent)':'var(--surface2)'}"></button>`
+    ).join('');
+  } else {
+    nav.innerHTML = '';
+  }
+}
+
+function setChordPos(i) {
+  chordPositionIdx = i;
+  renderChordPosition();
+}
+
+function closeChordModal() {
+  document.getElementById('chord-modal').style.display = 'none';
+}
+
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null;let tpActive=false;
 let tpSpeed=2.0;
