@@ -224,7 +224,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:8px 0 4px;overflow-x:auto"></div>
     <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v5.7</div>
+      <div class="footer">Powered by <span>Nano</span> · v5.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none">
@@ -414,7 +414,7 @@ function renderList(){renderTagFilterBar();
   list.innerHTML=filtered.map((s,i)=>`
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
-      <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text">${escH(s.artist)}</div></div>
+      <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text">${escH(s.artist)}</div>${(s.tags||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${(s.tags||[]).map(t=>`<span class="tag" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation();setTagFilter('${escH(t)}')">${escH(t)}</span>`).join('')}</div>`:''}</div>
       <span class="song-key-badge">${escH(s.key)}</span>
       ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
