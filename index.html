@@ -272,7 +272,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.16</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.17</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -440,12 +440,12 @@ function closeSideMenu(){document.getElementById('side-menu').classList.remove('
 
 // ── Temas ────────────────────────────────────────────────
 const THEMES=[
-  {id:'oscuro',name:'Oscuro',bg:'#0f0c1d',surface:'#1a1533',surface2:'#231d45',text:'#f0ecff',text2:'#9b93c4',text3:'#5e577d',accent:'#a78bfa',accent2:'#7c3aed'},
-  {id:'claro',name:'Claro',bg:'#f5f4ff',surface:'#ffffff',surface2:'#ede9ff',text:'#1a1033',text2:'#5e4d8a',text3:'#9b8ec4',accent:'#7c3aed',accent2:'#5b21b6'},
-  {id:'sepia',name:'Sepia',bg:'#1c1409',surface:'#2a1f0e',surface2:'#342714',text:'#f5e6c8',text2:'#c4a97a',text3:'#7a6440',accent:'#e8a44a',accent2:'#c47a1a'},
-  {id:'azul',name:'Azul',bg:'#050d1a',surface:'#0d1e33',surface2:'#152a47',text:'#ddeeff',text2:'#7aaed4',text3:'#3d6480',accent:'#4a9eff',accent2:'#1a6fcf'},
-  {id:'verde',name:'Verde',bg:'#081a0d',surface:'#102618',surface2:'#183520',text:'#d8f5dd',text2:'#6abf7a',text3:'#3a6b44',accent:'#34d399',accent2:'#059669'},
-  {id:'rosado',name:'Rosado',bg:'#1a0d18',surface:'#2a1525',surface2:'#3a1f35',text:'#fce8f5',text2:'#c47ab8',text3:'#7a3d70',accent:'#e040fb',accent2:'#aa00ff'},
+  {id:'oscuro',name:'Oscuro',bg:'#0f0c1d',surface:'#1a1533',surface2:'#231d45',text:'#f0ecff',text2:'#9b93c4',text3:'#5e577d',accent:'#a78bfa',accent2:'#7c3aed',amber:'#fbbf24',amberBg:'rgba(251,191,36,0.1)',green:'#34d399',greenBg:'rgba(52,211,153,0.1)',red:'#f87171'},
+  {id:'claro',name:'Claro',bg:'#f5f4ff',surface:'#ffffff',surface2:'#ede9ff',text:'#1a1033',text2:'#5e4d8a',text3:'#9b8ec4',accent:'#7c3aed',accent2:'#5b21b6',amber:'#d97706',amberBg:'rgba(217,119,6,0.12)',green:'#059669',greenBg:'rgba(5,150,105,0.1)',red:'#dc2626'},
+  {id:'sepia',name:'Sepia',bg:'#1c1409',surface:'#2a1f0e',surface2:'#342714',text:'#f5e6c8',text2:'#c4a97a',text3:'#7a6440',accent:'#e8a44a',accent2:'#c47a1a',amber:'#f59e0b',amberBg:'rgba(245,158,11,0.12)',green:'#6ee7b7',greenBg:'rgba(110,231,183,0.1)',red:'#fca5a5'},
+  {id:'azul',name:'Azul',bg:'#050d1a',surface:'#0d1e33',surface2:'#152a47',text:'#ddeeff',text2:'#7aaed4',text3:'#3d6480',accent:'#4a9eff',accent2:'#1a6fcf',amber:'#fbbf24',amberBg:'rgba(251,191,36,0.1)',green:'#34d399',greenBg:'rgba(52,211,153,0.1)',red:'#f87171'},
+  {id:'verde',name:'Verde',bg:'#081a0d',surface:'#102618',surface2:'#183520',text:'#d8f5dd',text2:'#6abf7a',text3:'#3a6b44',accent:'#34d399',accent2:'#059669',amber:'#fcd34d',amberBg:'rgba(252,211,77,0.12)',green:'#6ee7b7',greenBg:'rgba(110,231,183,0.1)',red:'#fca5a5'},
+  {id:'rosado',name:'Rosado',bg:'#1a0d18',surface:'#2a1525',surface2:'#3a1f35',text:'#fce8f5',text2:'#c47ab8',text3:'#7a3d70',accent:'#e040fb',accent2:'#aa00ff',amber:'#f9a8d4',amberBg:'rgba(249,168,212,0.12)',green:'#86efac',greenBg:'rgba(134,239,172,0.1)',red:'#fca5a5'},
 ];
 const THEME_COLOR_KEYS=[
   {key:'--bg',label:'Fondo'},
@@ -456,6 +456,9 @@ const THEME_COLOR_KEYS=[
   {key:'--text3',label:'Texto sutil'},
   {key:'--accent',label:'Acento'},
   {key:'--accent2',label:'Acento oscuro'},
+  {key:'--amber',label:'BPM / Destacado'},
+  {key:'--green',label:'Botones acción'},
+  {key:'--red',label:'Eliminar / Error'},
 ];
 let currentThemeId='oscuro';
 
@@ -470,6 +473,9 @@ function applyTheme(theme){
   r.style.setProperty('--accent',theme.accent);
   r.style.setProperty('--accent2',theme.accent2);
   r.style.setProperty('--accent-bg',theme.accent+'22');
+  if(theme.amber){r.style.setProperty('--amber',theme.amber);r.style.setProperty('--amber-bg',theme.amberBg);}
+  if(theme.green){r.style.setProperty('--green',theme.green);r.style.setProperty('--green-bg',theme.greenBg);}
+  if(theme.red)r.style.setProperty('--red',theme.red);
   currentThemeId=theme.id;
   localStorage.setItem('cancionero_theme',JSON.stringify({id:theme.id,...theme}));
 }
