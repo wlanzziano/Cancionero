@@ -229,6 +229,19 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .spotify-wrap iframe{display:block;border:none;width:100%;height:80px}
 .spotify-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);text-decoration:none;margin-top:6px;padding:4px 0}
 .spotify-link:hover{color:var(--accent)}
+.metro-wrap{display:flex;align-items:center;gap:10px;padding:12px 0 4px;flex-wrap:wrap}
+.metro-btn{height:36px;padding:0 14px;border-radius:var(--r-sm);background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.metro-btn:hover{background:var(--accent-hover)}
+.metro-btn.on{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.metro-beats{display:flex;gap:8px;align-items:center}
+.metro-beat{width:14px;height:14px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);transition:all .08s}
+.metro-beat.accent{width:18px;height:18px;border-color:var(--accent)}
+.metro-beat.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent)}
+.metro-beat.accent.on{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px var(--amber)}
+.metro-bpm-ctrl{display:flex;align-items:center;gap:6px}
+.metro-bpm-val{font-family:var(--font-mono);font-size:13px;color:var(--text2);min-width:52px;text-align:center}
+.metro-small-btn{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.metro-small-btn:hover{border-color:var(--accent);color:var(--accent)}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -276,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.18</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.19</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -352,7 +365,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzQqBrh9GWTTYxdER03_3uKqnChBFjLMRU91GS_7e9rBwmUgMNLoipaSO3PNLUCfRO7fA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycby9-CIv4dIWDK3RYCBTQl7dOsxyyrLkA1W7QYkKi15qboO5cW0m0uGmPcxB75sGYLpCQw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -999,6 +1012,91 @@ function renderTagBar(){
 
 function setTag(t){activeTag=t;renderList();}
 
+
+// ── Metrónomo ─────────────────────────────────────────────
+var metroCtx=null,metroInterval=null,metroBpm=120,metroBeats=4,metroCurrent=0,metroOn=false;
+
+function metroInit(){
+  if(!metroCtx) metroCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+
+function metroGetBeats(meter){
+  if(!meter||meter==='libre') return 0;
+  var parts=meter.split('/');
+  return parseInt(parts[0])||4;
+}
+
+function metroRenderBeats(){
+  var wrap=document.getElementById('metro-beats');
+  if(!wrap) return;
+  if(!metroBeats){wrap.innerHTML='';return;}
+  wrap.innerHTML=Array.from({length:metroBeats},function(_,i){
+    return '<div class="metro-beat'+(i===0?' accent':'')+(i===metroCurrent&&metroOn?' on':'')+'" id="mb'+i+'"></div>';
+  }).join('');
+}
+
+function metroTick(){
+  var isAccent=metroCurrent===0;
+  // Sonido
+  metroInit();
+  var osc=metroCtx.createOscillator();
+  var gain=metroCtx.createGain();
+  osc.connect(gain);gain.connect(metroCtx.destination);
+  osc.frequency.value=isAccent?1200:900;
+  gain.gain.setValueAtTime(isAccent?0.4:0.25,metroCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.08);
+  osc.start(metroCtx.currentTime);
+  osc.stop(metroCtx.currentTime+0.08);
+  // Visual
+  var prev=document.getElementById('mb'+metroCurrent);
+  metroCurrent=(metroCurrent+1)%metroBeats;
+  var curr=document.getElementById('mb'+(metroCurrent===0?metroBeats-1:metroCurrent-1));
+  document.querySelectorAll('.metro-beat').forEach(function(el){el.classList.remove('on');});
+  if(prev) prev.classList.add('on');
+  setTimeout(function(){if(prev)prev.classList.remove('on');},120);
+}
+
+function metroStart(){
+  if(!metroBeats) return;
+  metroOn=true;metroCurrent=0;
+  var ms=Math.round(60000/metroBpm);
+  metroTick();
+  metroInterval=setInterval(metroTick,ms);
+  var btn=document.getElementById('metro-btn');
+  if(btn){btn.textContent='&#9646;&#9646; Metrónomo';btn.classList.add('on');}
+}
+
+function metroStop(){
+  metroOn=false;
+  if(metroInterval){clearInterval(metroInterval);metroInterval=null;}
+  metroCurrent=0;
+  document.querySelectorAll('.metro-beat').forEach(function(el){el.classList.remove('on');});
+  var btn=document.getElementById('metro-btn');
+  if(btn){btn.innerHTML='&#9836; Metrónomo';btn.classList.remove('on');}
+}
+
+function metroToggle(){
+  if(metroOn) metroStop();
+  else metroStart();
+}
+
+function metroAdjust(delta){
+  metroBpm=Math.min(240,Math.max(20,metroBpm+delta));
+  var el=document.getElementById('metro-bpm-val');
+  if(el) el.textContent=metroBpm+' BPM';
+  if(metroOn){metroStop();metroStart();}
+}
+
+function metroLoad(song){
+  metroStop();
+  metroBpm=parseInt(song.bpm)||120;
+  metroBeats=metroGetBeats(song.meter||'4/4');
+  metroCurrent=0;
+  metroRenderBeats();
+  var el=document.getElementById('metro-bpm-val');
+  if(el) el.textContent=metroBpm+' BPM';
+}
+
 function init(){calcCH();loadSavedTheme();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
@@ -1071,7 +1169,7 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);}
+function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();metroStop();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();if(currentSong.bpm)metroLoad(currentSong);window.scrollTo(0,0);}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
@@ -1121,6 +1219,7 @@ function drawSong(){
         <span class="sv-artist">${escH(s.artist)}</span>
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
+      ${s.bpm?`<div class="metro-wrap" id="metro-wrap"><button class="metro-btn" id="metro-btn" onclick="metroToggle()">&#9836; Metrónomo</button><div class="metro-beats" id="metro-beats"></div><div class="metro-bpm-ctrl"><button class="metro-small-btn" onclick="metroAdjust(-1)">&#8722;</button><span class="metro-bpm-val" id="metro-bpm-val">${s.bpm} BPM</span><button class="metro-small-btn" onclick="metroAdjust(1)">+</button></div></div>`:''}
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
@@ -1144,6 +1243,10 @@ function formHTML(s){
       <div class="row-2b">
         <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Compás</label><select id="f-meter"><option value="">— Sin compás —</option><option value="4/4" ${s&&s.meter==='4/4'?'selected':''}>4/4 (común)</option><option value="3/4" ${s&&s.meter==='3/4'?'selected':''}>3/4 (vals)</option><option value="2/4" ${s&&s.meter==='2/4'?'selected':''}>2/4</option><option value="6/8" ${s&&s.meter==='6/8'?'selected':''}>6/8</option><option value="5/4" ${s&&s.meter==='5/4'?'selected':''}>5/4</option><option value="7/8" ${s&&s.meter==='7/8'?'selected':''}>7/8</option><option value="libre" ${s&&s.meter==='libre'?'selected':''}>Libre</option></select></div>
+        <div class="field"><label>&#160;</label><div style="font-size:12px;color:var(--text3);padding-top:10px">El compás activa el acento en el primer tiempo del metrónomo</div></div>
       </div>
       <div class="field"><label>Letra con acordes *</label>
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
@@ -1177,13 +1280,15 @@ function getFormValues(){
   var spMatch=spRaw.match(/track\/([A-Za-z0-9]+)/);
   var spotify=spMatch?spMatch[1]:'';
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
-  return{title,artist,key,bpm,tags,spotify,body};
+  var meterEl=document.getElementById('f-meter');
+  var meter=meterEl?meterEl.value:'';
+  return{title,artist,key,bpm,meter,tags,spotify,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -1191,10 +1296,10 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
   if(r.ok){
     const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,tags:(vals?vals.tags:[]),spotify:(vals?vals.spotify:''),sections:parseBody(body)};
+    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,meter:(vals?vals.meter:''),tags:(vals?vals.tags:[]),spotify:(vals?vals.spotify:''),sections:parseBody(body)};
     currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
@@ -1271,7 +1376,7 @@ async function addUserAction(){
   else toast('Error: '+r.error);
 }
 function showView(v){['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
-function showList(){tpHideBar();showView('list-view');renderList();}
+function showList(){tpHideBar();metroStop();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
   lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
