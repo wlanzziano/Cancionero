@@ -166,6 +166,12 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .tp-speed-input{width:56px;font-family:var(--font-mono);font-size:14px;color:var(--accent);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:4px 6px;text-align:center;-moz-appearance:textfield;outline:none}
 .tp-speed-input::-webkit-outer-spin-button,.tp-speed-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .tp-speed-input:focus{border-color:var(--accent)}
+.sl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:grab;transition:border-color .2s,opacity .2s}
+.sl-card:hover{border-color:var(--accent)}
+.sl-card.dragging{opacity:.4;border-color:var(--accent)}
+.sl-card.drag-over{border-color:var(--accent);background:var(--surface2)}
+.sl-drag-handle{color:var(--text3);font-size:18px;cursor:grab;flex-shrink:0;user-select:none}
+.sl-num{font-family:var(--font-mono);font-size:12px;color:var(--text3);min-width:20px;text-align:right;flex-shrink:0}
 .chord-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center;padding:20px}
 .chord-modal.open{display:flex}
 .chord-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7)}
@@ -251,13 +257,14 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.12</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.13</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
   <div id="chords-view" style="display:none"></div>
+  <div id="setlists-view" style="display:none"></div>
 </div>
 <!-- Menú lateral -->
 <div class="side-menu" id="side-menu">
@@ -266,6 +273,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <div class="side-menu-header">&#9834; <span>Cancionero</span> Católico</div>
     <div style="flex:1;overflow-y:auto">
       <div class="side-menu-item" onclick="closeSideMenu();showList()">&#127925; Canciones</div>
+      <div class="side-menu-item" onclick="closeSideMenu();openSetlists()">&#127897;&#65039; Setlists</div>
       <div class="side-menu-sep"></div>
       <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Gestionar acordes</div>
       <div class="side-menu-item" id="smenu-users" onclick="closeSideMenu();openUsers()" style="display:none">&#128101; Usuarios</div>
@@ -325,7 +333,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycby3aSk4bvSU5lJ-AAlcvYscQ8f4DIMs3Kzy0CVo-BgE9R9DpTkunRuBMGPkoHfb9PUI/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxcowE_tNj4cPtxNbAaq4Xbz8mJuRPN1lMnpe2PAL0YZBClbGhZbL1WUOvrkQPmWFYDyA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -750,6 +758,163 @@ async function deleteCustomChord(name){
   } else toast('Error: '+r.error);
 }
 
+// ── Setlists ──────────────────────────────────────────────
+let setlists = [];
+let currentSetlist = null;
+let dragSrcIdx = null;
+
+async function loadSetlists(){
+  const r = await apiGet({action:'setlists'});
+  if(r.ok) setlists = r.setlists || [];
+}
+
+async function openSetlists(){
+  tpHideBar();
+  showView('setlists-view');
+  window.scrollTo(0,0);
+  const el = document.getElementById('setlists-view');
+  el.innerHTML = '<button class="back-btn" onclick="showList()">&#8592; Volver</button><div style="color:var(--text3);font-size:14px;padding:20px 0">Cargando...</div>';
+  await loadSetlists();
+  renderSetlists();
+}
+
+function renderSetlists(){
+  const el = document.getElementById('setlists-view');
+  const items = setlists.length ? setlists.map(sl=>`
+    <div class="song-card" style="flex-direction:column;align-items:flex-start;gap:6px" onclick="openSetlistDetail('${sl.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="font-size:15px;font-weight:500;color:var(--text)">${escH(sl.name)}</div>
+        <button class="song-del" onclick="event.stopPropagation();confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')">&#10005;</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3)">${(sl.songs||[]).length} canción${(sl.songs||[]).length!==1?'es':''} · ${escH(sl.createdBy||'')}</div>
+    </div>`).join('') :
+    '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
+
+  el.innerHTML = `
+    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">Setlists</div>
+      <button class="btn-add" onclick="createSetlist()">+ Nuevo</button>
+    </div>
+    ${items}`;
+}
+
+async function createSetlist(){
+  const name = prompt('Nombre del setlist:');
+  if(!name || !name.trim()) return;
+  const r = await api({action:'add_setlist', setlist:{name:name.trim(), songs:[], createdBy:currentUser.name}});
+  if(r.ok){ await loadSetlists(); renderSetlists(); toast('✓ Setlist creado'); }
+  else toast('Error: '+r.error);
+}
+
+function confirmDeleteSetlist(id, name){
+  if(!confirm('¿Eliminar setlist "'+name+'"?')) return;
+  deleteSetlistAction(id);
+}
+async function deleteSetlistAction(id){
+  const r = await apiGet({action:'delete_setlist', id:id});
+  if(r.ok){ setlists=setlists.filter(s=>s.id!==id); renderSetlists(); toast('Setlist eliminado'); }
+  else toast('Error: '+r.error);
+}
+
+function openSetlistDetail(id){
+  currentSetlist = setlists.find(s=>s.id===id);
+  if(!currentSetlist) return;
+  renderSetlistDetail();
+}
+
+function renderSetlistDetail(){
+  const sl = currentSetlist;
+  const slSongs = (sl.songs||[]).map(sid=>songs.find(s=>s.id===sid)).filter(Boolean);
+  const available = songs.filter(s=>!(sl.songs||[]).includes(s.id));
+  const el = document.getElementById('setlists-view');
+
+  const songItems = slSongs.length ? slSongs.map((s,i)=>`
+    <div class="sl-card" draggable="true"
+      ondragstart="slDragStart(event,${i})"
+      ondragover="slDragOver(event,${i})"
+      ondrop="slDrop(event,${i})"
+      ondragend="slDragEnd()">
+      <span class="sl-drag-handle">&#9776;</span>
+      <span class="sl-num">${i+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
+        <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
+      </div>
+      <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="openSong('${s.id}')">Abrir</button>
+      <button class="song-del" onclick="removeFromSetlist('${s.id}')">&#10005;</button>
+    </div>`).join('') :
+    '<div style="color:var(--text3);font-size:13px;padding:12px 0">Agrega canciones desde abajo</div>';
+
+  const availItems = available.length ? `
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">Agregar canciones</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${available.map(s=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
+            <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
+          </div>
+          <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="addToSetlist('${s.id}')">+ Agregar</button>
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  el.innerHTML = `
+    <button class="back-btn" onclick="openSetlists()">&#8592; Setlists</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">${escH(sl.name)}</div>
+      <button class="song-del" onclick="confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')" style="font-size:12px;padding:4px 8px">Eliminar</button>
+    </div>
+    <div id="sl-song-list">${songItems}</div>
+    ${availItems}`;
+}
+
+async function addToSetlist(songId){
+  if(!currentSetlist) return;
+  if(!currentSetlist.songs) currentSetlist.songs=[];
+  currentSetlist.songs.push(songId);
+  const r = await api({action:'edit_setlist', setlist:currentSetlist});
+  if(r.ok){ renderSetlistDetail(); toast('✓ Canción agregada'); }
+  else{ currentSetlist.songs.pop(); toast('Error: '+r.error); }
+}
+
+async function removeFromSetlist(songId){
+  if(!currentSetlist) return;
+  currentSetlist.songs = (currentSetlist.songs||[]).filter(id=>id!==songId);
+  const r = await api({action:'edit_setlist', setlist:currentSetlist});
+  if(r.ok) renderSetlistDetail();
+  else toast('Error: '+r.error);
+}
+
+// Drag & drop
+function slDragStart(e, idx){
+  dragSrcIdx = idx;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function slDragOver(e, idx){
+  e.preventDefault();
+  document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function slDragEnd(){
+  document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
+}
+async function slDrop(e, toIdx){
+  e.preventDefault();
+  if(dragSrcIdx===null || dragSrcIdx===toIdx) return;
+  const arr = [...(currentSetlist.songs||[])];
+  const [moved] = arr.splice(dragSrcIdx,1);
+  arr.splice(toIdx,0,moved);
+  currentSetlist.songs = arr;
+  dragSrcIdx = null;
+  const r = await api({action:'edit_setlist', setlist:currentSetlist});
+  if(r.ok) renderSetlistDetail();
+  else toast('Error al guardar orden');
+}
+
 function init(){calcCH();loadSavedTheme();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
@@ -757,7 +922,7 @@ function init(){calcCH();loadSavedTheme();
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();loadCustomChords();return;
+      showApp();loadSongs();loadCustomChords();loadSetlists();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -1003,7 +1168,7 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
-function showView(v){['list-view','song-view','add-view','users-view','chords-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
+function showView(v){['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
 function showList(){tpHideBar();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
