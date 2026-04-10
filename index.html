@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.19</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.20</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1037,23 +1037,24 @@ function metroRenderBeats(){
 
 function metroTick(){
   var isAccent=metroCurrent===0;
-  // Sonido
+  // Sonido Web Audio API
   metroInit();
   var osc=metroCtx.createOscillator();
   var gain=metroCtx.createGain();
-  osc.connect(gain);gain.connect(metroCtx.destination);
-  osc.frequency.value=isAccent?1200:900;
-  gain.gain.setValueAtTime(isAccent?0.4:0.25,metroCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.08);
+  osc.connect(gain);
+  gain.connect(metroCtx.destination);
+  osc.type='sine';
+  osc.frequency.value=isAccent?1400:1000;
+  gain.gain.setValueAtTime(isAccent?0.5:0.3,metroCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.06);
   osc.start(metroCtx.currentTime);
-  osc.stop(metroCtx.currentTime+0.08);
-  // Visual
-  var prev=document.getElementById('mb'+metroCurrent);
-  metroCurrent=(metroCurrent+1)%metroBeats;
-  var curr=document.getElementById('mb'+(metroCurrent===0?metroBeats-1:metroCurrent-1));
+  osc.stop(metroCtx.currentTime+0.06);
+  // Visual — iluminar beat actual
   document.querySelectorAll('.metro-beat').forEach(function(el){el.classList.remove('on');});
-  if(prev) prev.classList.add('on');
-  setTimeout(function(){if(prev)prev.classList.remove('on');},120);
+  var beat=document.getElementById('mb'+metroCurrent);
+  if(beat) beat.classList.add('on');
+  // Avanzar
+  metroCurrent=(metroCurrent+1)%metroBeats;
 }
 
 function metroStart(){
@@ -1063,7 +1064,7 @@ function metroStart(){
   metroTick();
   metroInterval=setInterval(metroTick,ms);
   var btn=document.getElementById('metro-btn');
-  if(btn){btn.textContent='&#9646;&#9646; Metrónomo';btn.classList.add('on');}
+  if(btn){btn.innerHTML='&#9646;&#9646; Metr&#243;nomo';btn.classList.add('on');}
 }
 
 function metroStop(){
@@ -1169,7 +1170,7 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();metroStop();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();if(currentSong.bpm)metroLoad(currentSong);window.scrollTo(0,0);}
+function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();metroStop();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();if(currentSong.bpm)setTimeout(function(){metroLoad(currentSong);},50);window.scrollTo(0,0);}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
