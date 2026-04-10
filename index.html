@@ -24,7 +24,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
-#app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 80px}
+#app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 100px}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:340px}
 .login-logo{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -158,6 +158,53 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .loading-text{font-size:13px;color:var(--text3)}
 .footer{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.08em}.footer span{color:var(--accent);font-weight:500}
+.tp-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border2);display:none;flex-direction:row;align-items:center;justify-content:center;gap:12px;padding:10px 16px}
+.tp-btn{width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:var(--font-body)}
+.tp-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tp-auto{height:38px;padding:0 16px;border-radius:var(--r-sm);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);color:var(--accent);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer}
+.tp-auto.active{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:var(--green)}
+.tp-speed-input{width:56px;font-family:var(--font-mono);font-size:14px;color:var(--accent);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:4px 6px;text-align:center;-moz-appearance:textfield;outline:none}
+.tp-speed-input::-webkit-outer-spin-button,.tp-speed-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tp-speed-input:focus{border-color:var(--accent)}
+.chord-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center;padding:20px}
+.chord-modal.open{display:flex}
+.chord-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7)}
+.chord-modal-box{position:relative;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:24px;max-width:320px;width:100%;text-align:center}
+.chord-modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px}
+.chord-modal-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1}
+.chord-modal-close:hover{color:var(--text)}
+.chord-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.chord-nav-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);cursor:pointer;border:none;transition:background .2s}
+.chord-nav-dot.active{background:var(--accent)}
+.chord-not-found{font-size:13px;color:var(--text3);padding:20px}
+.hamburger{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:2px 6px;flex-shrink:0;line-height:1}
+.hamburger:hover{color:var(--accent)}
+.side-menu{position:fixed;inset:0;z-index:500;display:none}
+.side-menu.open{display:block}
+.side-menu-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.side-menu-panel{position:absolute;top:0;left:0;bottom:0;width:270px;background:var(--surface);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,.4)}
+.side-menu-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text)}
+.side-menu-header span{color:var(--accent)}
+.side-menu-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-size:15px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
+.side-menu-item:hover{background:var(--surface2);color:var(--text)}
+.side-menu-item.danger{color:var(--red)}
+.side-menu-item.danger:hover{background:rgba(248,113,113,.08)}
+.side-menu-sep{height:1px;background:var(--border);margin:6px 0}
+.theme-panel{position:fixed;inset:0;z-index:600;display:none;align-items:flex-end;justify-content:center}
+.theme-panel.open{display:flex}
+.theme-panel-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.theme-panel-box{position:relative;background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:24px 20px 32px;width:100%;max-width:680px;max-height:80vh;overflow-y:auto}
+.theme-panel-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px}
+.theme-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.theme-preset{border:2px solid var(--border);border-radius:var(--r-sm);overflow:hidden;cursor:pointer;transition:border-color .2s}
+.theme-preset:hover{border-color:var(--accent)}
+.theme-preset.active{border-color:var(--accent)}
+.theme-preset-swatch{height:48px;display:flex;align-items:center;justify-content:center;gap:6px}
+.theme-preset-name{font-size:11px;font-weight:500;text-align:center;padding:5px 4px;background:rgba(0,0,0,.2);color:var(--text2)}
+.theme-custom-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.theme-color-row{display:flex;align-items:center;gap:10px}
+.theme-color-swatch{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);cursor:pointer;flex-shrink:0}
+.theme-color-label{font-size:13px;color:var(--text2)}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -184,6 +231,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 </div>
 <div id="app" style="display:none">
   <div class="header">
+    <button class="hamburger" onclick="openSideMenu()" title="Menú">&#9776;</button>
     <div class="header-title">&#9834; <span>Cancionero</span> Católico</div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
@@ -203,12 +251,67 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.6</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.10</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
+  <div id="chords-view" style="display:none"></div>
+</div>
+<!-- Menú lateral -->
+<div class="side-menu" id="side-menu">
+  <div class="side-menu-backdrop" onclick="closeSideMenu()"></div>
+  <div class="side-menu-panel">
+    <div class="side-menu-header">&#9834; <span>Cancionero</span> Católico</div>
+    <div style="flex:1;overflow-y:auto">
+      <div class="side-menu-item" onclick="closeSideMenu();showList()">&#127925; Canciones</div>
+      <div class="side-menu-sep"></div>
+      <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Gestionar acordes</div>
+      <div class="side-menu-item" id="smenu-users" onclick="closeSideMenu();openUsers()" style="display:none">&#128101; Usuarios</div>
+      <div class="side-menu-sep" id="smenu-admin-sep" style="display:none"></div>
+      <div class="side-menu-item" onclick="closeSideMenu();openThemePanel()">&#127752; Personalizar tema</div>
+    </div>
+    <div class="side-menu-sep"></div>
+    <div class="side-menu-item danger" onclick="closeSideMenu();doLogout()">&#8592; Cerrar sesión</div>
+  </div>
+</div>
+
+<!-- Panel de temas -->
+<div class="theme-panel" id="theme-panel">
+  <div class="theme-panel-backdrop" onclick="closeThemePanel()"></div>
+  <div class="theme-panel-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="theme-panel-title">&#127752; Personalizar tema</div>
+      <button onclick="closeThemePanel()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">&#10005;</button>
+    </div>
+    <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">Temas predefinidos</div>
+    <div class="theme-presets" id="theme-presets"></div>
+    <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:16px 0 10px">Colores personalizados</div>
+    <div class="theme-custom-grid" id="theme-custom-grid"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button onclick="resetTheme()" style="flex:1;background:transparent;border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px;color:var(--text2);font-size:14px;cursor:pointer">Restablecer</button>
+      <button onclick="closeThemePanel()" style="flex:1;background:var(--accent);border:none;border-radius:var(--r-sm);padding:9px;color:#fff;font-size:14px;font-weight:500;cursor:pointer">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal diagrama de acorde -->
+<div class="chord-modal" id="chord-modal">
+  <div class="chord-modal-backdrop" onclick="closeChordModal()"></div>
+  <div class="chord-modal-box">
+    <button class="chord-modal-close" onclick="closeChordModal()">&#10005;</button>
+    <div class="chord-modal-title" id="chord-modal-title"></div>
+    <div id="chord-modal-svg"></div>
+    <div class="chord-nav" id="chord-modal-nav"></div>
+  </div>
+</div>
+
+<div class="tp-bar" id="tp-bar">
+  <button class="tp-btn" onclick="tpSpeedDown()">&#8722;</button>
+  <input type="number" id="tp-speed-val" class="tp-speed-input" value="2.0" min="0.3" max="8" step="0.1" onchange="tpSetSpeed(parseFloat(this.value))">
+  <button class="tp-btn" onclick="tpSpeedUp()">+</button>
+  <button class="tp-auto" id="tp-auto-btn" onclick="tpToggle()">&#9654; Auto</button>
 </div>
 <div class="toast" id="toast"></div>
 <div class="modal-overlay" id="confirm-modal">
@@ -247,14 +350,420 @@ async function apiGet(params){
   try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
   catch(e){return{ok:false,error:'Error de red'};}
 }
-function init(){calcCH();
+// ── Teleprompter ─────────────────────────────────────────
+let tpInterval=null,tpActive=false,tpSpeed=2.0;
+
+function tpShowBar(){document.getElementById('tp-bar').style.display='flex';}
+function tpHideBar(){tpPause();document.getElementById('tp-bar').style.display='none';}
+
+function tpToggle(){
+  tpActive=!tpActive;
+  const btn=document.getElementById('tp-auto-btn');
+  if(tpActive){btn.textContent='⏸ Auto';btn.classList.add('active');tpStart();}
+  else{btn.textContent='▶ Auto';btn.classList.remove('active');tpPause();}
+}
+function tpStart(){
+  if(tpInterval)clearInterval(tpInterval);
+  const msPerPx=(tpSpeed*1000)/32;
+  tpInterval=setInterval(()=>{window.scrollBy({top:1,behavior:'instant'});},msPerPx);
+}
+function tpPause(){
+  if(tpInterval){clearInterval(tpInterval);tpInterval=null;}
+  tpActive=false;
+  const btn=document.getElementById('tp-auto-btn');
+  if(btn){btn.textContent='▶ Auto';btn.classList.remove('active');}
+}
+function tpSpeedUp(){
+  tpSpeed=Math.min(8,parseFloat((tpSpeed+0.1).toFixed(1)));
+  tpUpdateDisplay();tpSaveSpeed();
+  if(tpActive)tpStart();
+}
+function tpSpeedDown(){
+  tpSpeed=Math.max(0.3,parseFloat((tpSpeed-0.1).toFixed(1)));
+  tpUpdateDisplay();tpSaveSpeed();
+  if(tpActive)tpStart();
+}
+function tpUpdateDisplay(){
+  const el=document.getElementById('tp-speed-val');
+  if(el)el.value=tpSpeed.toFixed(1);
+}
+function tpSetSpeed(val){
+  if(isNaN(val))return;
+  tpSpeed=Math.min(8,Math.max(0.3,parseFloat(val.toFixed(1))));
+  tpUpdateDisplay();tpSaveSpeed();
+  if(tpActive)tpStart();
+}
+async function tpSaveSpeed(){
+  if(!currentSong)return;
+  currentSong.tpSpeed=tpSpeed;
+  await apiGet({action:'saveTpSpeed',id:currentSong.id,speed:tpSpeed});
+}
+function tpLoadSpeed(){
+  tpSpeed=currentSong&&currentSong.tpSpeed?parseFloat(currentSong.tpSpeed):2.0;
+  tpUpdateDisplay();
+}
+
+
+// ── Menú lateral ─────────────────────────────────────────
+function openSideMenu(){
+  const m=document.getElementById('side-menu');
+  m.classList.add('open');
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  document.getElementById('smenu-chords').style.display=isAdmin?'flex':'none';
+  document.getElementById('smenu-users').style.display=isAdmin?'flex':'none';
+  document.getElementById('smenu-admin-sep').style.display=isAdmin?'block':'none';
+}
+function closeSideMenu(){document.getElementById('side-menu').classList.remove('open');}
+
+// ── Temas ────────────────────────────────────────────────
+const THEMES=[
+  {id:'oscuro',name:'Oscuro',bg:'#0f0c1d',surface:'#1a1533',surface2:'#231d45',text:'#f0ecff',text2:'#9b93c4',text3:'#5e577d',accent:'#a78bfa',accent2:'#7c3aed'},
+  {id:'claro',name:'Claro',bg:'#f5f4ff',surface:'#ffffff',surface2:'#ede9ff',text:'#1a1033',text2:'#5e4d8a',text3:'#9b8ec4',accent:'#7c3aed',accent2:'#5b21b6'},
+  {id:'sepia',name:'Sepia',bg:'#1c1409',surface:'#2a1f0e',surface2:'#342714',text:'#f5e6c8',text2:'#c4a97a',text3:'#7a6440',accent:'#e8a44a',accent2:'#c47a1a'},
+  {id:'azul',name:'Azul',bg:'#050d1a',surface:'#0d1e33',surface2:'#152a47',text:'#ddeeff',text2:'#7aaed4',text3:'#3d6480',accent:'#4a9eff',accent2:'#1a6fcf'},
+  {id:'verde',name:'Verde',bg:'#081a0d',surface:'#102618',surface2:'#183520',text:'#d8f5dd',text2:'#6abf7a',text3:'#3a6b44',accent:'#34d399',accent2:'#059669'},
+  {id:'rosado',name:'Rosado',bg:'#1a0d18',surface:'#2a1525',surface2:'#3a1f35',text:'#fce8f5',text2:'#c47ab8',text3:'#7a3d70',accent:'#e040fb',accent2:'#aa00ff'},
+];
+const THEME_COLOR_KEYS=[
+  {key:'--bg',label:'Fondo'},
+  {key:'--surface',label:'Superficie'},
+  {key:'--surface2',label:'Superficie 2'},
+  {key:'--text',label:'Texto'},
+  {key:'--text2',label:'Texto secundario'},
+  {key:'--text3',label:'Texto sutil'},
+  {key:'--accent',label:'Acento'},
+  {key:'--accent2',label:'Acento oscuro'},
+];
+let currentThemeId='oscuro';
+
+function applyTheme(theme){
+  const r=document.documentElement;
+  r.style.setProperty('--bg',theme.bg);
+  r.style.setProperty('--surface',theme.surface);
+  r.style.setProperty('--surface2',theme.surface2);
+  r.style.setProperty('--text',theme.text);
+  r.style.setProperty('--text2',theme.text2);
+  r.style.setProperty('--text3',theme.text3);
+  r.style.setProperty('--accent',theme.accent);
+  r.style.setProperty('--accent2',theme.accent2);
+  r.style.setProperty('--accent-bg',theme.accent+'22');
+  currentThemeId=theme.id;
+  localStorage.setItem('cancionero_theme',JSON.stringify({id:theme.id,...theme}));
+}
+function applyCustomColor(key,value){
+  document.documentElement.style.setProperty(key,value);
+  const saved=JSON.parse(localStorage.getItem('cancionero_theme')||'{}');
+  const propKey=key.replace('--','');
+  saved[propKey]=value;
+  localStorage.setItem('cancionero_theme',JSON.stringify(saved));
+}
+function loadSavedTheme(){
+  const saved=localStorage.getItem('cancionero_theme');
+  if(saved){try{const t=JSON.parse(saved);applyTheme(t);}catch(e){}}
+}
+function resetTheme(){
+  const base=THEMES.find(t=>t.id==='oscuro');
+  applyTheme(base);
+  renderThemePanel();
+}
+function openThemePanel(){
+  renderThemePanel();
+  document.getElementById('theme-panel').classList.add('open');
+}
+function closeThemePanel(){document.getElementById('theme-panel').classList.remove('open');}
+
+function renderThemePanel(){
+  // Presets
+  const presetsEl=document.getElementById('theme-presets');
+  presetsEl.innerHTML=THEMES.map(t=>`
+    <div class="theme-preset${currentThemeId===t.id?' active':''}" onclick="selectPreset('${t.id}')">
+      <div class="theme-preset-swatch" style="background:${t.bg}">
+        <div style="width:16px;height:16px;border-radius:50%;background:${t.accent}"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:${t.surface}"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:${t.text}"></div>
+      </div>
+      <div class="theme-preset-name">${t.name}</div>
+    </div>`).join('');
+  // Custom colors
+  const customEl=document.getElementById('theme-custom-grid');
+  const rootStyle=getComputedStyle(document.documentElement);
+  customEl.innerHTML=THEME_COLOR_KEYS.map(({key,label})=>{
+    const val=rootStyle.getPropertyValue(key).trim();
+    return `<div class="theme-color-row">
+      <input type="color" class="theme-color-swatch" value="${val}" oninput="applyCustomColor('${key}',this.value)">
+      <span class="theme-color-label">${label}</span>
+    </div>`;
+  }).join('');
+}
+function selectPreset(id){
+  const t=THEMES.find(x=>x.id===id);
+  if(t){applyTheme(t);renderThemePanel();}
+}
+
+
+// ── Acordes / Diagramas ───────────────────────────────────
+let guitarDB = null;
+let chordModalPositions = [];
+let chordModalIdx = 0;
+let customChords = {}; // cargados del Sheet
+
+async function loadGuitarDB(){
+  if(guitarDB) return guitarDB;
+  try{
+    const r = await fetch('guitar.json');
+    if(r.ok){ guitarDB = await r.json(); return guitarDB; }
+  }catch(e){}
+  return null;
+}
+
+async function loadCustomChords(){
+  const r = await apiGet({action:'chords'});
+  if(r.ok){
+    customChords = {};
+    (r.chords||[]).forEach(ch=>{
+      if(!customChords[ch.nombre]) customChords[ch.nombre]=[];
+      customChords[ch.nombre].push({
+        frets: ch.trastes,
+        fingers: ch.dedos,
+        baseFret: ch.trasteBase||1,
+        posicion: ch.posicion
+      });
+    });
+  }
+}
+
+function parseChordKey(name){
+  // Extraer nota raíz y sufijo para buscar en guitar.json
+  const m = name.match(/^([A-G][b#]?)(.*)/);
+  if(!m) return null;
+  let key = m[1], suffix = m[2]||'';
+  // Normalizar bemoles a #
+  const map={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+  if(map[key]) key=map[key];
+  // Sufijo vacío = major
+  if(!suffix) suffix='major';
+  else if(suffix==='m') suffix='minor';
+  return {key, suffix};
+}
+
+function buildChordSVG(position){
+  const {frets, fingers, baseFret=1, barres=[]} = position;
+  const W=180, H=200, padL=28, padT=44, strGap=24, fretGap=28, nFrets=4, nStrings=6;
+  const w = strGap*(nStrings-1);
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:var(--font-mono)">`;
+
+  // Número de traste base
+  if(baseFret > 1){
+    svg += `<text x="${padL-8}" y="${padT+fretGap*0.7}" text-anchor="end" font-size="11" fill="var(--text2)">${baseFret}fr</text>`;
+  }
+
+  // Cejilla superior
+  const nutY = padT - 5;
+  if(baseFret===1){
+    svg += `<rect x="${padL}" y="${nutY}" width="${w}" height="5" rx="2" fill="var(--text2)"/>`;
+  } else {
+    svg += `<line x1="${padL}" y1="${padT}" x2="${padL+w}" y2="${padT}" stroke="var(--text2)" stroke-width="2"/>`;
+  }
+
+  // Trastes horizontales
+  for(let f=1;f<=nFrets;f++){
+    const y = padT + f*fretGap;
+    svg += `<line x1="${padL}" y1="${y}" x2="${padL+w}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>`;
+  }
+  // Cuerdas verticales
+  for(let s=0;s<nStrings;s++){
+    const x = padL + s*strGap;
+    svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT+nFrets*fretGap}" stroke="var(--text2)" stroke-width="1.2"/>`;
+  }
+
+  // Barré
+  (barres||[]).forEach(b=>{
+    const y = padT + (b.fret-0.5)*fretGap;
+    const x1 = padL + (b.fromString||0)*strGap;
+    const x2 = padL + (b.toString||(nStrings-1))*strGap;
+    svg += `<rect x="${x1}" y="${y-9}" width="${x2-x1}" height="18" rx="9" fill="var(--accent)" opacity="0.9"/>`;
+  });
+
+  // Dedos / notas
+  frets.forEach((fret,s)=>{
+    const x = padL + s*strGap;
+    if(fret===-1||fret==='x'||fret===0){
+      // Muda (x) o al aire (o) encima del mástil
+      const sym = (fret===-1||fret==='x') ? '×' : '○';
+      const col = (fret===-1||fret==='x') ? 'var(--red)' : 'var(--text2)';
+      svg += `<text x="${x}" y="${padT-10}" text-anchor="middle" font-size="13" fill="${col}">${sym}</text>`;
+    } else {
+      const cy = padT + (fret-0.5)*fretGap;
+      const finger = fingers ? fingers[s] : 0;
+      svg += `<circle cx="${x}" cy="${cy}" r="9" fill="var(--accent)"/>`;
+      if(finger && finger>0){
+        svg += `<text x="${x}" y="${cy+4}" text-anchor="middle" font-size="10" fill="white">${finger}</text>`;
+      }
+    }
+  });
+
+  // Nombres de cuerdas
+  const strNames=['E','A','D','G','B','e'];
+  strNames.forEach((n,s)=>{
+    svg += `<text x="${padL+s*strGap}" y="${padT+nFrets*fretGap+16}" text-anchor="middle" font-size="10" fill="var(--text3)">${n}</text>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+async function showChordDiagram(chordName){
+  chordModalPositions = [];
+  chordModalIdx = 0;
+  const modal = document.getElementById('chord-modal');
+  const titleEl = document.getElementById('chord-modal-title');
+  titleEl.textContent = chordName;
+  modal.classList.add('open');
+  document.getElementById('chord-modal-svg').innerHTML = '<div class="chord-not-found">Buscando...</div>';
+  document.getElementById('chord-modal-nav').innerHTML = '';
+
+  // 1. Buscar en acordes custom del Sheet
+  if(customChords[chordName]){
+    chordModalPositions = customChords[chordName];
+  }
+
+  // 2. Buscar en guitar.json
+  const db = await loadGuitarDB();
+  if(db){
+    const parsed = parseChordKey(chordName);
+    if(parsed){
+      const keyData = db.chords[parsed.key];
+      if(keyData){
+        const match = keyData.find(c=>c.suffix===parsed.suffix);
+        if(match && match.positions && match.positions.length){
+          // Agregar posiciones del DB (pueden coexistir con custom)
+          chordModalPositions = [...chordModalPositions, ...match.positions];
+        }
+      }
+    }
+  }
+
+  if(!chordModalPositions.length){
+    document.getElementById('chord-modal-svg').innerHTML =
+      `<div class="chord-not-found">Acorde no encontrado.<br><small style="color:var(--text3)">Puedes agregarlo en Gestionar acordes.</small></div>`;
+    return;
+  }
+  renderChordModal();
+}
+
+function renderChordModal(){
+  const pos = chordModalPositions[chordModalIdx];
+  document.getElementById('chord-modal-svg').innerHTML = buildChordSVG(pos);
+  const nav = document.getElementById('chord-modal-nav');
+  if(chordModalPositions.length > 1){
+    nav.innerHTML = chordModalPositions.map((_,i)=>
+      `<button class="chord-nav-dot${i===chordModalIdx?' active':''}" onclick="setChordPos(${i})"></button>`
+    ).join('');
+  } else {
+    nav.innerHTML = '';
+  }
+}
+
+function setChordPos(i){
+  chordModalIdx = i;
+  renderChordModal();
+}
+
+function closeChordModal(){
+  document.getElementById('chord-modal').classList.remove('open');
+}
+
+// ── Gestionar acordes (pantalla admin) ────────────────────
+async function openChordsManager(){
+  showView('chords-view');
+  window.scrollTo(0,0);
+  await renderChordsManager();
+}
+
+async function renderChordsManager(){
+  const cv = document.getElementById('chords-view');
+  cv.innerHTML = `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <div class="form-card">
+      <div class="form-title" style="margin-bottom:16px">Gestionar acordes</div>
+      <div id="chords-list-wrap"><div style="color:var(--text3);font-size:14px;padding:12px 0">Cargando...</div></div>
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:14px">Agregar acorde</div>
+        <div class="row-2">
+          <div class="field"><label>Nombre</label><input type="text" id="ca-name" placeholder="Ej: D/F# o Cadd9"></div>
+          <div class="field"><label>Posición</label><input type="number" id="ca-pos" value="1" min="1" max="9"></div>
+        </div>
+        <div class="field"><label>Trastes (6 valores separados por coma, -1=muda, 0=aire)</label>
+          <input type="text" id="ca-frets" placeholder="-1,0,0,2,3,2">
+        </div>
+        <div class="field"><label>Dedos (opcional, 6 valores)</label>
+          <input type="text" id="ca-fingers" placeholder="0,0,0,1,3,2">
+        </div>
+        <div class="field"><label>Traste base</label>
+          <input type="number" id="ca-base" value="1" min="1" max="12" style="max-width:80px">
+        </div>
+        <div class="form-actions" style="margin-top:12px;padding-top:12px">
+          <button class="btn-save" onclick="saveCustomChord()">Guardar acorde</button>
+        </div>
+      </div>
+    </div>`;
+
+  // Cargar lista actual
+  const r = await apiGet({action:'chords'});
+  const wrap = document.getElementById('chords-list-wrap');
+  if(!r.ok){wrap.innerHTML=`<div style="color:var(--red);font-size:13px">${r.error}</div>`;return;}
+  const chords = r.chords||[];
+  if(!chords.length){wrap.innerHTML='<div style="color:var(--text3);font-size:13px">No hay acordes personalizados</div>';return;}
+  // Agrupar por nombre
+  const grouped={};
+  chords.forEach(ch=>{if(!grouped[ch.nombre])grouped[ch.nombre]=[];grouped[ch.nombre].push(ch);});
+  wrap.innerHTML = Object.entries(grouped).map(([name,positions])=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--text)">${escH(name)}</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:8px">${positions.length} posición${positions.length>1?'es':''}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="sv-action-btn" style="padding:5px 12px;font-size:12px" onclick="showChordDiagram('${escH(name)}')">Ver</button>
+        <button class="song-del" onclick="deleteCustomChord('${escH(name)}')">&#10005;</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveCustomChord(){
+  const name = document.getElementById('ca-name').value.trim();
+  const pos = parseInt(document.getElementById('ca-pos').value)||1;
+  const fretsRaw = document.getElementById('ca-frets').value.trim();
+  const fingersRaw = document.getElementById('ca-fingers').value.trim();
+  const base = parseInt(document.getElementById('ca-base').value)||1;
+  if(!name||!fretsRaw){toast('Nombre y trastes son obligatorios');return;}
+  const frets = fretsRaw.split(',').map(v=>parseInt(v.trim()));
+  const fingers = fingersRaw ? fingersRaw.split(',').map(v=>parseInt(v.trim()||'0')) : frets.map(()=>0);
+  if(frets.length!==6){toast('Trastes debe tener exactamente 6 valores');return;}
+  const r = await api({action:'addChord', chord:{nombre:name, posicion:pos, trastes:frets, dedos:fingers, trasteBase:base}});
+  if(r.ok){
+    toast('✓ Acorde guardado');
+    await loadCustomChords();
+    await renderChordsManager();
+  } else toast('Error: '+r.error);
+}
+
+async function deleteCustomChord(name){
+  const r = await api({action:'deleteChord', nombre:name});
+  if(r.ok){
+    toast('Acorde eliminado');
+    await loadCustomChords();
+    await renderChordsManager();
+  } else toast('Error: '+r.error);
+}
+
+function init(){calcCH();loadSavedTheme();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
     try{
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();return;
+      showApp();loadSongs();loadCustomChords();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -314,7 +823,7 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;showView('song-view');drawSong();window.scrollTo(0,0);}
+function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
@@ -343,8 +852,11 @@ function drawSong(){
       }
       let cells='';
       segments.forEach(seg=>{
-        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre">`;
-        cells+=`<div class="chord-cell">${seg.chord?escH(seg.chord):'&nbsp;'}</div>`;
+        const chLen=seg.chord?seg.chord.length+1:0;
+        const lyLen=seg.lyric?seg.lyric.length:0;
+        const minW=chLen>lyLen?`${chLen*0.62}em`:'auto';
+        cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minW}">`;
+        cells+=seg.chord?`<div class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${seg.chord.replace(/'/g,"\\'")}')">\${escH(seg.chord)}</div>`:`<div class="chord-cell">&nbsp;</div>`;
         cells+=`<div class="lyric-cell">${escH(seg.lyric)||'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
@@ -496,8 +1008,8 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
-function showView(v){['list-view','song-view','add-view','users-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
-function showList(){showView('list-view');renderList();}
+function showView(v){['list-view','song-view','add-view','users-view','chords-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
+function showList(){tpHideBar();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
   lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
