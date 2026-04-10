@@ -179,9 +179,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .chord-modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px}
 .chord-modal-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1}
 .chord-modal-close:hover{color:var(--text)}
-.chord-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
-.chord-nav-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);cursor:pointer;border:none;transition:background .2s}
-.chord-nav-dot.active{background:var(--accent)}
+.chord-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px}
+.chord-nav-arrow{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.chord-nav-arrow:hover{border-color:var(--accent);color:var(--accent)}
+.chord-nav-arrow:disabled{opacity:.25;cursor:not-allowed}
+.chord-nav-counter{font-family:var(--font-mono);font-size:13px;color:var(--text2);min-width:40px;text-align:center}
 .chord-not-found{font-size:13px;color:var(--text3);padding:20px}
 .hamburger{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:2px 6px;flex-shrink:0;line-height:1}
 .hamburger:hover{color:var(--accent)}
@@ -257,7 +259,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.13</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.14</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -333,7 +335,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxcowE_tNj4cPtxNbAaq4Xbz8mJuRPN1lMnpe2PAL0YZBClbGhZbL1WUOvrkQPmWFYDyA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycby3aSk4bvSU5lJ-AAlcvYscQ8f4DIMs3Kzy0CVo-BgE9R9DpTkunRuBMGPkoHfb9PUI/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -659,9 +661,12 @@ function renderChordModal(){
   document.getElementById('chord-modal-svg').innerHTML = buildChordSVG(pos);
   const nav = document.getElementById('chord-modal-nav');
   if(chordModalPositions.length > 1){
-    nav.innerHTML = chordModalPositions.map((_,i)=>
-      `<button class="chord-nav-dot${i===chordModalIdx?' active':''}" onclick="setChordPos(${i})"></button>`
-    ).join('');
+    const total = chordModalPositions.length;
+    const idx = chordModalIdx;
+    nav.innerHTML =
+      `<button class="chord-nav-arrow" onclick="setChordPos(${idx-1})" ${idx===0?'disabled':''}>&#8592;</button>`+
+      `<span class="chord-nav-counter">${idx+1} / ${total}</span>`+
+      `<button class="chord-nav-arrow" onclick="setChordPos(${idx+1})" ${idx===total-1?'disabled':''}>&#8594;</button>`;
   } else {
     nav.innerHTML = '';
   }
