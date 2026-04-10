@@ -221,6 +221,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .tag-filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--text3);border-radius:20px;font-size:12px;padding:4px 12px;cursor:pointer;white-space:nowrap;transition:all .15s}
 .tag-filter-btn:hover{border-color:var(--accent);color:var(--accent)}
 .tag-filter-btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:500}
+.spotify-wrap{margin:12px 0 4px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.spotify-wrap iframe{display:block;border:none;width:100%;height:80px}
+.spotify-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);text-decoration:none;margin-top:6px;padding:4px 0}
+.spotify-link:hover{color:var(--accent)}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -268,7 +272,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.15</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.16</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1091,7 +1095,7 @@ function drawSong(){
         <span class="sv-artist">${escH(s.artist)}</span>
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
-      <div class="sv-controls">
+      ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
@@ -1119,6 +1123,7 @@ function formHTML(s){
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
         <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
       </div>
+      <div class="field"><label>Spotify <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none">— pega el enlace de la canción en Spotify (opcional)</span></label><input type="text" id="f-spotify" value="${escH(s&&s.spotify?s.spotify:'')}" placeholder="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"><div class="hint">Clic en ··· → Compartir → Copiar enlace de canción</div></div>
       <div class="field"><label>Etiquetas</label>
         <div id="tag-chips-wrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">
@@ -1141,14 +1146,18 @@ function getFormValues(){
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
+  var spInput=document.getElementById('f-spotify');
+  var spRaw=spInput?spInput.value.trim():'';
+  var spMatch=spRaw.match(/track\/([A-Za-z0-9]+)/);
+  var spotify=spMatch?spMatch[1]:'';
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
-  return{title,artist,key,bpm,tags,body};
+  return{title,artist,key,bpm,tags,spotify,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,tags:(vals.tags||[]),sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -1156,10 +1165,10 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags:(vals.tags||[]),sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
   if(r.ok){
     const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,tags:(vals?vals.tags:[]),sections:parseBody(body)};
+    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,tags:(vals?vals.tags:[]),spotify:(vals?vals.spotify:''),sections:parseBody(body)};
     currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
