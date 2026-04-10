@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.24</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.25</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -378,7 +378,18 @@ function calcCH(){
   document.body.removeChild(el);
 }
 window.addEventListener('resize',()=>{calcCH();if(currentSong)drawSong();});
-function txChord(ch,st){const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;return NS[((i+st)%12+12)%12]+m[2];}
+function txChord(ch,st){
+  const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;
+  let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;
+  const root=NS[((i+st)%12+12)%12];
+  const suffix=m[2];
+  const slashM=suffix.match(/^(.*\/)([A-G][b#]?)$/);
+  if(slashM){
+    let bi=NS.indexOf(slashM[2]);if(bi===-1)bi=NF.indexOf(slashM[2]);
+    if(bi!==-1)return root+slashM[1]+NS[((bi+st)%12+12)%12];
+  }
+  return root+suffix;
+}
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
