@@ -856,7 +856,8 @@ function drawSong(){
         const lyLen=seg.lyric?seg.lyric.length:0;
         const minW=chLen>lyLen?`${chLen*0.62}em`:'auto';
         cells+=`<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minW}">`;
-        cells+=seg.chord?`<div class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${seg.chord.replace(/'/g,"\\'")}')">\${escH(seg.chord)}</div>`:`<div class="chord-cell">&nbsp;</div>`;
+        if(seg.chord){const sc=seg.chord.replace(/'/g,"\\'");cells+=`<div class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(seg.chord)}</div>`;}
+        else{cells+=`<div class="chord-cell">&nbsp;</div>`;}
         cells+=`<div class="lyric-cell">${escH(seg.lyric)||'&nbsp;'}</div>`;
         cells+=`</td>`;
       });
