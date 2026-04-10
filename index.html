@@ -213,6 +213,14 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .theme-color-row{display:flex;align-items:center;gap:10px}
 .theme-color-swatch{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);cursor:pointer;flex-shrink:0}
 .theme-color-label{font-size:13px;color:var(--text2)}
+.tag-pill{display:inline-flex;align-items:center;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(167,139,250,.3);border-radius:20px;font-size:11px;font-weight:500;padding:3px 10px;white-space:nowrap}
+.tag-chip{display:inline-flex;align-items:center;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:20px;font-size:12px;padding:5px 12px;cursor:pointer;transition:all .15s;user-select:none}
+.tag-chip:hover{border-color:var(--accent);color:var(--accent)}
+.tag-chip.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.tag-filter-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 10px}
+.tag-filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--text3);border-radius:20px;font-size:12px;padding:4px 12px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tag-filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tag-filter-btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:500}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -258,8 +266,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       </div>
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
+      <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.14</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.15</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -920,6 +929,46 @@ async function slDrop(e, toIdx){
   else toast('Error al guardar orden');
 }
 
+
+// Tags
+var DEFAULT_TAGS=["Adoración", "Alabanza", "Comunión", "Santísimo", "Ofertorio", "Entrada", "Salida", "Sanación", "Perdón", "Navidad", "Semana Santa", "Bautismo", "Matrimonio", "Funeral", "Niños", "Tiempo Ordinario"];
+var activeTag=null;
+
+function initTagChips(sel){
+  var wrap=document.getElementById('tag-chips-wrap');if(!wrap)return;
+  var all=DEFAULT_TAGS.slice();
+  (sel||[]).forEach(function(t){if(all.indexOf(t)<0)all.push(t);});
+  wrap.innerHTML=all.map(function(t){
+    var s=(sel||[]).indexOf(t)>=0;
+    return '<span class="tag-chip'+(s?' sel':'')+'" data-tag="'+t+'" onclick="toggleChip(this)">'+t+'</span>';
+  }).join('');
+}
+
+function toggleChip(el){el.classList.toggle('sel');}
+
+function addCustomTag(){
+  var input=document.getElementById('f-tag-input');if(!input||!input.value.trim())return;
+  var tag=input.value.trim();input.value='';
+  var wrap=document.getElementById('tag-chips-wrap');if(!wrap)return;
+  var ex=[].find.call(wrap.querySelectorAll('.tag-chip'),function(el){return el.dataset.tag===tag;});
+  if(ex){ex.classList.add('sel');return;}
+  var el=document.createElement('span');el.className='tag-chip sel';
+  el.dataset.tag=tag;el.textContent=tag;
+  el.onclick=function(){toggleChip(el);};
+  wrap.appendChild(el);
+}
+
+function renderTagBar(){
+  var used=[];songs.forEach(function(s){(s.tags||[]).forEach(function(t){if(used.indexOf(t)<0)used.push(t);});});
+  var wrap=document.getElementById('tag-filter-wrap');if(!wrap)return;
+  if(!used.length){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+  wrap.innerHTML='<button class="tag-filter-btn'+(activeTag?'':' on')+'" onclick="setTag(null)">Todas</button>'
+    +used.map(function(t){return '<button class="tag-filter-btn'+(activeTag===t?' on':'')+'" onclick="setTag(\''+t+'\')">'+ t +'</button>';}).join('');
+}
+
+function setTag(t){activeTag=t;renderList();}
+
 function init(){calcCH();loadSavedTheme();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
@@ -970,8 +1019,13 @@ async function loadSongs(){
   if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
 }
 function renderList(){
+  renderTagBar();
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  const filtered=q?songs.filter(s=>s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):songs;
+  const filtered=songs.filter(function(s){
+    var mq=!q||(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).toLowerCase().indexOf(q)>=0;
+    var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
+    return mq&&mt;
+  });
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   const canDel=currentUser.role==='admin';
@@ -1036,7 +1090,7 @@ function drawSong(){
       <div class="sv-meta">
         <span class="sv-artist">${escH(s.artist)}</span>
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
-      </div>
+        ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
       <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
@@ -1046,8 +1100,8 @@ function drawSong(){
     </div>`;
 }
 function doTranspose(d){semitones+=d;drawSong();}
-function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);}
-function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);}
+function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);},50);}
+function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);},50);}
 function formHTML(s){
   const isEdit=!!s;const body=s?songToText(s):'';
   return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
@@ -1065,6 +1119,13 @@ function formHTML(s){
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
         <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
       </div>
+      <div class="field"><label>Etiquetas</label>
+        <div id="tag-chips-wrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="f-tag-input" placeholder="Tag personalizado..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTag();}">
+          <button type="button" onclick="addCustomTag()" class="btn-cancel" style="flex-shrink:0;font-size:13px">+ Tag</button>
+        </div>
+      </div>
       <div class="form-actions">
         <button class="btn-cancel" onclick="showList()">Cancelar</button>
         <button class="btn-save" id="save-btn" onclick="${isEdit?`saveSongEdit('${s.id}')`:'saveSongNew()'}">${isEdit?'Guardar cambios':'Guardar canción'}</button>
@@ -1080,13 +1141,14 @@ function getFormValues(){
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
-  return{title,artist,key,bpm,body};
+  var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
+  return{title,artist,key,bpm,tags,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,tags:(vals.tags||[]),sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -1094,10 +1156,10 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,tags:(vals.tags||[]),sections:parseBody(body)}});
   if(r.ok){
     const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,sections:parseBody(body)};
+    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,tags:(vals?vals.tags:[]),sections:parseBody(body)};
     currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
