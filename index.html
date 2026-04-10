@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.20</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.21</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -365,7 +365,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycby9-CIv4dIWDK3RYCBTQl7dOsxyyrLkA1W7QYkKi15qboO5cW0m0uGmPcxB75sGYLpCQw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzQqBrh9GWTTYxdER03_3uKqnChBFjLMRU91GS_7e9rBwmUgMNLoipaSO3PNLUCfRO7fA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -1016,53 +1016,53 @@ function setTag(t){activeTag=t;renderList();}
 // ── Metrónomo ─────────────────────────────────────────────
 var metroCtx=null,metroInterval=null,metroBpm=120,metroBeats=4,metroCurrent=0,metroOn=false;
 
-function metroInit(){
-  if(!metroCtx) metroCtx=new(window.AudioContext||window.webkitAudioContext)();
+function metroGetBeats(meter){
+  if(!meter||meter==='libre'||meter==='') return 4;
+  var n=parseInt((meter+'').split('/')[0]);
+  return(isNaN(n)||n<1)?4:n;
 }
 
-function metroGetBeats(meter){
-  if(!meter||meter==='libre') return 0;
-  var parts=meter.split('/');
-  return parseInt(parts[0])||4;
+function metroClick(isAccent){
+  if(!metroCtx) return;
+  if(metroCtx.state==='suspended') metroCtx.resume();
+  var osc=metroCtx.createOscillator();
+  var gain=metroCtx.createGain();
+  osc.connect(gain);gain.connect(metroCtx.destination);
+  osc.type='triangle';
+  osc.frequency.value=isAccent?1600:1100;
+  var t=metroCtx.currentTime;
+  gain.gain.setValueAtTime(isAccent?0.6:0.35,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+  osc.start(t);osc.stop(t+0.05);
 }
 
 function metroRenderBeats(){
   var wrap=document.getElementById('metro-beats');
   if(!wrap) return;
-  if(!metroBeats){wrap.innerHTML='';return;}
-  wrap.innerHTML=Array.from({length:metroBeats},function(_,i){
-    return '<div class="metro-beat'+(i===0?' accent':'')+(i===metroCurrent&&metroOn?' on':'')+'" id="mb'+i+'"></div>';
-  }).join('');
+  wrap.innerHTML='';
+  for(var i=0;i<metroBeats;i++){
+    var d=document.createElement('div');
+    d.className='metro-beat'+(i===0?' accent':'');
+    d.id='mb'+i;
+    wrap.appendChild(d);
+  }
 }
 
 function metroTick(){
-  var isAccent=metroCurrent===0;
-  // Sonido Web Audio API
-  metroInit();
-  var osc=metroCtx.createOscillator();
-  var gain=metroCtx.createGain();
-  osc.connect(gain);
-  gain.connect(metroCtx.destination);
-  osc.type='sine';
-  osc.frequency.value=isAccent?1400:1000;
-  gain.gain.setValueAtTime(isAccent?0.5:0.3,metroCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.06);
-  osc.start(metroCtx.currentTime);
-  osc.stop(metroCtx.currentTime+0.06);
-  // Visual — iluminar beat actual
-  document.querySelectorAll('.metro-beat').forEach(function(el){el.classList.remove('on');});
+  var isAccent=(metroCurrent===0);
+  metroClick(isAccent);
+  for(var i=0;i<metroBeats;i++){var el=document.getElementById('mb'+i);if(el)el.classList.remove('on');}
   var beat=document.getElementById('mb'+metroCurrent);
-  if(beat) beat.classList.add('on');
-  // Avanzar
+  if(beat)beat.classList.add('on');
   metroCurrent=(metroCurrent+1)%metroBeats;
 }
 
 function metroStart(){
   if(!metroBeats) return;
   metroOn=true;metroCurrent=0;
-  var ms=Math.round(60000/metroBpm);
+  metroRenderBeats();
   metroTick();
-  metroInterval=setInterval(metroTick,ms);
+  metroInterval=setInterval(metroTick,Math.round(60000/metroBpm));
   var btn=document.getElementById('metro-btn');
   if(btn){btn.innerHTML='&#9646;&#9646; Metr&#243;nomo';btn.classList.add('on');}
 }
@@ -1071,12 +1071,14 @@ function metroStop(){
   metroOn=false;
   if(metroInterval){clearInterval(metroInterval);metroInterval=null;}
   metroCurrent=0;
-  document.querySelectorAll('.metro-beat').forEach(function(el){el.classList.remove('on');});
+  metroRenderBeats();
   var btn=document.getElementById('metro-btn');
-  if(btn){btn.innerHTML='&#9836; Metrónomo';btn.classList.remove('on');}
+  if(btn){btn.innerHTML='&#9836; Metr&#243;nomo';btn.classList.remove('on');}
 }
 
 function metroToggle(){
+  if(!metroCtx) metroCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(metroCtx.state==='suspended') metroCtx.resume();
   if(metroOn) metroStop();
   else metroStart();
 }
@@ -1085,13 +1087,13 @@ function metroAdjust(delta){
   metroBpm=Math.min(240,Math.max(20,metroBpm+delta));
   var el=document.getElementById('metro-bpm-val');
   if(el) el.textContent=metroBpm+' BPM';
-  if(metroOn){metroStop();metroStart();}
+  if(metroOn){clearInterval(metroInterval);metroInterval=setInterval(metroTick,Math.round(60000/metroBpm));}
 }
 
 function metroLoad(song){
   metroStop();
   metroBpm=parseInt(song.bpm)||120;
-  metroBeats=metroGetBeats(song.meter||'4/4');
+  metroBeats=metroGetBeats(song.meter);
   metroCurrent=0;
   metroRenderBeats();
   var el=document.getElementById('metro-bpm-val');
