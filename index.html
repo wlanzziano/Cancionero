@@ -251,7 +251,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="list-count" id="list-count"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.10</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.11</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -521,13 +521,8 @@ async function loadCustomChords(){
   if(r.ok){
     customChords = {};
     (r.chords||[]).forEach(ch=>{
-      if(!customChords[ch.nombre]) customChords[ch.nombre]=[];
-      customChords[ch.nombre].push({
-        frets: ch.trastes,
-        fingers: ch.dedos,
-        baseFret: ch.trasteBase||1,
-        posicion: ch.posicion
-      });
+      // El script devuelve {name, positions:[{frets,fingers,baseFret,rowIndex}]}
+      customChords[ch.name] = ch.positions || [];
     });
   }
 }
@@ -714,17 +709,16 @@ async function renderChordsManager(){
   const chords = r.chords||[];
   if(!chords.length){wrap.innerHTML='<div style="color:var(--text3);font-size:13px">No hay acordes personalizados</div>';return;}
   // Agrupar por nombre
-  const grouped={};
-  chords.forEach(ch=>{if(!grouped[ch.nombre])grouped[ch.nombre]=[];grouped[ch.nombre].push(ch);});
-  wrap.innerHTML = Object.entries(grouped).map(([name,positions])=>`
+  // El script ya devuelve agrupado: [{name, positions:[]}]
+  wrap.innerHTML = chords.map(ch=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
       <div>
-        <span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--text)">${escH(name)}</span>
-        <span style="font-size:12px;color:var(--text3);margin-left:8px">${positions.length} posición${positions.length>1?'es':''}</span>
+        <span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--text)">${escH(ch.name)}</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:8px">${(ch.positions||[]).length} posición${(ch.positions||[]).length>1?'es':''}</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="sv-action-btn" style="padding:5px 12px;font-size:12px" onclick="showChordDiagram('${escH(name)}')">Ver</button>
-        <button class="song-del" onclick="deleteCustomChord('${escH(name)}')">&#10005;</button>
+        <button class="sv-action-btn" style="padding:5px 12px;font-size:12px" onclick="showChordDiagram('${escH(ch.name)}')">Ver</button>
+        <button class="song-del" onclick="deleteCustomChord('${escH(ch.name)}')">&#10005;</button>
       </div>
     </div>`).join('');
 }
@@ -739,7 +733,7 @@ async function saveCustomChord(){
   const frets = fretsRaw.split(',').map(v=>parseInt(v.trim()));
   const fingers = fingersRaw ? fingersRaw.split(',').map(v=>parseInt(v.trim()||'0')) : frets.map(()=>0);
   if(frets.length!==6){toast('Trastes debe tener exactamente 6 valores');return;}
-  const r = await api({action:'addChord', chord:{nombre:name, posicion:pos, trastes:frets, dedos:fingers, trasteBase:base}});
+  const r = await api({action:'add_chord', chord:{name:name, frets:frets, fingers:fingers, baseFret:base}});
   if(r.ok){
     toast('✓ Acorde guardado');
     await loadCustomChords();
@@ -748,7 +742,7 @@ async function saveCustomChord(){
 }
 
 async function deleteCustomChord(name){
-  const r = await api({action:'deleteChord', nombre:name});
+  const r = await api({action:'delete_chord', name:name});
   if(r.ok){
     toast('Acorde eliminado');
     await loadCustomChords();
