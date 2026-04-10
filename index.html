@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.23</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.24</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1017,9 +1017,9 @@ function setTag(t){activeTag=t;renderList();}
 var metroCtx=null,metroInterval=null,metroBpm=120,metroBeats=4,metroCurrent=0,metroOn=false;
 
 function metroGetBeats(meter){
-  if(!meter||meter==='libre'||meter==='') return 4;
+  if(!meter||meter===''||meter==='libre') return 4;
   var n=parseInt((meter+'').split('/')[0]);
-  return(isNaN(n)||n<1)?4:n;
+  return(isNaN(n)||n<2)?4:n;
 }
 
 function metroClick(isAccent){
@@ -1059,7 +1059,7 @@ function metroTick(){
   }
   var beat=document.getElementById('mb'+metroCurrent);
   if(beat) beat.classList.add('on');
-  metroCurrent=(metroCurrent+1)%metroBeats;
+  if(metroBeats>0) metroCurrent=(metroCurrent+1)%metroBeats;
 }
 
 function metroStart(){
@@ -1110,11 +1110,12 @@ function metroAdjust(delta){
 function metroLoad(song){
   metroStop();
   metroBpm=parseInt(song.bpm)||120;
-  metroBeats=metroGetBeats(song.meter);
+  metroBeats=metroGetBeats(song.meter||'4/4');
+  if(metroBeats<2) metroBeats=4;
   metroCurrent=0;
   metroRenderBeats();
-  var el=document.getElementById('metro-bpm-val');
-  if(el) el.textContent=metroBpm+' BPM';
+  var bpmEl=document.getElementById('metro-bpm-val');
+  if(bpmEl) bpmEl.textContent=metroBpm+' BPM';
 }
 
 function init(){calcCH();loadSavedTheme();
@@ -1239,7 +1240,7 @@ function drawSong(){
         <span class="sv-artist">${escH(s.artist)}</span>
         ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
-      ${s.bpm?`<div class="metro-wrap" id="metro-wrap"><button class="metro-btn" id="metro-btn" onclick="metroToggle()">&#9836; Metrónomo</button><div class="metro-beats" id="metro-beats"></div><div class="metro-bpm-ctrl"><button class="metro-small-btn" onclick="metroAdjust(-1)">&#8722;</button><span class="metro-bpm-val" id="metro-bpm-val">${s.bpm} BPM</span><button class="metro-small-btn" onclick="metroAdjust(1)">+</button></div></div>`:''}
+      ${s.bpm?`<div class="metro-wrap" id="metro-wrap"><button class="metro-btn" id="metro-btn" onclick="metroToggle()">&#9836; Metrónomo</button><div class="metro-beats" id="metro-beats"></div><div class="metro-bpm-ctrl"><button class="metro-small-btn" onclick="metroAdjust(-1)">&#8722;</button><span class="metro-bpm-val" id="metro-bpm-val">${s.bpm} BPM</span><button class="metro-small-btn" onclick="metroAdjust(1)">+</button>${s.meter?`<span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-left:4px">${s.meter}</span>`:''}</div></div>`:''}
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
