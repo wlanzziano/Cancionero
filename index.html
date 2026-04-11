@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.27</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.28</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1048,41 +1048,41 @@ function metroClick(isAccent){
   }catch(e){}
 }
 
-function metroRenderBeats(beats){
-  // Recibe el número de beats como parámetro — nunca usa variable global directamente
-  var n=beats||metroBeats||4;
+function metroBuildDots(){
+  // Construye los puntos fijos en el HTML del metro-wrap
+  // Se llama UNA sola vez al cargar la canción
   var wrap=document.getElementById('metro-beats');
-  if(!wrap) return;
-  wrap.innerHTML='';
-  for(var i=0;i<n;i++){
-    var d=document.createElement('div');
-    d.className='metro-beat'+(i===0?' accent':'');
-    d.id='mb'+i;
-    wrap.appendChild(d);
+  if(!wrap)return;
+  var html='';
+  for(var i=0;i<metroBeats;i++){
+    html+='<div class="metro-beat'+(i===0?' accent':'')+'" id="mb'+i+'"></div>';
   }
+  wrap.innerHTML=html;
 }
 
-function metroTick(){
-  var isAccent=(metroCurrent===0);
-  metroClick(isAccent);
-  // Apagar todos, encender el actual
+function metroLightDot(idx){
+  // Apaga todos y enciende solo el idx
   for(var i=0;i<metroBeats;i++){
     var el=document.getElementById('mb'+i);
     if(el) el.classList.remove('on');
   }
-  var beat=document.getElementById('mb'+metroCurrent);
-  if(beat) beat.classList.add('on');
-  // Avanzar — reinicia al llegar al final del compás
-  metroCurrent=(metroCurrent+1)%metroBeats;
+  var el=document.getElementById('mb'+idx);
+  if(el) el.classList.add('on');
+}
+
+function metroTick(){
+  metroClick(metroCurrent===0);
+  metroLightDot(metroCurrent);
+  metroCurrent++;
+  if(metroCurrent>=metroBeats) metroCurrent=0; // reinicio cíclico
 }
 
 function metroStart(){
-  if(!metroBeats||metroBeats<1) return;
   metroOn=true;
   metroCurrent=0;
-  metroRenderBeats(metroBeats);
-  metroTick(); // primer beat inmediato
-  metroInterval=setInterval(metroTick,Math.round(60000/metroBpm));
+  var ms=Math.round(60000/metroBpm);
+  metroTick();
+  metroInterval=setInterval(metroTick,ms);
   var btn=document.getElementById('metro-btn');
   if(btn){btn.innerHTML='&#9646;&#9646; Metr&#243;nomo';btn.classList.add('on');}
 }
@@ -1091,7 +1091,7 @@ function metroStop(){
   metroOn=false;
   if(metroInterval){clearInterval(metroInterval);metroInterval=null;}
   metroCurrent=0;
-  // Apagar visualmente sin recrear
+  // Solo apagar los puntos
   for(var i=0;i<metroBeats;i++){
     var el=document.getElementById('mb'+i);
     if(el) el.classList.remove('on');
@@ -1122,19 +1122,18 @@ function metroAdjust(delta){
 }
 
 function metroLoad(song){
-  // 1. Parar sin tocar los beats visuales aún
+  // Parar primero
   metroOn=false;
   if(metroInterval){clearInterval(metroInterval);metroInterval=null;}
   metroCurrent=0;
-  // 2. Asignar nuevos valores
+  // Asignar valores
   metroBpm=parseInt(song.bpm)||120;
   metroBeats=metroGetBeats(song.meter||'4/4');
-  // 3. Ahora sí renderizar con el número correcto
-  metroRenderBeats(metroBeats);
-  // 4. Actualizar display BPM
+  // Construir puntos fijos
+  metroBuildDots();
+  // Actualizar display
   var bpmEl=document.getElementById('metro-bpm-val');
   if(bpmEl) bpmEl.textContent=metroBpm+' BPM';
-  // 5. Resetear botón
   var btn=document.getElementById('metro-btn');
   if(btn){btn.innerHTML='&#9836; Metr&#243;nomo';btn.classList.remove('on');}
 }
