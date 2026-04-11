@@ -28,7 +28,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
-#app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 100px}
+#app{min-height:100vh;max-width:680px;margin:0 auto;padding:0 16px 40px}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:340px}
 .login-logo{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -162,12 +162,12 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .loading-text{font-size:13px;color:var(--text3)}
 .footer{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.08em}.footer span{color:var(--accent);font-weight:500}
-.tp-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border2);display:none;flex-direction:row;align-items:center;justify-content:center;gap:12px;padding:10px 16px}
+.tp-bar{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:150;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);display:none;flex-direction:column;align-items:center;gap:8px;padding:10px 8px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .tp-btn{width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:var(--font-body)}
 .tp-btn:hover{border-color:var(--accent);color:var(--accent)}
-.tp-auto{height:38px;padding:0 16px;border-radius:var(--r-sm);background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer}
+.tp-auto{width:38px;height:38px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent);font-family:var(--font-body);font-size:16px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .tp-auto.active{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
-.tp-speed-input{width:56px;font-family:var(--font-mono);font-size:14px;color:var(--accent);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:4px 6px;text-align:center;-moz-appearance:textfield;outline:none}
+.tp-speed-input{width:44px;font-family:var(--font-mono);font-size:12px;color:var(--accent);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:4px 4px;text-align:center;-moz-appearance:textfield;outline:none}
 .tp-speed-input::-webkit-outer-spin-button,.tp-speed-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .tp-speed-input:focus{border-color:var(--accent)}
 .sl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:grab;transition:border-color .2s,opacity .2s}
@@ -289,7 +289,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.25</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.26</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -348,10 +348,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 </div>
 
 <div class="tp-bar" id="tp-bar">
-  <button class="tp-btn" onclick="tpSpeedDown()">&#8722;</button>
-  <input type="number" id="tp-speed-val" class="tp-speed-input" value="2.0" min="0.3" max="8" step="0.1" onchange="tpSetSpeed(parseFloat(this.value))">
-  <button class="tp-btn" onclick="tpSpeedUp()">+</button>
-  <button class="tp-auto" id="tp-auto-btn" onclick="tpToggle()">&#9654; Auto</button>
+  <button class="tp-auto" id="tp-auto-btn" onclick="tpToggle()" title="Auto scroll">&#9654;</button>
+  <div style="width:1px;height:16px;background:var(--border);margin:2px 0"></div>
+  <button class="tp-btn" onclick="tpSpeedDown()" title="Más lento">&#8722;</button>
+  <input type="number" id="tp-speed-val" class="tp-speed-input" value="2.0" min="0.3" max="8" step="0.1" onchange="tpSetSpeed(parseFloat(this.value))" title="Velocidad (segundos)">
+  <button class="tp-btn" onclick="tpSpeedUp()" title="Más rápido">+</button>
 </div>
 <div class="toast" id="toast"></div>
 <div class="modal-overlay" id="confirm-modal">
@@ -410,8 +411,8 @@ function tpHideBar(){tpPause();document.getElementById('tp-bar').style.display='
 function tpToggle(){
   tpActive=!tpActive;
   const btn=document.getElementById('tp-auto-btn');
-  if(tpActive){btn.textContent='⏸ Auto';btn.classList.add('active');tpStart();}
-  else{btn.textContent='▶ Auto';btn.classList.remove('active');tpPause();}
+  if(tpActive){btn.innerHTML='&#9646;&#9646;';btn.classList.add('active');tpStart();}
+  else{btn.innerHTML='&#9654;';btn.classList.remove('active');tpPause();}
 }
 function tpStart(){
   if(tpInterval)clearInterval(tpInterval);
@@ -422,7 +423,7 @@ function tpPause(){
   if(tpInterval){clearInterval(tpInterval);tpInterval=null;}
   tpActive=false;
   const btn=document.getElementById('tp-auto-btn');
-  if(btn){btn.textContent='▶ Auto';btn.classList.remove('active');}
+  if(btn){btn.innerHTML='&#9654;';btn.classList.remove('active');}
 }
 function tpSpeedUp(){
   tpSpeed=Math.min(8,parseFloat((tpSpeed+0.1).toFixed(1)));
