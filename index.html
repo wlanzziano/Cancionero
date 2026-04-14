@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.36</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.37</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1090,8 +1090,8 @@ function exportSetlistPDF(){
     '.sl-title{font-size:20px;font-weight:bold;color:#1a1033}'+
     '.sl-meta{font-size:10px;color:#6b63a0;margin-top:2px}'+
     // Cada canción
-    '.song-page{page-break-after:always;padding-bottom:10px}'+'.song-page:last-child{page-break-after:auto}'+
-    '.song-page:last-child{border-bottom:none;margin-bottom:0}'+
+    '.song-page{break-after:page;break-inside:avoid;padding-bottom:8px}'+
+    '.song-page:last-child{break-after:auto}'+
     '.sheader{margin-bottom:6px}'+
     '.stitle{font-size:14px;font-weight:bold;color:#534ab7;margin-bottom:1px}'+
     '.smeta{font-size:9px;color:#6b63a0}'+
@@ -1133,9 +1133,7 @@ function exportSetlistPDF(){
     '      var h2=page.scrollHeight;'+
     '      if(h2>maxH){'+
     '        var scale=maxH/h2;'+
-    '        page.style.transformOrigin="top left";'+
-    '        page.style.transform="scale("+scale+")";'+
-    '        page.style.marginBottom=((h2*scale)-h2)+"px";'+
+    '        page.style.zoom=scale;'+
     '      }'+
     '    }'+
     '  });'+
@@ -1533,8 +1531,7 @@ function exportPDF(){
     '  var scaleH=maxH/actualH;'+
     '  var scaleW=maxW/actualW;'+
     '  var scale=Math.min(scaleH,scaleW,1);'+ // nunca ampliar, solo reducir
-    '  if(scale<1){wrap.style.transform="scale("+scale+")";'+
-    '  wrap.style.width=(190/scale)+"mm";}'+  // compensar ancho
+    '  if(scale<1) wrap.style.zoom=scale;'+
     '  setTimeout(function(){window.print();},400);'+
     '};'+
     '<\/script>'+
