@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.35</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.36</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1025,7 +1025,7 @@ function exportSetlistPDF(){
   if(!slSongs.length){toast('El setlist no tiene canciones');return;}
 
   function buildSongHTML(song){
-    const st=0; // siempre tono original en el PDF
+    const st=0;
     function buildSection(sec){
       let html='';
       if(sec.label) html+='<div class="sec">'+escH(sec.label)+'</div>';
@@ -1053,12 +1053,13 @@ function exportSetlistPDF(){
       return html;
     }
     const secs=song.sections||[];
+    // 1 columna — todas las secciones juntas
+    let col1html='';
+    secs.forEach(function(sec){ col1html+=buildSection(sec); });
+    // 2 columnas — mitad cada una
     const mid=Math.ceil(secs.length/2);
-    let col1='',col2='';
-    secs.forEach(function(sec,i){
-      if(i<mid) col1+=buildSection(sec);
-      else col2+=buildSection(sec);
-    });
+    let c1='',c2='';
+    secs.forEach(function(sec,i){ if(i<mid) c1+=buildSection(sec); else c2+=buildSection(sec); });
     const bpmInfo=song.bpm?' · '+song.bpm+' BPM':'';
     const meterInfo=song.meter?' · '+song.meter:'';
     return '<div class="song-page">'+
@@ -1066,10 +1067,12 @@ function exportSetlistPDF(){
       '<div class="stitle">'+escH(song.title)+'</div>'+
       '<div class="smeta">'+escH(song.artist)+bpmInfo+meterInfo+'</div>'+
       '</div>'+
-      '<div class="cols">'+
-      '<div class="col">'+col1+'</div>'+
-      '<div class="col">'+col2+'</div>'+
-      '</div></div>';
+      // Empieza en 1 columna — el script decide si cambia a 2
+      '<div class="content-1col">'+col1html+'</div>'+
+      '<div class="content-2col" style="display:none">'+
+        '<div class="cols"><div class="col">'+c1+'</div><div class="col">'+c2+'</div></div>'+
+      '</div>'+
+      '</div>';
   }
 
   let allSongs='';
@@ -1114,16 +1117,29 @@ function exportSetlistPDF(){
     '</div>'+
     '<script>'+
     'window.onload=function(){'+
+    '  var maxH=Math.round(277*96/25.4);'+
     '  var pages=document.querySelectorAll(".song-page");'+
     '  pages.forEach(function(page){'+
-    '    var maxH=277*96/25.4;'+
-    '    var h=page.scrollHeight;'+
-    '    var scale=Math.min(maxH/h,1);'+
-    '    if(scale<1){page.style.transformOrigin="top left";'+
-    '      page.style.transform="scale("+scale+")";'+
-    '      page.style.height=(h*scale)+"px";}'+
+    '    var c1=page.querySelector(".content-1col");'+
+    '    var c2=page.querySelector(".content-2col");'+
+    '    var header=page.querySelector(".sheader");'+
+    '    var headerH=header?header.offsetHeight:0;'+
+    '    var contentH=c1.scrollHeight;'+
+    '    var totalH=headerH+contentH;'+
+    '    if(totalH<=maxH){'+
+    '      c1.style.display="block";c2.style.display="none";'+
+    '    } else {'+
+    '      c1.style.display="none";c2.style.display="block";'+
+    '      var h2=page.scrollHeight;'+
+    '      if(h2>maxH){'+
+    '        var scale=maxH/h2;'+
+    '        page.style.transformOrigin="top left";'+
+    '        page.style.transform="scale("+scale+")";'+
+    '        page.style.marginBottom=((h2*scale)-h2)+"px";'+
+    '      }'+
+    '    }'+
     '  });'+
-    '  setTimeout(function(){window.print();},500);'+
+    '  setTimeout(function(){window.print();},600);'+
     '};'+
     '<\/script></body></html>');
   win.document.close();
