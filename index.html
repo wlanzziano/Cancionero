@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.34</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.35</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -450,9 +450,10 @@ function openSideMenu(){
   const m=document.getElementById('side-menu');
   m.classList.add('open');
   const isAdmin=currentUser&&currentUser.role==='admin';
-  document.getElementById('smenu-chords').style.display=isAdmin?'flex':'none';
-  document.getElementById('smenu-users').style.display=isAdmin?'flex':'none';
-  document.getElementById('smenu-admin-sep').style.display=isAdmin?'block':'none';
+  const isEditor=currentUser&&currentUser.role==='editor';
+  document.getElementById('smenu-chords').style.display=(isAdmin||isEditor)?'flex':'none';
+  document.getElementById('smenu-users').style.display=(isAdmin||isEditor)?'flex':'none';
+  document.getElementById('smenu-admin-sep').style.display=(isAdmin||isEditor)?'block':'none';
 }
 function closeSideMenu(){document.getElementById('side-menu').classList.remove('open');}
 
@@ -1086,7 +1087,7 @@ function exportSetlistPDF(){
     '.sl-title{font-size:20px;font-weight:bold;color:#1a1033}'+
     '.sl-meta{font-size:10px;color:#6b63a0;margin-top:2px}'+
     // Cada canción
-    '.song-page{margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed #e8e5f5;page-break-inside:avoid}'+
+    '.song-page{page-break-after:always;padding-bottom:10px}'+'.song-page:last-child{page-break-after:auto}'+
     '.song-page:last-child{border-bottom:none;margin-bottom:0}'+
     '.sheader{margin-bottom:6px}'+
     '.stitle{font-size:14px;font-weight:bold;color:#534ab7;margin-bottom:1px}'+
@@ -1113,12 +1114,16 @@ function exportSetlistPDF(){
     '</div>'+
     '<script>'+
     'window.onload=function(){'+
-    '  var wrap=document.getElementById("wrap");'+
-    '  var maxH=277*96/25.4;'+
-    '  var actualH=wrap.scrollHeight;'+
-    '  var scale=Math.min(maxH/actualH,1);'+
-    '  if(scale<1){wrap.style.transform="scale("+scale+")";wrap.style.width=(190/scale)+"mm";}'+
-    '  setTimeout(function(){window.print();},400);'+
+    '  var pages=document.querySelectorAll(".song-page");'+
+    '  pages.forEach(function(page){'+
+    '    var maxH=277*96/25.4;'+
+    '    var h=page.scrollHeight;'+
+    '    var scale=Math.min(maxH/h,1);'+
+    '    if(scale<1){page.style.transformOrigin="top left";'+
+    '      page.style.transform="scale("+scale+")";'+
+    '      page.style.height=(h*scale)+"px";}'+
+    '  });'+
+    '  setTimeout(function(){window.print();},500);'+
     '};'+
     '<\/script></body></html>');
   win.document.close();
@@ -1352,11 +1357,16 @@ document.getElementById('confirm-ok-btn').onclick=async function(){
   }
 };
 async function openUsers(){
+  const isAdmin=currentUser.role==='admin';
   showView('users-view');
+  // Opciones de rol según quien accede
+  const roleOpts=isAdmin
+    ?'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option><option value="admin">&#128081; Admin</option>'
+    :'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option>';
   document.getElementById('users-view').innerHTML=`
     <button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="form-card">
-      <div class="form-title" style="margin-bottom:16px">Gestionar usuarios</div>
+      <div class="form-title" style="margin-bottom:16px">Usuarios</div>
       <div id="users-list"><div style="color:var(--text3);font-size:14px">Cargando...</div></div>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Agregar usuario</div>
@@ -1364,13 +1374,7 @@ async function openUsers(){
           <div class="field"><label>Nombre</label><input type="text" id="u-name" placeholder="Ej: María"></div>
           <div class="field"><label>Código acceso</label><input type="text" id="u-code" placeholder="Ej: maria2024"></div>
         </div>
-        <div class="field"><label>Rol</label>
-          <select id="u-role">
-            <option value="lector">&#128065; Lector — solo puede ver</option>
-            <option value="editor">&#9998; Editor — puede agregar y editar</option>
-            <option value="admin">&#128081; Admin — acceso total</option>
-          </select>
-        </div>
+        <div class="field"><label>Rol</label><select id="u-role">${roleOpts}</select></div>
         <div class="form-actions" style="margin-top:12px;padding-top:12px">
           <button class="btn-save" onclick="addUserAction()">Agregar usuario</button>
         </div>
@@ -1388,7 +1392,7 @@ function renderUsersList(users){
   wrap.innerHTML=users.map(u=>`
     <div class="user-card">
       <div class="user-avatar ua-${u.role}">${(u.name||'?')[0].toUpperCase()}</div>
-      <div class="user-info"><div class="user-name-text">${escH(u.name)}</div><div class="user-role-text">${roleLabel[u.role]||u.role} · código: <span class="user-code">${escH(u.code)}</span></div></div>
+      <div class="user-info"><div class="user-name-text">${escH(u.name)}</div><div class="user-role-text">${roleLabel[u.role]||u.role}${currentUser.role==='admin'?' · <span class="user-code">'+escH(u.code)+'</span>':''}</div></div>
       ${currentUser.role==='admin'?`<button class="song-del" onclick="confirmDelete('user','${escH(u.code)}','${escH(u.name)}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
