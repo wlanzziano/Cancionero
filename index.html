@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.38</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.39</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1104,7 +1104,7 @@ function exportSetlistPDF(){
     '.tc{vertical-align:bottom;padding:0;white-space:pre;min-width:4px}'+
     '.ch{font-family:monospace;font-size:9px;font-weight:bold;color:#534ab7;line-height:1.2;white-space:pre}'+
     '.ly{font-family:monospace;font-size:10px;color:#1a1033;line-height:1.3;white-space:pre}'+
-    '.footer{margin-top:8px;text-align:right;font-size:8px;color:#c4c0d8}'+
+    '.footer{display:none}'+
     '@media print{html,body{width:190mm}#wrap{transform:none!important;width:190mm}}'+
     '</style></head><body>'+
     '<div id="wrap">'+
@@ -1113,31 +1113,36 @@ function exportSetlistPDF(){
     '<div class="sl-meta">'+slSongs.length+' canción'+(slSongs.length!==1?'es':'')+' · Cancionero Católico</div>'+
     '</div>'+
     allSongs+
-    '<div class="footer">Cancionero Católico · '+escH(currentSetlist.name)+'</div>'+
     '</div>'+
     '<script>'+
     'window.onload=function(){'+
-    '  var maxH=Math.round(277*96/25.4);'+
-    '  var pages=document.querySelectorAll(".song-page");'+
-    '  pages.forEach(function(page){'+
-    '    var c1=page.querySelector(".content-1col");'+
-    '    var c2=page.querySelector(".content-2col");'+
-    '    var header=page.querySelector(".sheader");'+
-    '    var headerH=header?header.offsetHeight:0;'+
-    '    var contentH=c1.scrollHeight;'+
-    '    var totalH=headerH+contentH;'+
-    '    if(totalH<=maxH){'+
+    '  function process(){'+
+    '    var mmToPx=96/25.4;'+
+    '    var maxH=Math.floor(277*mmToPx);'+
+    '    var pages=document.querySelectorAll(".song-page");'+
+    '    pages.forEach(function(page){'+
+    '      var c1=page.querySelector(".content-1col");'+
+    '      var c2=page.querySelector(".content-2col");'+
     '      c1.style.display="block";c2.style.display="none";'+
-    '    } else {'+
-    '      c1.style.display="none";c2.style.display="block";'+
-    '      var h2=page.scrollHeight;'+
-    '      if(h2>maxH){'+
-    '        var scale=maxH/h2;'+
-    '        page.style.zoom=scale;'+
+    '      page.style.zoom="";'+
+    '      var h1=page.getBoundingClientRect().height;'+
+    '      if(h1<=maxH){'+
+    '        return;'+
     '      }'+
-    '    }'+
+    '      c1.style.display="none";c2.style.display="block";'+
+    '      var h2=page.getBoundingClientRect().height;'+
+    '      if(h2>maxH){'+
+    '        var z=maxH/h2;'+
+    '        page.style.zoom=z;'+
+    '      }'+
+    '    });'+
+    '  }'+
+    '  requestAnimationFrame(function(){'+
+    '    requestAnimationFrame(function(){'+
+    '      process();'+
+    '      setTimeout(function(){window.print();},300);'+
+    '    });'+
     '  });'+
-    '  setTimeout(function(){window.print();},600);'+
     '};'+
     '<\/script></body></html>');
   win.document.close();
