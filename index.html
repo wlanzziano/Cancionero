@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.37</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.38</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1090,8 +1090,8 @@ function exportSetlistPDF(){
     '.sl-title{font-size:20px;font-weight:bold;color:#1a1033}'+
     '.sl-meta{font-size:10px;color:#6b63a0;margin-top:2px}'+
     // Cada canción
-    '.song-page{break-after:page;break-inside:avoid;padding-bottom:8px}'+
-    '.song-page:last-child{break-after:auto}'+
+    '.song-page{padding-bottom:8px;break-inside:avoid}'+
+    '.song-page:not(:last-child){break-after:page}'+
     '.sheader{margin-bottom:6px}'+
     '.stitle{font-size:14px;font-weight:bold;color:#534ab7;margin-bottom:1px}'+
     '.smeta{font-size:9px;color:#6b63a0}'+
@@ -1297,7 +1297,7 @@ function formHTML(s){
         <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
         <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
       </div>
-      <div class="field"><label>Spotify <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none">— pega el enlace de la canción en Spotify (opcional)</span></label><input type="text" id="f-spotify" value="${escH(s&&s.spotify?s.spotify:'')}" placeholder="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"><div class="hint">Clic en ··· → Compartir → Copiar enlace de canción</div></div>
+      <div class="field"><label>Spotify <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none">— pega el enlace de la canción en Spotify (opcional)</span></label><input type="text" id="f-spotify" value="${escH(s&&s.spotify?'https://open.spotify.com/track/'+s.spotify:'')}" placeholder="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"><div class="hint">Clic en ··· → Compartir → Copiar enlace de canción</div></div>
       <div class="field"><label>Etiquetas</label>
         <div id="tag-chips-wrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">
