@@ -278,7 +278,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.41</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.42</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -347,10 +347,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
     <p id="confirm-title">¿Eliminar?</p>
-    <small id="confirm-detail"></small>
+    <small id="confirm-detail" style="display:block;margin:4px 0 8px;color:var(--text2);font-size:13px"></small>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Esta acción no se puede deshacer.</div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeConfirm()">Cancelar</button>
-      <button class="modal-confirm" id="confirm-ok-btn">Eliminar</button>
+      <button class="modal-confirm" id="confirm-ok-btn">Sí, eliminar</button>
     </div>
   </div>
 </div>
@@ -381,7 +382,7 @@ function txChord(ch,st){
   return root+suffix;
 }
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song';
+let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song',pendingDeleteCb=null;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
   try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
@@ -787,7 +788,7 @@ async function renderChordsManager(){
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="sv-action-btn" style="padding:5px 12px;font-size:12px" onclick="showChordDiagram('${escH(ch.name)}')">Ver</button>
-        <button class="song-del" onclick="deleteCustomChord('${escH(ch.name)}')">&#10005;</button>
+        <button class="song-del" onclick="confirmDelete('chord','${escH(ch.name)}','${escH(ch.name)}',function(){deleteCustomChord('${escH(ch.name)}');})">&#10005;</button>
       </div>
     </div>`).join('');
 }
@@ -868,10 +869,7 @@ async function createSetlist(){
   else toast('Error: '+r.error);
 }
 
-function confirmDeleteSetlist(id, name){
-  if(!confirm('¿Eliminar setlist "'+name+'"?')) return;
-  deleteSetlistAction(id);
-}
+function confirmDeleteSetlist(id,name){confirmDelete('setlist',id,name,function(){deleteSetlistAction(id);});}
 async function deleteSetlistAction(id){
   const r = await apiGet({action:'delete_setlist', id:id});
   if(r.ok){ setlists=setlists.filter(s=>s.id!==id); renderSetlists(); toast('Setlist eliminado'); }
@@ -1398,22 +1396,24 @@ async function saveSongEdit(id){
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
 function doDelete(id,name){confirmDelete('song',id,name);}
-function confirmDelete(type,id,name){
-  pendingDeleteId=id;pendingDeleteType=type;
-  document.getElementById('confirm-title').textContent=type==='song'?'¿Eliminar canción?':'¿Eliminar usuario?';
+function confirmDelete(type,id,name,cb){
+  pendingDeleteId=id;pendingDeleteType=type;pendingDeleteCb=cb||null;
+  const titles={song:'¿Eliminar canción?',user:'¿Eliminar usuario?',chord:'¿Eliminar acorde?',setlist:'¿Eliminar setlist?'};
+  document.getElementById('confirm-title').textContent=titles[type]||'¿Eliminar?';
   document.getElementById('confirm-detail').textContent=name;
   document.getElementById('confirm-modal').classList.add('open');
 }
-function closeConfirm(){pendingDeleteId=null;document.getElementById('confirm-modal').classList.remove('open');}
+function closeConfirm(){pendingDeleteId=null;pendingDeleteCb=null;document.getElementById('confirm-modal').classList.remove('open');}
 document.getElementById('confirm-ok-btn').onclick=async function(){
-  if(!pendingDeleteId)return;
-  const _id=pendingDeleteId;const _type=pendingDeleteType;
+  if(!pendingDeleteId&&!pendingDeleteCb)return;
+  const _id=pendingDeleteId;const _type=pendingDeleteType;const _cb=pendingDeleteCb;
   closeConfirm();
+  if(_cb){_cb();return;}
   if(_type==='song'){
     const r=await apiGet({action:'delete',id:_id});
     if(r.ok){songs=songs.filter(s=>String(s.id)!==String(_id));renderList();toast('Canción eliminada');}
     else toast('Error: '+r.error);
-  }else{
+  }else if(_type==='user'){
     const r=await apiGet({action:'delete_user',code:_id});
     if(r.ok){openUsers();toast('Usuario eliminado');}
     else toast('Error: '+r.error);
