@@ -276,7 +276,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-count" id="list-count"></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.39</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.40</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -979,13 +979,34 @@ async function slDrop(e, toIdx){
 
 
 // Tags
-var DEFAULT_TAGS=["Adoración", "Alabanza", "Comunión", "Santísimo", "Ofertorio", "Entrada", "Salida", "Sanación", "Perdón", "Navidad", "Semana Santa", "Bautismo", "Matrimonio", "Funeral", "Niños", "Tiempo Ordinario"];
+var DEFAULT_TAGS=["Adoración","Alabanza","Comunión","Santísimo","Ofertorio","Entrada","Salida","Sanación","Perdón","Navidad","Semana Santa","Bautismo","Matrimonio","Funeral","Niños","Tiempo Ordinario"];
 var activeTag=null;
+
+function getCustomTags(){
+  // Cargar tags personalizados guardados en localStorage
+  try{return JSON.parse(localStorage.getItem('cancionero_custom_tags')||'[]');}catch(e){return[];}
+}
+
+function saveCustomTag(tag){
+  // Guardar tag personalizado si no existe ya en DEFAULT_TAGS ni en los guardados
+  if(DEFAULT_TAGS.indexOf(tag)>=0) return;
+  var saved=getCustomTags();
+  if(saved.indexOf(tag)>=0) return;
+  saved.push(tag);
+  localStorage.setItem('cancionero_custom_tags',JSON.stringify(saved));
+}
+
+function getAllTags(sel){
+  // DEFAULT + guardados + los de la canción actual (sel)
+  var all=DEFAULT_TAGS.slice();
+  getCustomTags().forEach(function(t){if(all.indexOf(t)<0)all.push(t);});
+  (sel||[]).forEach(function(t){if(all.indexOf(t)<0)all.push(t);});
+  return all;
+}
 
 function initTagChips(sel){
   var wrap=document.getElementById('tag-chips-wrap');if(!wrap)return;
-  var all=DEFAULT_TAGS.slice();
-  (sel||[]).forEach(function(t){if(all.indexOf(t)<0)all.push(t);});
+  var all=getAllTags(sel);
   wrap.innerHTML=all.map(function(t){
     var s=(sel||[]).indexOf(t)>=0;
     return '<span class="tag-chip'+(s?' sel':'')+'" data-tag="'+t+'" onclick="toggleChip(this)">'+t+'</span>';
@@ -998,12 +1019,15 @@ function addCustomTag(){
   var input=document.getElementById('f-tag-input');if(!input||!input.value.trim())return;
   var tag=input.value.trim();input.value='';
   var wrap=document.getElementById('tag-chips-wrap');if(!wrap)return;
+  // Si ya existe en la lista, solo seleccionarlo
   var ex=[].find.call(wrap.querySelectorAll('.tag-chip'),function(el){return el.dataset.tag===tag;});
   if(ex){ex.classList.add('sel');return;}
+  // Agregar chip nuevo y guardar en localStorage para futuras sesiones
   var el=document.createElement('span');el.className='tag-chip sel';
   el.dataset.tag=tag;el.textContent=tag;
   el.onclick=function(){toggleChip(el);};
   wrap.appendChild(el);
+  saveCustomTag(tag);
 }
 
 function renderTagBar(){
