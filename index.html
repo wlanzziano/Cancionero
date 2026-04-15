@@ -279,7 +279,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.43</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.44</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1270,7 +1270,7 @@ function drawSong(){
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   let secs='';
   s.sections.forEach(sec=>{
-    var isBold=sec.label?['coro','estribillo','chorus','puente','bridge','final','outro'].some(function(k){return sec.label.toLowerCase().indexOf(k)>=0;}):false;
+    var isBold=sec.label?['coro','estribillo','chorus'].some(function(k){return sec.label.toLowerCase().indexOf(k)>=0;}):false;
     if(sec.label){secs+=`<div class="sec-label${isBold?' bold':''}">${escH(sec.label)}</div>`;}
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
