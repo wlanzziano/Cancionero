@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cancionero Católico">
-<meta name="theme-color" content="#1a1033">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cancionero">
+<meta name="theme-color" content="#0f0c1d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Cancionero Católico</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -82,6 +85,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .empty{text-align:center;padding:48px 0;color:var(--text3)}
 .sync-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 0;margin-bottom:8px}
 .sync-btn:hover{color:var(--accent)}
+.offline-banner{display:none;align-items:center;gap:8px;background:rgba(251,191,36,.12);border:1px solid var(--amber-border);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--amber)}
 .spin{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text2);font-size:13px;cursor:pointer;padding:10px 0 14px;background:none;border:none;font-family:var(--font-body)}
@@ -275,11 +279,12 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
         <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
       </div>
       <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
+      <div class="offline-banner" id="offline-banner">&#9888;&#65039; Modo sin conexión — mostrando canciones guardadas localmente</div>
       <div class="list-count" id="list-count"></div>
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.45</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.46</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1236,9 +1241,43 @@ function showApp(){
   document.getElementById('user-name-display').textContent=currentUser.name;
 }
 async function loadSongs(){
-  const icon=document.getElementById('sync-icon');icon.classList.add('spin');
-  const r=await apiGet({action:'songs'});icon.classList.remove('spin');
-  if(r.ok){songs=r.songs||[];renderList();}else toast('Error: '+r.error);
+  const icon=document.getElementById('sync-icon');if(icon)icon.classList.add('spin');
+  const banner=document.getElementById('offline-banner');
+  try{
+    const r=await apiGet({action:'songs'});
+    if(icon)icon.classList.remove('spin');
+    if(r.ok){
+      songs=r.songs||[];
+      // Guardar en caché local
+      try{localStorage.setItem('cancionero_songs_cache',JSON.stringify(songs));
+          localStorage.setItem('cancionero_songs_cache_ts',Date.now());}catch(e){}
+      if(banner)banner.style.display='none';
+      renderList();
+    } else {
+      loadSongsFromCache(banner);
+    }
+  } catch(e){
+    if(icon)icon.classList.remove('spin');
+    loadSongsFromCache(banner);
+  }
+}
+function loadSongsFromCache(banner){
+  try{
+    const cached=localStorage.getItem('cancionero_songs_cache');
+    if(cached){
+      songs=JSON.parse(cached);
+      const ts=localStorage.getItem('cancionero_songs_cache_ts');
+      const ago=ts?Math.round((Date.now()-parseInt(ts))/60000):0;
+      if(banner){
+        banner.style.display='flex';
+        banner.textContent='⚠️ Sin conexión — '+songs.length+' canciones guardadas'+(ago?' · hace '+ago+' min':'');
+      }
+      renderList();
+      toast('Sin conexión — mostrando caché local');
+    } else {
+      toast('Sin conexión y sin caché disponible');
+    }
+  } catch(e){ toast('Error al cargar caché'); }
 }
 function renderList(){
   renderTagBar();
@@ -1592,6 +1631,14 @@ function exportPDF(){
   win.document.close();
 }
 init();
+// Registrar Service Worker para PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js')
+      .then(function(reg){console.log('SW registrado:',reg.scope);})
+      .catch(function(err){console.log('SW error:',err);});
+  });
+}
 </script>
 </body>
 </html>
