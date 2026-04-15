@@ -279,7 +279,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.44</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.45</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1069,8 +1069,9 @@ function exportSetlistPDF(){
   function buildSongHTML(song){
     const st=0;
     function buildSection(sec){
+      var isBold=sec.label?['coro','estribillo','chorus'].some(function(k){return sec.label.toLowerCase().indexOf(k)>=0;}):false;
       let html='';
-      if(sec.label) html+='<div class="sec">'+escH(sec.label)+'</div>';
+      if(sec.label) html+='<div class="sec'+(isBold?' sec-bold':'')+'">'+escH(sec.label)+'</div>';
       (sec.lines||[]).forEach(function(line){
         if(!line.lyric&&!line.chords.length) return;
         const lyric=line.lyric||'';
@@ -1088,7 +1089,7 @@ function exportSetlistPDF(){
         let cells='';
         segments.forEach(function(seg){
           cells+='<td class="tc"><div class="ch">'+(seg.chord||'&nbsp;')+'</div>';
-          cells+='<div class="ly">'+(escH(seg.lyric)||'&nbsp;')+'</div></td>';
+          cells+='<div class="ly'+(isBold?' ly-bold':'')+'">'+( escH(seg.lyric)||'&nbsp;')+'</div></td>';
         });
         html+='<div class="block"><table><tr>'+cells+'</tr></table></div>';
       });
@@ -1494,8 +1495,9 @@ function exportPDF(){
   const tagsInfo=(s.tags&&s.tags.length)?' · '+s.tags.join(', '):'';
 
   function buildSection(sec){
+    const isBold=sec.label?['coro','estribillo','chorus'].some(k=>sec.label.toLowerCase().indexOf(k)>=0):false;
     let html='';
-    if(sec.label) html+='<div class="sec">'+escH(sec.label)+'</div>';
+    if(sec.label) html+='<div class="sec'+(isBold?' sec-bold':'')+'">'+escH(sec.label)+'</div>';
     sec.lines.forEach(function(line){
       if(!line.lyric&&!line.chords.length) return;
       const lyric=line.lyric||'';
@@ -1513,7 +1515,7 @@ function exportPDF(){
       let cells='';
       segments.forEach(seg=>{
         cells+='<td class="tc"><div class="ch">'+(seg.chord||'&nbsp;')+'</div>';
-        cells+='<div class="ly">'+(escH(seg.lyric)||'&nbsp;')+'</div></td>';
+        cells+='<div class="ly'+(isBold?' ly-bold':'')+'">'+( escH(seg.lyric)||'&nbsp;')+'</div></td>';
       });
       html+='<div class="block"><table><tr>'+cells+'</tr></table></div>';
     });
@@ -1551,7 +1553,7 @@ function exportPDF(){
     'table{border-collapse:collapse}'+
     '.tc{vertical-align:bottom;padding:0;white-space:pre;min-width:4px}'+
     '.ch{font-family:monospace;font-size:10px;font-weight:bold;color:#534ab7;line-height:1.2;white-space:pre}'+
-    '.ly{font-family:monospace;font-size:11px;color:#1a1033;line-height:1.4;white-space:pre}'+
+    '.ly{font-family:monospace;font-size:11px;color:#1a1033;line-height:1.4;white-space:pre}'+'.ly-bold{font-weight:700;color:#1a1033}'+'.sec-bold{color:#534ab7;font-weight:900}'+
     '.footer{margin-top:8px;padding-top:4px;border-top:1px solid #e8e5f5;'+
     'text-align:right;font-size:8px;color:#c4c0d8}'+
     '@media print{html,body{width:190mm}#wrap{transform:none!important;width:190mm}'+
