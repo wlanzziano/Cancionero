@@ -310,7 +310,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.54</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.55</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -401,7 +401,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       </div>
       <div class="conv-key-row">
         <span class="conv-key-lbl">API Key:</span>
-        <input class="conv-key-input" type="password" id="conv-key" placeholder="AIza..." value="AIzaSyCVzXzw1IPp29JobRbUysmYGTzQnjsXaOo">
+        <input class="conv-key-input" type="password" id="conv-key" placeholder="AIzaSy... o AQ.Ab8..." value="">
       </div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:10px">La key se guarda solo en este dispositivo · <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Obtener key gratis</a></div>
     </div>
@@ -1364,35 +1364,41 @@ async function callGemini(base64Data, mimeType, apiKey){
   const b64=base64Data.split(',')[1];
   if(!b64){throw new Error('Imagen no válida — intenta con otra foto');}
   if(!apiKey||apiKey.length<10){throw new Error('API key no válida');}
-  // Gemini 1.5 Flash es más compatible con el tier gratuito
-  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+apiKey;
-  console.log('Llamando Gemini con mimeType:', mimeType, 'b64 length:', b64.length);
   const prompt='Esta imagen contiene una canción de un cancionero con letra y acordes de guitarra. '+
-    'Los acordes suelen aparecer encima de la letra en color diferente. '+
+    'Los acordes suelen aparecer encima de la letra en color diferente (naranja, azul, etc). '+
     'Convierte la canción al siguiente formato exacto:\n'+
-    '- El título va en la primera línea (sin número)\n'+
-    '- El artista entre paréntesis en la primera línea si aparece\n'+
-    '- Las secciones como: # CORO, # VERSO 1, # PUENTE, # INTRO, etc.\n'+
-    '- Los acordes van entre corchetes JUSTO ANTES de la sílaba donde caen. Ej: [G]Tú has ve[C]nido\n'+
-    '- Si hay líneas de solo acordes sin letra, ponlos como: [D] [G] [A]\n'+
+    '- Primera línea: Título (Artista) si aparece el artista\n'+
+    '- Secciones con: # CORO, # VERSO 1, # PUENTE, # INTRO, etc.\n'+
+    '- Acordes entre corchetes ANTES de la sílaba donde caen: [G]Tú has ve[C]nido\n'+
+    '- Líneas solo de acordes: [D] [G] [A]\n'+
     '- Responde SOLO con el texto convertido, sin explicaciones ni markdown.';
-  const body={
-    contents:[{parts:[
-      {text:prompt},
-      {inline_data:{mime_type:mimeType,data:b64}}
-    ]}],
-    generationConfig:{temperature:0.1,maxOutputTokens:2048}
-  };
-  const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  // Intentar primero con AIza key (REST directo)
+  if(apiKey.startsWith('AIza')){
+    const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+apiKey;
+    const body={contents:[{parts:[{text:prompt},{inline_data:{mime_type:mimeType,data:b64}}]}],generationConfig:{temperature:0.1,maxOutputTokens:2048}};
+    const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const respText=await resp.text();
+    console.log('Gemini REST status:',resp.status);
+    if(!resp.ok){
+      const err=JSON.parse(respText);
+      throw new Error(err.error?.message||'Error '+resp.status);
+    }
+    const data=JSON.parse(respText);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  }
+  // Para keys AQ. usar endpoint alternativo con Bearer token
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  const body={contents:[{parts:[{text:prompt},{inline_data:{mime_type:mimeType,data:b64}}]}],generationConfig:{temperature:0.1,maxOutputTokens:2048}};
+  const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)});
   const respText=await resp.text();
-  console.log('Gemini response status:', resp.status, 'body:', respText.slice(0,200));
+  console.log('Gemini Bearer status:',resp.status,respText.slice(0,100));
   if(!resp.ok){
     try{const err=JSON.parse(respText);throw new Error(err.error?.message||'Error '+resp.status);}
-    catch(pe){throw new Error('Error '+resp.status+': '+respText.slice(0,100));}
+    catch(pe){throw new Error('Error '+resp.status);}
   }
   const data=JSON.parse(respText);
   const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  if(!text)throw new Error('Gemini no devolvió texto. Revisa que la imagen sea legible.');
+  if(!text)throw new Error('Gemini no devolvió texto. Revisa la imagen.');
   return text;
 }
 async function runConv(){
