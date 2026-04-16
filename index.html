@@ -310,7 +310,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.52</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.53</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1362,7 +1362,11 @@ function closeConv(){document.getElementById('conv-modal').classList.remove('ope
 
 async function callGemini(base64Data, mimeType, apiKey){
   const b64=base64Data.split(',')[1];
-  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey;
+  if(!b64){throw new Error('Imagen no válida — intenta con otra foto');}
+  if(!apiKey||apiKey.length<10){throw new Error('API key no válida');}
+  // Gemini 1.5 Flash es más compatible con el tier gratuito
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+apiKey;
+  console.log('Llamando Gemini con mimeType:', mimeType, 'b64 length:', b64.length);
   const prompt='Esta imagen contiene una canción de un cancionero con letra y acordes de guitarra. '+
     'Los acordes suelen aparecer encima de la letra en color diferente. '+
     'Convierte la canción al siguiente formato exacto:\n'+
@@ -1380,9 +1384,16 @@ async function callGemini(base64Data, mimeType, apiKey){
     generationConfig:{temperature:0.1,maxOutputTokens:2048}
   };
   const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Error Gemini '+resp.status);}
-  const data=await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  const respText=await resp.text();
+  console.log('Gemini response status:', resp.status, 'body:', respText.slice(0,200));
+  if(!resp.ok){
+    try{const err=JSON.parse(respText);throw new Error(err.error?.message||'Error '+resp.status);}
+    catch(pe){throw new Error('Error '+resp.status+': '+respText.slice(0,100));}
+  }
+  const data=JSON.parse(respText);
+  const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  if(!text)throw new Error('Gemini no devolvió texto. Revisa que la imagen sea legible.');
+  return text;
 }
 async function runConv(){
   if(convMode==='text'){
@@ -1417,6 +1428,7 @@ async function runConv(){
       closeConv();
       toast('✓ Imagen convertida por Gemini — revisa antes de guardar');
     }catch(e){
+      console.error('Gemini error:',e);
       toast('Error: '+e.message);
       btn.disabled=false;btn.textContent='🤖 Analizar imagen';
     }
