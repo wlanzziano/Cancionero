@@ -50,9 +50,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .login-err{font-size:13px;color:var(--red);margin-top:10px;text-align:center;min-height:20px}
 .login-info{font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6}
 .header{padding:16px 0 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
-.header-title{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text);flex-shrink:0}
+.header-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);flex-shrink:0;white-space:nowrap}
 .header-title span{color:var(--accent)}
-.search-wrap{flex:1;position:relative}
+.search-wrap{flex:1;position:relative;min-width:0}
 .search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px 8px 32px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap input::placeholder{color:var(--text3)}
@@ -237,7 +237,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .spotify-wrap iframe{display:block;border:none;width:100%;height:80px}
 .spotify-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);text-decoration:none;margin-top:6px;padding:4px 0}
 .spotify-link:hover{color:var(--accent)}
-@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
+@media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:14px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
 @media(max-width:380px){.lyric-line{font-size:11px}.chord-pill{font-size:10px}}
@@ -264,10 +264,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div id="app" style="display:none">
   <div class="header">
     <button class="hamburger" onclick="openSideMenu()" title="Menú">&#9776;</button>
-    <div class="header-title" style="display:flex;align-items:center;gap:8px"><img src="icon-192.png" class="app-icon-sm" alt=""><span>Cancionero</span> Católico</div>
+    <div class="header-title" style="display:flex;align-items:center;gap:6px"><img src="icon-192.png" class="app-icon-sm" alt=""><span>C</span>.C.</div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
-      <input type="text" id="search" placeholder="Buscar..." oninput="renderList()">
+      <input type="text" id="search" placeholder="Buscar..." oninput="renderList()" style="font-size:15px">
     </div>
     <div class="header-actions">
       <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">&#128101;</div>
@@ -286,7 +286,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.49</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.50</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
