@@ -286,7 +286,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.47</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.48</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1153,7 +1153,7 @@ function exportSetlistPDF(){
     '.block{margin-bottom:1px}table{border-collapse:collapse}'+
     '.tc{vertical-align:bottom;padding:0;white-space:pre;min-width:4px}'+
     '.ch{font-family:monospace;font-size:9px;font-weight:bold;color:#534ab7;line-height:1.2;white-space:pre}'+
-    '.ly{font-family:monospace;font-size:10px;color:#1a1033;line-height:1.3;white-space:pre}'+
+    '.ly{font-family:monospace;font-size:10px;color:#1a1033;line-height:1.3;white-space:pre}'+'.ly-bold{font-weight:700;color:#1a1033}'+'.sec-bold{color:#534ab7;font-weight:900}'+
     '.footer{display:none}'+
     '@media print{html,body{width:190mm}#wrap{transform:none!important;width:190mm}}'+
     '</style></head><body>'+
