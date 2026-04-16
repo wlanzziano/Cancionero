@@ -1193,7 +1193,11 @@ function exportSetlistPDF(){
     '      setTimeout(function(){window.print();},300);'+
     '    });'+
     '  });'+
+    '  window.onafterprint=function(){document.getElementById("close-btn").style.display="flex";};'+
     '};'+
+    '<button id="close-btn" onclick="window.close()" style="display:none;position:fixed;top:12px;right:12px;z-index:9999;background:#534ab7;color:#fff;border:none;border-radius:50px;padding:10px 20px;font-size:14px;font-family:Arial,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)">&#10005; Cerrar</button>'+
+    '@media print{#close-btn{display:none!important}}'+
+    '<\/style>'+
     '<\/script></body></html>');
   win.document.close();
 }
@@ -1627,7 +1631,9 @@ function exportPDF(){
     '  var scale=Math.min(scaleH,scaleW,1);'+ // nunca ampliar, solo reducir
     '  if(scale<1) wrap.style.zoom=scale;'+
     '  setTimeout(function(){window.print();},400);'+
+    '  window.onafterprint=function(){document.getElementById("close-btn").style.display="flex";};'+
     '};'+
+    '<button id="close-btn" onclick="window.close()" style="display:none;position:fixed;top:12px;right:12px;z-index:9999;background:#534ab7;color:#fff;border:none;border-radius:50px;padding:10px 20px;font-size:14px;font-family:Arial,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)">&#10005; Cerrar</button>'+
     '<\/script>'+
     '</body></html>');
   win.document.close();
