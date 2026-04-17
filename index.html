@@ -1715,7 +1715,7 @@ function parseBody(text){
   if(current.lines.length||current.label)sections.push(current);if(!sections.length)sections.push({label:'',lines:[]});return sections;
 }
 function parseLine(line){
-  const chords=[],re=/\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:\/[A-G][b#]?)?)\]/g;
+  const chords=[],re=/\[([A-G][b#]?(?:m|maj7?|min|dim|aug|sus[24]?|add\d+|[Mm]?[0-9]+(?:[b#][0-9]+)?)*(?:\/[A-G][b#]?)?)\]/g;
   let clean='',last=0,m;
   while((m=re.exec(line))!==null){clean+=line.slice(last,m.index);chords.push({ch:m[1],pos:clean.length});last=m.index+m[0].length;}
   clean+=line.slice(last);return{chords,lyric:clean};
