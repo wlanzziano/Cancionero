@@ -77,6 +77,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sort-select:focus{border-color:var(--accent)}
 .tags-toggle{background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 10px;color:var(--text3);font-family:var(--font-body);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
 .tags-toggle:hover,.tags-toggle.open{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.alpha-bar{display:none;flex-wrap:wrap;gap:4px;padding:6px 0 4px}
+.alpha-btn{background:none;border:none;border-radius:6px;padding:3px 7px;font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .15s;min-width:24px;text-align:center}
+.alpha-btn:hover{background:var(--surface2);color:var(--accent)}
+.alpha-btn.on{background:var(--accent-bg);color:var(--accent);font-weight:700}
+.alpha-btn.disabled{opacity:.25;cursor:default;pointer-events:none}
 .song-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:border-color .2s,background .2s}
 .song-card:hover{border-color:var(--accent);background:var(--surface2)}
 .song-num{font-family:var(--font-mono);font-size:11px;color:var(--text3);width:20px;flex-shrink:0;text-align:right}
@@ -285,7 +290,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <div class="header-title" style="display:flex;align-items:center;gap:6px"><img src="icon-192.png" class="app-icon-sm" alt=""><span>Cancionero</span></div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
-      <input type="text" id="search" placeholder="Buscar..." oninput="renderList()">
+      <input type="text" id="search" placeholder="Buscar..." oninput="activeAlpha=null;renderList()">
     </div>
     <div class="header-actions">
       <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">&#128101;</div>
@@ -306,15 +311,16 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
           <button class="tags-toggle" id="tags-toggle-btn" onclick="toggleTagsPanel()" style="display:none">&#127991; Tags <span id="tags-arrow">&#9662;</span></button>
           <select class="sort-select" id="sort-select" onchange="renderList()">
             <option value="id">Orden original</option>
-            <option value="title">A&#8211;Z T&#237;tulo</option>
+            <option value="title" selected>A&#8211;Z T&#237;tulo</option>
             <option value="artist">A&#8211;Z Artista</option>
           </select>
         </div>
       </div>
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
+      <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.60</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.61</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1101,6 +1107,37 @@ function renderTagBar(){
 function setTag(t){activeTag=t;activeArtist=null;renderList();}
 
 var tagsOpen=false;
+var activeAlpha=null;
+function renderAlphaBar(){
+  var bar=document.getElementById('alpha-bar');
+  if(!bar) return;
+  // Determinar qué campo usar según el orden activo
+  var sortEl=document.getElementById('sort-select');
+  var sortBy=sortEl?sortEl.value:'title';
+  var field=sortBy==='artist'?'artist':'title';
+  // Letras que tienen canciones
+  var available={};
+  songs.forEach(function(s){
+    var first=(s[field]||'').trim().toUpperCase().replace(/^(EL |LA |LOS |LAS |UN |UNA )/,'')[0];
+    if(first) available[first]=true;
+  });
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  var hasAny=Object.keys(available).length>0;
+  if(!hasAny){bar.style.display='none';return;}
+  bar.style.display='flex';
+  var html='<button class="alpha-btn'+(activeAlpha===null?' on':'')+'" onclick="setAlpha(null)">• Todas</button>';
+  letters.forEach(function(l){
+    var has=available[l];
+    html+='<button class="alpha-btn'+(activeAlpha===l?' on':'')+(has?'':' disabled')+'" data-letter="'+l+'" onclick="setAlpha(this.dataset.letter)">'+l+'</button>';
+  });
+  bar.innerHTML=html;
+}
+
+function setAlpha(letter){
+  activeAlpha=letter;
+  renderList();
+}
+
 function toggleTagsPanel(){
   tagsOpen=!tagsOpen;
   var wrap=document.getElementById('tag-filter-wrap');
@@ -1434,15 +1471,18 @@ function loadSongsFromCache(banner){
 }
 function renderList(){
   renderTagBar();
+  renderAlphaBar();
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var sortEl=document.getElementById('sort-select');
+  var sortBy=sortEl?sortEl.value:'title';
+  var alphaField=sortBy==='artist'?'artist':'title';
   const filtered=songs.filter(function(s){
     var mq=!q||(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).toLowerCase().indexOf(q)>=0;
     var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
     var ma=!activeArtist||s.artist===activeArtist;
-    return mq&&mt&&ma;
+    var mal=!activeAlpha||(s[alphaField]||'').trim().toUpperCase().replace(/^(EL |LA |LOS |LAS |UN |UNA )/,'')[0]===activeAlpha;
+    return mq&&mt&&ma&&mal;
   });
-  var sortEl=document.getElementById('sort-select');
-  var sortBy=sortEl?sortEl.value:'id';
   if(sortBy==='title') filtered.sort(function(a,b){return a.title.localeCompare(b.title,'es');});
   else if(sortBy==='artist') filtered.sort(function(a,b){var r=a.artist.localeCompare(b.artist,'es');return r||a.title.localeCompare(b.title,'es');});
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
