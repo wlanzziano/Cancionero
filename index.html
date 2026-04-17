@@ -76,8 +76,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sort-select{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 10px;color:var(--text2);font-family:var(--font-body);font-size:12px;outline:none;cursor:pointer}
 .sort-select:focus{border-color:var(--accent)}
 .tags-toggle{background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 10px;color:var(--text3);font-family:var(--font-body);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
-.tags-toggle:hover{border-color:var(--accent);color:var(--accent)}
-.tags-toggle.open{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.tags-toggle:hover,.tags-toggle.open{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .song-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:border-color .2s,background .2s}
 .song-card:hover{border-color:var(--accent);background:var(--surface2)}
 .song-num{font-family:var(--font-mono);font-size:11px;color:var(--text3);width:20px;flex-shrink:0;text-align:right}
@@ -304,16 +303,16 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="list-toolbar">
         <div class="list-count" id="list-count"></div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="tags-toggle" id="tags-toggle-btn" onclick="toggleTagsPanel()" style="display:none">&#127991; Tags <span id="tags-arrow">▾</span></button>
+          <button class="tags-toggle" id="tags-toggle-btn" onclick="toggleTagsPanel()" style="display:none">&#127991; Tags <span id="tags-arrow">&#9662;</span></button>
           <select class="sort-select" id="sort-select" onchange="renderList()">
             <option value="id">Orden original</option>
-            <option value="title">A–Z Título</option>
-            <option value="artist">A–Z Artista</option>
+            <option value="title">A&#8211;Z T&#237;tulo</option>
+            <option value="artist">A&#8211;Z Artista</option>
           </select>
         </div>
       </div>
       <div id="artist-filter-banner" style="display:none;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r-sm);padding:6px 12px;margin-bottom:8px;font-size:13px;color:var(--accent)">&#127932; Artista: <strong class="af-name"></strong><button onclick="activeArtist=null;document.getElementById('artist-filter-banner').style.display='none';renderList();" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:16px">&#10005;</button></div>
-      <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none;padding-bottom:8px"></div>
+      <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="song-list"></div>
       <div class="footer">Powered by <span>Nano</span> · v2.60</div>
     </div>
@@ -1080,21 +1079,22 @@ function addCustomTag(){
 }
 
 function renderTagBar(){
-  var used=[];songs.forEach(function(s){(s.tags||[]).forEach(function(t){if(used.indexOf(t)<0)used.push(t);});});
+  var used=[];
+  songs.forEach(function(s){(s.tags||[]).forEach(function(t){if(used.indexOf(t)<0)used.push(t);});});
   var wrap=document.getElementById('tag-filter-wrap');
   var btn=document.getElementById('tags-toggle-btn');
-  if(!wrap)return;
+  if(!wrap) return;
   if(!used.length){
-    if(btn)btn.style.display='none';
+    if(btn) btn.style.display='none';
     wrap.style.display='none';
     return;
   }
-  // Mostrar botón toggle
-  if(btn)btn.style.display='flex';
-  // Actualizar contenido del panel (siempre, aunque esté oculto)
-  wrap.innerHTML='<button class="tag-filter-btn'+(activeTag?'':' on')+'" onclick="setTag(null)">Todas</button>'
-    +used.map(function(t){return '<button class="tag-filter-btn'+(activeTag===t?' on':'')+'" onclick="setTag(''+t+'')">'+t+'</button>';}).join('');
-  // Mantener el estado abierto/cerrado
+  if(btn) btn.style.display='flex';
+  var html='<button class="tag-filter-btn'+(activeTag?'':' on')+'" onclick="setTag(null)">Todas</button>';
+  used.forEach(function(t){
+    html+='<button class="tag-filter-btn'+(activeTag===t?' on':'')+'" onclick="setTag(this.dataset.tag)" data-tag="'+t.replace(/"/g,'&quot;')+'">'+t+'</button>';
+  });
+  wrap.innerHTML=html;
   wrap.style.display=tagsOpen?'flex':'none';
 }
 
@@ -1103,12 +1103,12 @@ function setTag(t){activeTag=t;activeArtist=null;renderList();}
 var tagsOpen=false;
 function toggleTagsPanel(){
   tagsOpen=!tagsOpen;
-  var wrap=document.getElementById("tag-filter-wrap");
-  var btn=document.getElementById("tags-toggle-btn");
-  var arrow=document.getElementById("tags-arrow");
-  if(wrap)wrap.style.display=tagsOpen?"flex":"none";
-  if(btn)btn.classList.toggle("open",tagsOpen);
-  if(arrow)arrow.textContent=tagsOpen?"▴":"▾";
+  var wrap=document.getElementById('tag-filter-wrap');
+  var btn=document.getElementById('tags-toggle-btn');
+  var arrow=document.getElementById('tags-arrow');
+  if(wrap) wrap.style.display=tagsOpen?'flex':'none';
+  if(btn) btn.classList.toggle('open',tagsOpen);
+  if(arrow) arrow.textContent=tagsOpen?'▴':'▾';
 }
 
 var activeArtist=null;
@@ -1441,11 +1441,10 @@ function renderList(){
     var ma=!activeArtist||s.artist===activeArtist;
     return mq&&mt&&ma;
   });
-  // Ordenar según selección
   var sortEl=document.getElementById('sort-select');
   var sortBy=sortEl?sortEl.value:'id';
   if(sortBy==='title') filtered.sort(function(a,b){return a.title.localeCompare(b.title,'es');});
-  else if(sortBy==='artist') filtered.sort(function(a,b){return a.artist.localeCompare(b.artist,'es')||a.title.localeCompare(b.title,'es');});
+  else if(sortBy==='artist') filtered.sort(function(a,b){var r=a.artist.localeCompare(b.artist,'es');return r||a.title.localeCompare(b.title,'es');});
   document.getElementById('list-count').textContent=filtered.length+' canción'+(filtered.length!==1?'es':'');
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   const canDel=currentUser.role==='admin';
