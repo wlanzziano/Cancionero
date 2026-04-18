@@ -193,6 +193,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sl-card.dragging{opacity:.4;border-color:var(--accent)}
 .sl-card.drag-over{border-color:var(--accent);background:var(--surface2)}
 .sl-drag-handle{color:var(--text3);font-size:18px;cursor:grab;flex-shrink:0;user-select:none}
+.sl-move-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:10px;cursor:pointer;padding:2px 5px;line-height:1;transition:all .15s}
+.sl-move-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.sl-move-btn:disabled{opacity:.2;cursor:default}
 .sl-num{font-family:var(--font-mono);font-size:12px;color:var(--text3);min-width:20px;text-align:right;flex-shrink:0}
 .chord-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center;padding:20px}
 .chord-modal.open{display:flex}
@@ -320,7 +323,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.62</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.63</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -943,12 +946,11 @@ function renderSetlistDetail(){
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
-    <div class="sl-card" draggable="true"
-      ondragstart="slDragStart(event,${i})"
-      ondragover="slDragOver(event,${i})"
-      ondrop="slDrop(event,${i})"
-      ondragend="slDragEnd()">
-      <span class="sl-drag-handle" ontouchstart="slTouchStart(event,${i})" ontouchmove="slTouchMove(event)" ontouchend="slTouchEnd(event,${i})">&#9776;</span>
+    <div class="sl-card">
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+        <button class="sl-move-btn" onclick="slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
+        <button class="sl-move-btn" onclick="slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
+      </div>
       <span class="sl-num">${i+1}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
@@ -1029,42 +1031,27 @@ function slDragOver(e, idx){
 function slDragEnd(){
   document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
-// Touch drag & drop para móvil
-var touchDragIdx=null, touchTargetIdx=null;
-function slTouchStart(e,idx){
-  touchDragIdx=idx;
-  e.currentTarget.parentElement.classList.add('dragging');
-}
-function slTouchMove(e){
-  e.preventDefault();
-  var touch=e.touches[0];
-  var el=document.elementFromPoint(touch.clientX,touch.clientY);
-  var card=el?el.closest('.sl-card'):null;
-  document.querySelectorAll('.sl-card').forEach(function(c){c.classList.remove('drag-over');});
-  if(card) card.classList.add('drag-over');
-}
-function slTouchEnd(e,fromIdx){
-  var touch=e.changedTouches[0];
-  var el=document.elementFromPoint(touch.clientX,touch.clientY);
-  var card=el?el.closest('.sl-card'):null;
-  document.querySelectorAll('.sl-card').forEach(function(c){c.classList.remove('dragging','drag-over');});
-  if(!card||touchDragIdx===null) return;
-  // Encontrar índice destino
-  var cards=Array.from(document.querySelectorAll('.sl-card'));
-  var toIdx=cards.indexOf(card);
-  if(toIdx<0||toIdx===touchDragIdx){touchDragIdx=null;return;}
+async function slMoveUp(idx){
+  if(idx===0) return;
   var arr=[...(currentSetlist.songs||[])];
-  var moved=arr.splice(touchDragIdx,1)[0];
-  arr.splice(toIdx,0,moved);
+  var tmp=arr[idx-1]; arr[idx-1]=arr[idx]; arr[idx]=tmp;
   currentSetlist.songs=arr;
-  touchDragIdx=null;
-  api({action:'edit_setlist',setlist:currentSetlist}).then(function(r){
-    if(r.ok){
-      var idx=setlists.findIndex(function(sl){return sl.id===currentSetlist.id;});
-      if(idx>=0) setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
-      renderSetlistDetail();
-    } else toast('Error al guardar orden');
-  });
+  await slSaveOrder();
+}
+async function slMoveDown(idx){
+  var arr=[...(currentSetlist.songs||[])];
+  if(idx>=arr.length-1) return;
+  var tmp=arr[idx+1]; arr[idx+1]=arr[idx]; arr[idx]=tmp;
+  currentSetlist.songs=arr;
+  await slSaveOrder();
+}
+async function slSaveOrder(){
+  const r=await api({action:'edit_setlist',setlist:currentSetlist});
+  if(r.ok){
+    const i=setlists.findIndex(sl=>sl.id===currentSetlist.id);
+    if(i>=0) setlists[i]=JSON.parse(JSON.stringify(currentSetlist));
+    renderSetlistDetail();
+  } else toast('Error al guardar orden');
 }
 
 async function slDrop(e, toIdx){
