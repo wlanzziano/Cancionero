@@ -1627,7 +1627,7 @@ function drawSong(){
     secs+='<div style="height:2px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="songNavOrigin==='setlist'?openSetlists():showList()">&#8592; Volver</button>
     <div class="sv-card">
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
