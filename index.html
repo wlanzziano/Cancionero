@@ -192,6 +192,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sl-card:hover{border-color:var(--accent)}
 .sl-card.dragging{opacity:.4;border-color:var(--accent)}
 .sl-card.drag-over{border-color:var(--accent);background:var(--surface2)}
+.sl-card.selected{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 2px var(--accent)}
 .sl-drag-handle{color:var(--text3);font-size:18px;cursor:grab;flex-shrink:0;user-select:none}
 .sl-move-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:10px;cursor:pointer;padding:2px 5px;line-height:1;transition:all .15s}
 .sl-move-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
@@ -888,6 +889,7 @@ async function loadSetlists(){
 }
 
 async function openSetlists(){
+  selectedSlIdx=null;
   tpHideBar();
   showView('setlists-view');
   window.scrollTo(0,0);
@@ -946,17 +948,20 @@ function renderSetlistDetail(){
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
-    <div class="sl-card">
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;user-select:none">
-        <button class="sl-move-btn" onclick="slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
-        <button class="sl-move-btn" onclick="slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
-      </div>
+    <div class="sl-card${selectedSlIdx===i?' selected':''}" onclick="slSelectCard(${i})">
       <span class="sl-num">${i+1}</span>
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="openSong('${s.id}')">
+      <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
         <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
       </div>
-      <button class="song-del" onclick="removeFromSetlist('${s.id}')">&#10005;</button>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <button class="sl-move-btn" onclick="event.stopPropagation();slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
+          <button class="sl-move-btn" onclick="event.stopPropagation();slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
+        </div>
+        <button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openSong('${s.id}')">Abrir</button>
+        <button class="song-del" onclick="event.stopPropagation();removeFromSetlist('${s.id}')">&#10005;</button>
+      </div>
     </div>`).join('') :
     '<div style="color:var(--text3);font-size:13px;padding:12px 0">Agrega canciones desde abajo</div>';
 
@@ -1037,12 +1042,27 @@ function slDragOver(e, idx){
 function slDragEnd(){
   document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
+function slSelectCard(idx){
+  if(selectedSlIdx===idx){
+    // Doble toque en la misma — abrir canción
+    var sl=(currentSetlist.songs||[]);
+    var sid=sl[idx];
+    var song=songs.find(function(s){return String(s.id)===String(sid);});
+    if(song) openSong(song.id);
+    selectedSlIdx=null;
+  } else {
+    selectedSlIdx=idx;
+  }
+  renderSetlistDetail();
+}
+
 function slReorder(fromIdx, toIdx){
   if(fromIdx===toIdx) return;
   var arr=[...(currentSetlist.songs||[])];
   var moved=arr.splice(fromIdx,1)[0];
   arr.splice(toIdx,0,moved);
   currentSetlist.songs=arr;
+  selectedSlIdx=toIdx; // mantener selección en nueva posición
   // Actualizar global inmediatamente
   var gi=setlists.findIndex(function(sl){return String(sl.id)===String(currentSetlist.id);});
   if(gi>=0) setlists[gi].songs=[...arr];
