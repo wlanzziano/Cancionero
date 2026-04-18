@@ -946,7 +946,7 @@ function renderSetlistDetail(){
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
-    <div class="sl-card">
+    <div class="sl-card" style="user-select:none">
       <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
         <button class="sl-move-btn" onclick="slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
         <button class="sl-move-btn" onclick="slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
@@ -987,8 +987,7 @@ function renderSetlistDetail(){
     </div>
     <div id="sl-song-list">${songItems}</div>
     ${availItems}`;
-  // Drag táctil nativo
-  initTouchDrag();
+
 }
 
 async function addToSetlist(songId){
@@ -1071,42 +1070,8 @@ async function slSaveOrder(){
   });
 }
 
-// Drag táctil nativo
-var _tdSrc=null,_tdEl=null;
 function initTouchDrag(){
-  var list=document.getElementById('sl-song-list');
-  if(!list) return;
-  list.querySelectorAll('.sl-drag-handle').forEach(function(handle){
-    handle.addEventListener('touchstart',function(e){
-      _tdEl=handle.closest('.sl-card');
-      _tdSrc=Array.from(list.querySelectorAll('.sl-card')).indexOf(_tdEl);
-      _tdEl.style.opacity='0.5';
-      e.preventDefault();
-    },{passive:false});
-    handle.addEventListener('touchmove',function(e){
-      if(_tdSrc===null) return;
-      e.preventDefault();
-      var touch=e.touches[0];
-      var target=document.elementFromPoint(touch.clientX,touch.clientY);
-      var card=target?target.closest('.sl-card'):null;
-      list.querySelectorAll('.sl-card').forEach(function(c){c.style.borderColor='';});
-      if(card&&card!==_tdEl) card.style.borderColor='var(--accent)';
-    },{passive:false});
-    handle.addEventListener('touchend',function(e){
-      if(_tdSrc===null) return;
-      var touch=e.changedTouches[0];
-      var target=document.elementFromPoint(touch.clientX,touch.clientY);
-      var card=target?target.closest('.sl-card'):null;
-      list.querySelectorAll('.sl-card').forEach(function(c){c.style.borderColor='';});
-      if(_tdEl) _tdEl.style.opacity='';
-      if(card&&card!==_tdEl){
-        var cards=Array.from(list.querySelectorAll('.sl-card'));
-        var toIdx=cards.indexOf(card);
-        if(toIdx>=0) slReorder(_tdSrc,toIdx);
-      }
-      _tdSrc=null;_tdEl=null;
-    },{passive:false});
-  });
+  // Solo botones ▲▼ en móvil — drag nativo no soportado en iOS Safari
 }
 
 async function slDrop(e, toIdx){
