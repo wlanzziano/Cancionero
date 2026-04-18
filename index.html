@@ -946,17 +946,16 @@ function renderSetlistDetail(){
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
-    <div class="sl-card" style="user-select:none">
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+    <div class="sl-card">
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;user-select:none">
         <button class="sl-move-btn" onclick="slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
         <button class="sl-move-btn" onclick="slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
       </div>
       <span class="sl-num">${i+1}</span>
-      <div style="flex:1;min-width:0">
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="openSong('${s.id}')">
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
         <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
       </div>
-      <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="openSong('${s.id}')">Abrir</button>
       <button class="song-del" onclick="removeFromSetlist('${s.id}')">&#10005;</button>
     </div>`).join('') :
     '<div style="color:var(--text3);font-size:13px;padding:12px 0">Agrega canciones desde abajo</div>';
