@@ -912,7 +912,7 @@ function renderSetlists(){
     '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
 
   el.innerHTML = `
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="songNavOrigin==='setlist'?openSetlists():showList()">&#8592; Volver</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">Setlists</div>
       <button class="btn-add" onclick="createSetlist()">+ Nuevo</button>
@@ -959,7 +959,7 @@ function renderSetlistDetail(){
           <button class="sl-move-btn" onclick="event.stopPropagation();slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
           <button class="sl-move-btn" onclick="event.stopPropagation();slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
         </div>
-        <button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openSong('${s.id}')">Abrir</button>
+        <button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openSong('${s.id}','setlist')">Abrir</button>
         <button class="song-del" onclick="event.stopPropagation();removeFromSetlist('${s.id}')">&#10005;</button>
       </div>
     </div>`).join('') :
@@ -1048,7 +1048,7 @@ function slSelectCard(idx){
     var sl=(currentSetlist.songs||[]);
     var sid=sl[idx];
     var song=songs.find(function(s){return String(s.id)===String(sid);});
-    if(song) openSong(song.id);
+    if(song) openSong(song.id,'setlist');
     selectedSlIdx=null;
   } else {
     selectedSlIdx=idx;
@@ -1578,7 +1578,12 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id){currentSong=songs.find(s=>String(s.id)===String(id));if(!currentSong)return;semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);}
+function openSong(id, origin){
+  currentSong=songs.find(s=>String(s.id)===String(id));
+  if(!currentSong)return;
+  if(origin) songNavOrigin=origin;
+  semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
+}
 function drawSong(){
   const s=currentSong,st=semitones;
   const badge=st===0?'Original':(st>0?'+':'')+st+' st';
