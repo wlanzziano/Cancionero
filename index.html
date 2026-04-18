@@ -323,7 +323,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.63</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.64</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -987,6 +987,8 @@ function renderSetlistDetail(){
     </div>
     <div id="sl-song-list">${songItems}</div>
     ${availItems}`;
+  // Drag táctil nativo
+  initTouchDrag();
 }
 
 async function addToSetlist(songId){
@@ -997,7 +999,10 @@ async function addToSetlist(songId){
   if(r.ok){
     // Actualizar también en el array global de setlists
     const idx=setlists.findIndex(sl=>sl.id===currentSetlist.id);
-    if(idx>=0) setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
+    if(idx>=0){
+      setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
+      currentSetlist=setlists[idx];
+    }
     renderSetlistDetail();
     toast('✓ Canción agregada');
   } else {
@@ -1012,7 +1017,10 @@ async function removeFromSetlist(songId){
   const r = await api({action:'edit_setlist', setlist:currentSetlist});
   if(r.ok){
     const idx=setlists.findIndex(sl=>sl.id===currentSetlist.id);
-    if(idx>=0) setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
+    if(idx>=0){
+      setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
+      currentSetlist=setlists[idx];
+    }
     renderSetlistDetail();
   } else toast('Error: '+r.error);
 }
@@ -1031,27 +1039,74 @@ function slDragOver(e, idx){
 function slDragEnd(){
   document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
-async function slMoveUp(idx){
-  if(idx===0) return;
+function slReorder(fromIdx, toIdx){
+  if(fromIdx===toIdx) return;
   var arr=[...(currentSetlist.songs||[])];
-  var tmp=arr[idx-1]; arr[idx-1]=arr[idx]; arr[idx]=tmp;
+  var moved=arr.splice(fromIdx,1)[0];
+  arr.splice(toIdx,0,moved);
   currentSetlist.songs=arr;
-  await slSaveOrder();
+  // Actualizar global inmediatamente
+  var gi=setlists.findIndex(function(sl){return String(sl.id)===String(currentSetlist.id);});
+  if(gi>=0) setlists[gi].songs=[...arr];
+  renderSetlistDetail();
+  // Guardar en background
+  api({action:'edit_setlist',setlist:currentSetlist}).then(function(r){
+    if(!r.ok) toast('Error al guardar orden');
+  });
 }
-async function slMoveDown(idx){
-  var arr=[...(currentSetlist.songs||[])];
-  if(idx>=arr.length-1) return;
-  var tmp=arr[idx+1]; arr[idx+1]=arr[idx]; arr[idx]=tmp;
-  currentSetlist.songs=arr;
-  await slSaveOrder();
+function slMoveUp(idx){
+  if(idx===0) return;
+  slReorder(idx, idx-1);
+}
+function slMoveDown(idx){
+  if(idx>=(currentSetlist.songs||[]).length-1) return;
+  slReorder(idx, idx+1);
 }
 async function slSaveOrder(){
-  const r=await api({action:'edit_setlist',setlist:currentSetlist});
-  if(r.ok){
-    const i=setlists.findIndex(sl=>sl.id===currentSetlist.id);
-    if(i>=0) setlists[i]=JSON.parse(JSON.stringify(currentSetlist));
-    renderSetlistDetail();
-  } else toast('Error al guardar orden');
+  var gi=setlists.findIndex(function(sl){return String(sl.id)===String(currentSetlist.id);});
+  if(gi>=0) setlists[gi].songs=[...(currentSetlist.songs||[])];
+  renderSetlistDetail();
+  api({action:'edit_setlist',setlist:currentSetlist}).then(function(r){
+    if(!r.ok) toast('Error al guardar orden');
+  });
+}
+
+// Drag táctil nativo
+var _tdSrc=null,_tdEl=null;
+function initTouchDrag(){
+  var list=document.getElementById('sl-song-list');
+  if(!list) return;
+  list.querySelectorAll('.sl-drag-handle').forEach(function(handle){
+    handle.addEventListener('touchstart',function(e){
+      _tdEl=handle.closest('.sl-card');
+      _tdSrc=Array.from(list.querySelectorAll('.sl-card')).indexOf(_tdEl);
+      _tdEl.style.opacity='0.5';
+      e.preventDefault();
+    },{passive:false});
+    handle.addEventListener('touchmove',function(e){
+      if(_tdSrc===null) return;
+      e.preventDefault();
+      var touch=e.touches[0];
+      var target=document.elementFromPoint(touch.clientX,touch.clientY);
+      var card=target?target.closest('.sl-card'):null;
+      list.querySelectorAll('.sl-card').forEach(function(c){c.style.borderColor='';});
+      if(card&&card!==_tdEl) card.style.borderColor='var(--accent)';
+    },{passive:false});
+    handle.addEventListener('touchend',function(e){
+      if(_tdSrc===null) return;
+      var touch=e.changedTouches[0];
+      var target=document.elementFromPoint(touch.clientX,touch.clientY);
+      var card=target?target.closest('.sl-card'):null;
+      list.querySelectorAll('.sl-card').forEach(function(c){c.style.borderColor='';});
+      if(_tdEl) _tdEl.style.opacity='';
+      if(card&&card!==_tdEl){
+        var cards=Array.from(list.querySelectorAll('.sl-card'));
+        var toIdx=cards.indexOf(card);
+        if(toIdx>=0) slReorder(_tdSrc,toIdx);
+      }
+      _tdSrc=null;_tdEl=null;
+    },{passive:false});
+  });
 }
 
 async function slDrop(e, toIdx){
