@@ -327,7 +327,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.66</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.67</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1598,7 +1598,7 @@ function drawSong(){
     secs+='<div style="height:2px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="prevView==='setlists-view'?openSetlists():showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="prevView==='setlists-view'?(showView('setlists-view'),renderSetlistDetail()):showList()">&#8592; Volver</button>
     <div class="sv-card">
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
