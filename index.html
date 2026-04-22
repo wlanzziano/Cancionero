@@ -327,7 +327,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.69</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.70</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -854,7 +854,8 @@ async function renderChordsManager(){
       if(!Array.isArray(arr)) return;
       arr.forEach(function(entry){
         var suffix = entry.suffix||'';
-        var name = root + (suffix==='major'?'': suffix==='minor'?'m': suffix);
+        var rootDisplay = root.replace('sharp','#');
+        var name = rootDisplay + (suffix==='major'?'': suffix==='minor'?'m': suffix);
         var count = (entry.positions||[]).length;
         if(count>0) allChords.push({name:name, count:count, source:'db'});
       });
