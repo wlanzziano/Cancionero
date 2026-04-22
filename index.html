@@ -294,7 +294,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div id="app" style="display:none">
   <div class="header">
     <button class="hamburger" onclick="openSideMenu()" title="Menú">&#9776;</button>
-    <div class="header-title" style="display:flex;align-items:center;gap:6px"><img src="icon-192.png" class="app-icon-sm" alt=""><span>Cancionero</span></div>
+    <div class="header-title" style="display:flex;align-items:center;gap:6px"><img src="icon-192.png" class="app-icon-sm" alt=""><span id="header-section-name">Cancionero</span></div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
       <input type="text" id="search" placeholder="Buscar..." oninput="activeAlpha=null;renderList()">
@@ -327,7 +327,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.68</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.69</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -847,12 +847,16 @@ async function renderChordsManager(){
   let allChords = [];
 
   // Acordes del guitar.json
+  // Estructura: db.chords[root] = [{suffix, positions:[...]}]
   if(db && db.chords){
     Object.keys(db.chords).forEach(function(root){
-      Object.keys(db.chords[root]).forEach(function(suffix){
-        const name = root + (suffix==='major'?'':suffix==='minor'?'m':suffix);
-        const positions = db.chords[root][suffix];
-        if(positions&&positions.length) allChords.push({name:name, count:positions.length, source:'db'});
+      var arr = db.chords[root];
+      if(!Array.isArray(arr)) return;
+      arr.forEach(function(entry){
+        var suffix = entry.suffix||'';
+        var name = root + (suffix==='major'?'': suffix==='minor'?'m': suffix);
+        var count = (entry.positions||[]).length;
+        if(count>0) allChords.push({name:name, count:count, source:'db'});
       });
     });
   }
@@ -1820,7 +1824,14 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
-function showView(v){['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
+function showView(v){
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  const t=document.getElementById(v);if(t)t.style.display='block';
+  // Actualizar nombre en el header
+  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists'};
+  const hn=document.getElementById('header-section-name');
+  if(hn) hn.textContent=names[v]||'Cancionero';
+}
 function showList(){tpHideBar();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
