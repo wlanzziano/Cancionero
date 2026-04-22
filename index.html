@@ -327,7 +327,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.67</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.68</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -345,7 +345,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="side-menu-item" onclick="closeSideMenu();showList()">&#127925; Canciones</div>
       <div class="side-menu-item" onclick="closeSideMenu();openSetlists()">&#127897;&#65039; Setlists</div>
       <div class="side-menu-sep"></div>
-      <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Gestionar acordes</div>
+      <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Acordes</div>
       <div class="side-menu-item" id="smenu-users" onclick="closeSideMenu();openUsers()" style="display:none">&#128101; Usuarios</div>
       <div class="side-menu-sep" id="smenu-admin-sep" style="display:none"></div>
       <div class="side-menu-item" onclick="closeSideMenu();openThemePanel()">&#127752; Personalizar tema</div>
@@ -808,12 +808,17 @@ async function openChordsManager(){
 
 async function renderChordsManager(){
   const cv = document.getElementById('chords-view');
+  const canEdit = currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
   cv.innerHTML = `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="form-card">
-      <div class="form-title" style="margin-bottom:16px">Gestionar acordes</div>
-      <div id="chords-list-wrap"><div style="color:var(--text3);font-size:14px;padding:12px 0">Cargando...</div></div>
-      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:14px">Agregar acorde</div>
+      <div class="form-title" style="margin-bottom:4px">Acordes</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Toca cualquier acorde para ver su diagrama</div>
+      <input type="text" id="chord-search" placeholder="&#128269; Buscar acorde..." oninput="filterChordsList()"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);
+        padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:16px">
+      <div id="chords-list-wrap"><div style="color:var(--text3);font-size:13px;padding:8px 0">Cargando...</div></div>
+      ${canEdit?`<div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:14px">Agregar acorde personalizado</div>
         <div class="row-2">
           <div class="field"><label>Nombre</label><input type="text" id="ca-name" placeholder="Ej: D/F# o Cadd9"></div>
           <div class="field"><label>Posición</label><input type="number" id="ca-pos" value="1" min="1" max="9"></div>
@@ -830,28 +835,82 @@ async function renderChordsManager(){
         <div class="form-actions" style="margin-top:12px;padding-top:12px">
           <button class="btn-save" onclick="saveCustomChord()">Guardar acorde</button>
         </div>
-      </div>
+      </div>`:''}
     </div>`;
 
-  // Cargar lista actual
+  // Cargar acordes personalizados del Sheet
   const r = await apiGet({action:'chords'});
+  const customList = r.ok ? (r.chords||[]) : [];
+
+  // Cargar guitar.json
+  const db = await loadGuitarDB();
+  let allChords = [];
+
+  // Acordes del guitar.json
+  if(db && db.chords){
+    Object.keys(db.chords).forEach(function(root){
+      Object.keys(db.chords[root]).forEach(function(suffix){
+        const name = root + (suffix==='major'?'':suffix==='minor'?'m':suffix);
+        const positions = db.chords[root][suffix];
+        if(positions&&positions.length) allChords.push({name:name, count:positions.length, source:'db'});
+      });
+    });
+  }
+
+  // Acordes personalizados (marcar como custom)
+  customList.forEach(function(ch){
+    var existing = allChords.find(function(a){return a.name===ch.name;});
+    if(existing){ existing.source='both'; existing.custom=ch; }
+    else allChords.push({name:ch.name, count:(ch.positions||[]).length, source:'custom', custom:ch});
+  });
+
+  // Ordenar A-Z
+  allChords.sort(function(a,b){return a.name.localeCompare(b.name);});
+  window._allChordsCache = allChords;
+  renderChordsList(allChords, canEdit);
+}
+
+function chordViewClick(btn){showChordDiagram(btn.dataset.cname);}
+function chordDelClick(btn){
+  var n=btn.dataset.cname;
+  confirmDelete('chord',n,n,function(){deleteCustomChord(n);});
+}
+function filterChordsList(){
+  var q = (document.getElementById('chord-search').value||'').trim().toLowerCase();
+  var canEdit = currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
+  var filtered = q ? (window._allChordsCache||[]).filter(function(ch){return ch.name.toLowerCase().indexOf(q)>=0;}) : (window._allChordsCache||[]);
+  renderChordsList(filtered, canEdit);
+}
+
+function renderChordsList(list, canEdit){
   const wrap = document.getElementById('chords-list-wrap');
-  if(!r.ok){wrap.innerHTML=`<div style="color:var(--red);font-size:13px">${r.error}</div>`;return;}
-  const chords = r.chords||[];
-  if(!chords.length){wrap.innerHTML='<div style="color:var(--text3);font-size:13px">No hay acordes personalizados</div>';return;}
-  // Agrupar por nombre
-  // El script ya devuelve agrupado: [{name, positions:[]}]
-  wrap.innerHTML = chords.map(ch=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div>
-        <span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--text)">${escH(ch.name)}</span>
-        <span style="font-size:12px;color:var(--text3);margin-left:8px">${(ch.positions||[]).length} posición${(ch.positions||[]).length>1?'es':''}</span>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="sv-action-btn" style="padding:5px 12px;font-size:12px" onclick="showChordDiagram('${escH(ch.name)}')">Ver</button>
-        <button class="song-del" onclick="confirmDelete('chord','${escH(ch.name)}','${escH(ch.name)}',function(){deleteCustomChord('${escH(ch.name)}');})">&#10005;</button>
-      </div>
-    </div>`).join('');
+  if(!wrap) return;
+  if(!list.length){
+    wrap.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">No se encontraron acordes</div>';
+    return;
+  }
+  var html='';
+  list.forEach(function(ch){
+    var badge = ch.source==='custom'
+      ? '<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px">personalizado</span>'
+      : ch.source==='both'
+      ? '<span style="font-size:10px;background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 6px;margin-left:6px">db+custom</span>'
+      : '';
+    var delBtn = canEdit&&(ch.source==='custom'||ch.source==='both')
+      ? '<button class="song-del" onclick="chordDelClick(this)" data-cname="'+escH(ch.name)+'">✕</button>'
+      : '';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;cursor:pointer;flex:1;min-width:0" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">'
+      +'<span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--accent)">'+escH(ch.name)+'</span>'
+      +badge
+      +'<span style="font-size:11px;color:var(--text3);margin-left:8px">'+ch.count+' pos.</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">'
+      +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">Ver</button>'
+      +delBtn
+      +'</div></div>';
+  });
+  wrap.innerHTML=html;
 }
 
 async function saveCustomChord(){
