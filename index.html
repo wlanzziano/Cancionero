@@ -912,7 +912,7 @@ function renderSetlists(){
     '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
 
   el.innerHTML = `
-    <button class="back-btn" onclick="songNavOrigin==='setlist'?openSetlists():showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="goBack()">&#8592; Volver</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">Setlists</div>
       <button class="btn-add" onclick="createSetlist()">+ Nuevo</button>
@@ -959,7 +959,7 @@ function renderSetlistDetail(){
           <button class="sl-move-btn" onclick="event.stopPropagation();slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
           <button class="sl-move-btn" onclick="event.stopPropagation();slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
         </div>
-        <button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openSong('${s.id}','setlist')">Abrir</button>
+        <button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();openSong('${s.id}')">Abrir</button>
         <button class="song-del" onclick="event.stopPropagation();removeFromSetlist('${s.id}')">&#10005;</button>
       </div>
     </div>`).join('') :
@@ -1048,7 +1048,7 @@ function slSelectCard(idx){
     var sl=(currentSetlist.songs||[]);
     var sid=sl[idx];
     var song=songs.find(function(s){return String(s.id)===String(sid);});
-    if(song) openSong(song.id,'setlist');
+    if(song) openSong(song.id);
     selectedSlIdx=null;
   } else {
     selectedSlIdx=idx;
@@ -1492,7 +1492,7 @@ async function doLogin(){
   }else{err.textContent=r.error||'Código incorrecto';}
 }
 function doLogout(){
-  currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
+  currentUser=null;songs=[];navHistory=[];localStorage.removeItem('cancionero_session');
   document.getElementById('app').style.display='none';
   document.getElementById('login-code').value='';
   document.getElementById('login-err').textContent='';
@@ -1578,10 +1578,9 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
 }
-function openSong(id, origin){
+function openSong(id){
   currentSong=songs.find(s=>String(s.id)===String(id));
   if(!currentSong)return;
-  if(origin) songNavOrigin=origin;
   semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
 }
 function drawSong(){
@@ -1627,7 +1626,7 @@ function drawSong(){
     secs+='<div style="height:2px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="songNavOrigin==='setlist'?openSetlists():showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="goBack()">&#8592; Volver</button>
     <div class="sv-card">
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
@@ -1790,7 +1789,23 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
-function showView(v){['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});const t=document.getElementById(v);if(t)t.style.display='block';}
+function showView(v){
+  // Guardar vista actual en historial antes de cambiar
+  var views=['list-view','song-view','add-view','users-view','chords-view','setlists-view'];
+  var current=views.find(function(id){var el=document.getElementById(id);return el&&el.style.display!=='none';});
+  if(current&&current!==v){navHistory.push(current);}
+  if(navHistory.length>10) navHistory.shift();
+  views.forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  var t=document.getElementById(v);if(t)t.style.display='block';
+}
+function goBack(){
+  // Quitar vistas de song-view duplicadas del historial
+  while(navHistory.length>1&&navHistory[navHistory.length-1]==='song-view') navHistory.pop();
+  var prev=navHistory.pop();
+  if(!prev||prev==='list-view'){showList();return;}
+  if(prev==='setlists-view'){openSetlists();return;}
+  showList();
+}
 function showList(){tpHideBar();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
