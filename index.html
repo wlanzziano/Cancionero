@@ -96,6 +96,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .song-edit:hover{color:var(--accent);background:var(--accent-bg)}
 .empty{text-align:center;padding:48px 0;color:var(--text3)}
 .sync-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 0;margin-bottom:8px}
+.chord-group{border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;overflow:hidden}
+.chord-group-header{display:flex;align-items:center;gap:6px;padding:10px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
+.chord-group-header:hover{background:var(--accent-bg)}
 .sync-btn:hover{color:var(--accent)}
 .offline-banner{display:none;align-items:center;gap:8px;background:rgba(251,191,36,.12);border:1px solid var(--amber-border);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--amber)}
 .spin{animation:spin .8s linear infinite}
@@ -327,7 +330,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.70</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.71</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -656,13 +659,14 @@ async function loadCustomChords(){
 }
 
 function parseChordKey(name){
-  // Extraer nota raíz y sufijo para buscar en guitar.json
   const m = name.match(/^([A-G][b#]?)(.*)/);
   if(!m) return null;
   let key = m[1], suffix = m[2]||'';
   // Normalizar bemoles a #
-  const map={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
-  if(map[key]) key=map[key];
+  const flatMap={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+  if(flatMap[key]) key=flatMap[key];
+  // Convertir # a sharp para buscar en guitar.json (Csharp, Dsharp, etc.)
+  key = key.replace('#','sharp');
   // Sufijo vacío = major
   if(!suffix) suffix='major';
   else if(suffix==='m') suffix='minor';
@@ -894,28 +898,77 @@ function renderChordsList(list, canEdit){
     wrap.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">No se encontraron acordes</div>';
     return;
   }
-  var html='';
+
+  // Si hay búsqueda activa — mostrar plano sin agrupación
+  var q=(document.getElementById('chord-search')||{}).value||'';
+  if(q.trim()){
+    var html='';
+    list.forEach(function(ch){ html+=chordRowHTML(ch,canEdit); });
+    wrap.innerHTML=html;
+    return;
+  }
+
+  // Agrupar por nota raíz
+  var rootOrder=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  var groups={};
+  rootOrder.forEach(function(r){groups[r]=[];});
   list.forEach(function(ch){
-    var badge = ch.source==='custom'
-      ? '<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px">personalizado</span>'
-      : ch.source==='both'
-      ? '<span style="font-size:10px;background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 6px;margin-left:6px">db+custom</span>'
-      : '';
-    var delBtn = canEdit&&(ch.source==='custom'||ch.source==='both')
-      ? '<button class="song-del" onclick="chordDelClick(this)" data-cname="'+escH(ch.name)+'">✕</button>'
-      : '';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">'
-      +'<div style="display:flex;align-items:center;cursor:pointer;flex:1;min-width:0" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">'
-      +'<span style="font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--accent)">'+escH(ch.name)+'</span>'
+    var m=ch.name.match(/^([A-G][b#]?)/);
+    var root=m?m[1]:'?';
+    // Normalizar bemoles
+    var flatMap={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+    if(flatMap[root]) root=flatMap[root];
+    if(!groups[root]) groups[root]=[];
+    groups[root].push(ch);
+  });
+
+  var html='';
+  rootOrder.forEach(function(root){
+    var items=groups[root];
+    if(!items||!items.length) return;
+    var hasCustom=items.some(function(ch){return ch.source==='custom'||ch.source==='both';});
+    var badge=hasCustom?'<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:2px 6px;margin-left:6px">+custom</span>':'';
+    html+='<div class="chord-group">'
+      +'<div class="chord-group-header" onclick="toggleChordGroup(this)">'
+      +'<span style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text)">'+root+'</span>'
       +badge
-      +'<span style="font-size:11px;color:var(--text3);margin-left:8px">'+ch.count+' pos.</span>'
+      +'<span style="font-size:12px;color:var(--text3);margin-left:8px">'+items.length+' variantes</span>'
+      +'<span class="chord-group-arrow" style="margin-left:auto;color:var(--text3);font-size:12px">▾</span>'
       +'</div>'
-      +'<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">'
-      +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">Ver</button>'
-      +delBtn
-      +'</div></div>';
+      +'<div class="chord-group-body" style="display:none">';
+    items.forEach(function(ch){ html+=chordRowHTML(ch,canEdit); });
+    html+='</div></div>';
   });
   wrap.innerHTML=html;
+}
+
+function chordRowHTML(ch, canEdit){
+  var badge = ch.source==='custom'
+    ? '<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px">personalizado</span>'
+    : ch.source==='both'
+    ? '<span style="font-size:10px;background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:6px">db+custom</span>'
+    : '';
+  var delBtn = canEdit&&(ch.source==='custom'||ch.source==='both')
+    ? '<button class="song-del" onclick="chordDelClick(this)" data-cname="'+escH(ch.name)+'">✕</button>'
+    : '';
+  return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 8px 12px;border-bottom:1px solid var(--border)">'
+    +'<div style="display:flex;align-items:center;cursor:pointer;flex:1;min-width:0" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">'
+    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:500;color:var(--accent)">'+escH(ch.name)+'</span>'
+    +badge
+    +'<span style="font-size:11px;color:var(--text3);margin-left:6px">'+ch.count+' pos.</span>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
+    +'<button class="sv-action-btn" style="padding:3px 8px;font-size:11px" onclick="chordViewClick(this)" data-cname="'+escH(ch.name)+'">Ver</button>'
+    +delBtn
+    +'</div></div>';
+}
+
+function toggleChordGroup(header){
+  var body=header.nextElementSibling;
+  var arrow=header.querySelector('.chord-group-arrow');
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(arrow) arrow.textContent=open?'▾':'▴';
 }
 
 async function saveCustomChord(){
