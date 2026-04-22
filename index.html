@@ -301,7 +301,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="btn-add" id="add-song-btn" onclick="openAdd()" style="display:none">+ Nueva</button>
     </div>
   </div>
-  <div id="list-view">
+  <div id="list-view" style="display:none">
     <div class="list-wrap">
       <div class="role-bar">
         <div><span class="role-badge" id="role-badge"></span><span class="user-name-lbl" id="user-name-display" style="margin-left:8px"></span></div>
@@ -324,7 +324,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.64</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.65</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1789,18 +1789,20 @@ async function addUserAction(){
   if(r.ok){toast('✓ Usuario agregado');document.getElementById('u-name').value='';document.getElementById('u-code').value='';const r2=await api({action:'users'});if(r2.ok)renderUsersList(r2.users||[]);}
   else toast('Error: '+r.error);
 }
+var currentView = null;
 function showView(v){
-  // Guardar vista actual en historial antes de cambiar
-  var views=['list-view','song-view','add-view','users-view','chords-view','setlists-view'];
-  var current=views.find(function(id){var el=document.getElementById(id);return el&&el.style.display!=='none';});
-  if(current&&current!==v){navHistory.push(current);}
-  if(navHistory.length>10) navHistory.shift();
-  views.forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  if(currentView && currentView!==v){
+    navHistory.push(currentView);
+    if(navHistory.length>10) navHistory.shift();
+  }
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display='none';
+  });
   var t=document.getElementById(v);if(t)t.style.display='block';
+  currentView=v;
 }
 function goBack(){
-  // Quitar vistas de song-view duplicadas del historial
-  while(navHistory.length>1&&navHistory[navHistory.length-1]==='song-view') navHistory.pop();
+  while(navHistory.length>0 && navHistory[navHistory.length-1]===currentView) navHistory.pop();
   var prev=navHistory.pop();
   if(!prev||prev==='list-view'){showList();return;}
   if(prev==='setlists-view'){openSetlists();return;}
