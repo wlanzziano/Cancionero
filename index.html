@@ -99,6 +99,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .chord-group{border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;overflow:hidden}
 .chord-group-header{display:flex;align-items:center;gap:6px;padding:10px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
 .chord-group-header:hover{background:var(--accent-bg)}
+.chord-subgroup{border-bottom:1px solid var(--border);margin:0 0 2px 0}
+.chord-subgroup-header{display:flex;align-items:center;gap:6px;padding:7px 14px 7px 20px;cursor:pointer;background:var(--surface);transition:background .15s}
+.chord-subgroup-header:hover{background:var(--accent-bg)}
 .sync-btn:hover{color:var(--accent)}
 .offline-banner{display:none;align-items:center;gap:8px;background:rgba(251,191,36,.12);border:1px solid var(--amber-border);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--amber)}
 .spin{animation:spin .8s linear infinite}
@@ -330,7 +333,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.73</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.74</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -908,7 +911,7 @@ function renderChordsList(list, canEdit){
     return;
   }
 
-  // Categorías por tipo de sufijo
+  var ROOT_ORDER=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   var CATS=[
     {label:'Mayores',      suffixes:['major','major7','major9','major6','major6add9','major7sharp11','add9','majoradd9']},
     {label:'Menores',      suffixes:['minor','minor7','minor9','minor6','minor11','minor13','minor6add9','minormajor7','minoradd9']},
@@ -917,47 +920,69 @@ function renderChordsList(list, canEdit){
     {label:'Aumentados / Disminuidos', suffixes:['augmented','diminished','diminished7','halfdiminished']},
   ];
 
-  // Asignar cada acorde a su categoría
-  var groups={};
-  CATS.forEach(function(cat){groups[cat.label]=[];});
-
-  // Mapeo adicional de sufijos de nombre de acorde a categoría
   function guessCategory(ch){
     var dbSuffix=ch.dbSuffix||'';
-    // Buscar por dbSuffix primero
     for(var ci=0;ci<CATS.length;ci++){
       if(CATS[ci].suffixes.indexOf(dbSuffix)>=0) return CATS[ci].label;
     }
-    // Inferir por el nombre del acorde
-    var name=ch.name;
-    var sfx=name.match(/^[A-G][b#]?(.*)/);
-    var s=sfx?sfx[1]:'';
-    if(!s||s==='maj'||s.match(/^(maj7|maj9|maj6|add9|6|9)$/i)) return 'Mayores';
-    if(s.match(/^m($|7|9|6|11|13|aj)/i)) return 'Menores';
-    if(s.match(/^7/)) return 'Dominantes';
-    if(s.match(/^sus/)) return 'Suspendidos';
-    if(s.match(/^(aug|dim)/i)) return 'Aumentados / Disminuidos';
-    return 'Mayores'; // default para personalizados sin sufijo conocido
+    var sfx=(ch.name.match(/^[A-G][b#]?(.*)/)||[])[1]||'';
+    if(!sfx||sfx.match(/^(maj7?|maj9|maj6|add9|6|9)$/i)) return 'Mayores';
+    if(sfx.match(/^m($|7|9|6|11|13|aj)/i)) return 'Menores';
+    if(sfx.match(/^7/)) return 'Dominantes';
+    if(sfx.match(/^sus/)) return 'Suspendidos';
+    if(sfx.match(/^(aug|dim)/i)) return 'Aumentados / Disminuidos';
+    return 'Mayores';
   }
 
+  function getRoot(name){
+    var m=name.match(/^([A-G][b#]?)/);
+    var r=m?m[1]:'?';
+    var flatMap={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+    return flatMap[r]||r;
+  }
+
+  // Agrupar: cat → root → [chords]
+  var catGroups={};
+  CATS.forEach(function(cat){ catGroups[cat.label]={}; });
   list.forEach(function(ch){
     var cat=guessCategory(ch);
-    if(groups[cat]) groups[cat].push(ch);
-    else groups['Mayores'].push(ch);
+    var root=getRoot(ch.name);
+    if(!catGroups[cat]) catGroups[cat]={};
+    if(!catGroups[cat][root]) catGroups[cat][root]=[];
+    catGroups[cat][root].push(ch);
   });
 
   var html='';
   CATS.forEach(function(cat){
-    var items=groups[cat.label];
-    if(!items||!items.length) return;
-    html+='<div class="chord-group">'
+    var rootMap=catGroups[cat.label];
+    if(!rootMap||!Object.keys(rootMap).length) return;
+    // Contar total
+    var total=0;
+    ROOT_ORDER.forEach(function(r){ if(rootMap[r]) total+=rootMap[r].length; });
+
+    html+='<div class="chord-group" style="margin-bottom:10px">'
       +'<div class="chord-group-header" onclick="toggleChordGroup(this)">'
       +'<span style="font-size:15px;font-weight:700;color:var(--text)">'+cat.label+'</span>'
-      +'<span style="font-size:12px;color:var(--text3);margin-left:8px">'+items.length+' acordes</span>'
+      +'<span style="font-size:12px;color:var(--text3);margin-left:8px">'+total+' acordes</span>'
       +'<span class="chord-group-arrow" style="margin-left:auto;color:var(--text3);font-size:12px">▾</span>'
       +'</div>'
-      +'<div class="chord-group-body" style="display:none">';
-    items.forEach(function(ch){ html+=chordRowHTML(ch,canEdit); });
+      +'<div class="chord-group-body" style="display:none;padding:8px 0 4px">';
+
+    // Sub-grupos por nota raíz
+    ROOT_ORDER.forEach(function(root){
+      var items=rootMap[root];
+      if(!items||!items.length) return;
+      html+='<div class="chord-subgroup">'
+        +'<div class="chord-subgroup-header" onclick="toggleChordSubgroup(this)">'
+        +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--accent)">'+root+'</span>'
+        +'<span style="font-size:11px;color:var(--text3);margin-left:6px">'+items.length+'</span>'
+        +'<span class="chord-sub-arrow" style="margin-left:auto;color:var(--text3);font-size:11px">▾</span>'
+        +'</div>'
+        +'<div class="chord-subgroup-body" style="display:none">';
+      items.forEach(function(ch){ html+=chordRowHTML(ch,canEdit); });
+      html+='</div></div>';
+    });
+
     html+='</div></div>';
   });
   wrap.innerHTML=html;
@@ -984,6 +1009,13 @@ function chordRowHTML(ch, canEdit){
     +'</div></div>';
 }
 
+function toggleChordSubgroup(header){
+  var body=header.nextElementSibling;
+  var arrow=header.querySelector('.chord-sub-arrow');
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(arrow) arrow.textContent=open?'▾':'▴';
+}
 function toggleChordGroup(header){
   var body=header.nextElementSibling;
   var arrow=header.querySelector('.chord-group-arrow');
