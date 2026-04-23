@@ -330,7 +330,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.71</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.72</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -861,7 +861,7 @@ async function renderChordsManager(){
         var rootDisplay = root.replace('sharp','#');
         var name = rootDisplay + (suffix==='major'?'': suffix==='minor'?'m': suffix);
         var count = (entry.positions||[]).length;
-        if(count>0) allChords.push({name:name, count:count, source:'db'});
+        if(count>0) allChords.push({name:name, count:count, source:'db', dbSuffix:suffix});
       });
     });
   }
@@ -899,7 +899,7 @@ function renderChordsList(list, canEdit){
     return;
   }
 
-  // Si hay búsqueda activa — mostrar plano sin agrupación
+  // Si hay búsqueda — mostrar plano
   var q=(document.getElementById('chord-search')||{}).value||'';
   if(q.trim()){
     var html='';
@@ -908,31 +908,50 @@ function renderChordsList(list, canEdit){
     return;
   }
 
-  // Agrupar por nota raíz
-  var rootOrder=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  // Categorías por tipo de sufijo
+  var CATS=[
+    {label:'Mayores',      suffixes:['major','major7','major9','major6','major6add9','major7sharp11','add9','majoradd9']},
+    {label:'Menores',      suffixes:['minor','minor7','minor9','minor6','minor11','minor13','minor6add9','minormajor7','minoradd9']},
+    {label:'Dominantes',   suffixes:['dominant7','dominant9','dominant11','dominant13','dominant7sus4','dominant7flat5','dominant7sharp5','dominant7flat9','dominant7sharp9']},
+    {label:'Suspendidos',  suffixes:['sus2','sus4']},
+    {label:'Aumentados / Disminuidos', suffixes:['augmented','diminished','diminished7','halfdiminished']},
+    {label:'Personalizados', suffixes:['__custom__']},
+    {label:'Otros',        suffixes:['__other__']},
+  ];
+
+  // Asignar cada acorde a su categoría
   var groups={};
-  rootOrder.forEach(function(r){groups[r]=[];});
+  CATS.forEach(function(cat){groups[cat.label]=[];});
+
   list.forEach(function(ch){
-    var m=ch.name.match(/^([A-G][b#]?)/);
-    var root=m?m[1]:'?';
-    // Normalizar bemoles
-    var flatMap={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
-    if(flatMap[root]) root=flatMap[root];
-    if(!groups[root]) groups[root]=[];
-    groups[root].push(ch);
+    // Acordes personalizados van siempre a "Personalizados"
+    if(ch.source==='custom'){
+      groups['Personalizados'].push(ch);
+      return;
+    }
+    // Extraer sufijo del nombre
+    var mSuffix=ch.name.match(/^[A-G][b#]?(.*)/);
+    var rawSuffix=mSuffix?mSuffix[1]:'';
+    // Buscar en guitar.json el sufijo interno
+    var dbSuffix=ch.dbSuffix||rawSuffix;
+    var found=false;
+    for(var ci=0;ci<CATS.length-2;ci++){
+      if(CATS[ci].suffixes.indexOf(dbSuffix)>=0){
+        groups[CATS[ci].label].push(ch);
+        found=true;break;
+      }
+    }
+    if(!found) groups['Otros'].push(ch);
   });
 
   var html='';
-  rootOrder.forEach(function(root){
-    var items=groups[root];
+  CATS.forEach(function(cat){
+    var items=groups[cat.label];
     if(!items||!items.length) return;
-    var hasCustom=items.some(function(ch){return ch.source==='custom'||ch.source==='both';});
-    var badge=hasCustom?'<span style="font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:2px 6px;margin-left:6px">+custom</span>':'';
     html+='<div class="chord-group">'
       +'<div class="chord-group-header" onclick="toggleChordGroup(this)">'
-      +'<span style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text)">'+root+'</span>'
-      +badge
-      +'<span style="font-size:12px;color:var(--text3);margin-left:8px">'+items.length+' variantes</span>'
+      +'<span style="font-size:15px;font-weight:700;color:var(--text)">'+cat.label+'</span>'
+      +'<span style="font-size:12px;color:var(--text3);margin-left:8px">'+items.length+' acordes</span>'
       +'<span class="chord-group-arrow" style="margin-left:auto;color:var(--text3);font-size:12px">▾</span>'
       +'</div>'
       +'<div class="chord-group-body" style="display:none">';
