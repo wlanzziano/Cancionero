@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.85</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.86</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2253,6 +2253,12 @@ function showView(v){
   const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil'};
   const hn=document.getElementById('header-section-name');
   if(hn) hn.textContent=names[v]||'Cancionero';
+  // Mostrar botón Nueva solo en la vista de canciones
+  var addBtn=document.getElementById('add-song-btn');
+  if(addBtn){
+    var canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
+    addBtn.style.display=(v==='list-view'&&canEdit)?'block':'none';
+  }
 }
 function showList(){tpHideBar();showView('list-view');renderList();}
 function parseBody(text){
