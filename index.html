@@ -380,7 +380,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.87</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.88</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -389,6 +389,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div id="chords-view" style="display:none"></div>
   <div id="calendar-view" style="display:none"></div>
 <div id="tuner-view" style="display:none"></div>
+<div id="metronome-view" style="display:none"></div>
 <div id="profile-view" style="display:none"></div>
 <div id="setlists-view" style="display:none"></div>
 </div>
@@ -401,14 +402,20 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="side-menu-item" onclick="closeSideMenu();showList()">&#127925; Canciones</div>
       <div class="side-menu-item" onclick="closeSideMenu();openSetlists()">&#127897;&#65039; Setlists</div>
       <div class="side-menu-item" onclick="closeSideMenu();openCalendar()">&#128197; Calendario</div>
-      <div class="side-menu-item" onclick="closeSideMenu();openTuner()">&#127929; Afinador</div>
-      <div class="side-menu-item" onclick="closeSideMenu();openProfile()">&#128100; Mi perfil</div>
+      <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()">&#127928; Acordes</div>
       <div class="side-menu-sep"></div>
-      <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Acordes</div>
-      <div class="side-menu-item" id="smenu-users" onclick="closeSideMenu();openUsers()" style="display:none">&#128101; Usuarios</div>
-      <div class="side-menu-sep" id="smenu-admin-sep" style="display:none"></div>
+      <!-- Herramientas -->
+      <div class="side-menu-item" onclick="toggleToolsMenu(this)">&#128295; Herramientas <span id="tools-arrow" style="margin-left:auto;font-size:11px">&#9662;</span></div>
+      <div id="tools-submenu" style="display:none">
+        <div class="side-menu-item" style="padding-left:36px;font-size:14px" onclick="closeSideMenu();openTuner()">&#127929; Afinador</div>
+        <div class="side-menu-item" style="padding-left:36px;font-size:14px" onclick="closeSideMenu();openMetronome()">&#9201;&#65039; Metrónomo</div>
+      </div>
+      <div class="side-menu-sep"></div>
       <div class="side-menu-item" onclick="closeSideMenu();openThemePanel()">&#127752; Personalizar tema</div>
     </div>
+    <div class="side-menu-sep"></div>
+    <div class="side-menu-item" onclick="closeSideMenu();openProfile()">&#128100; Mi perfil</div>
+    <div class="side-menu-item" id="smenu-users" onclick="closeSideMenu();openUsers()" style="display:none">&#128101; Usuarios</div>
     <div class="side-menu-sep"></div>
     <div class="side-menu-item danger" onclick="closeSideMenu();doLogout()">&#8592; Cerrar sesión</div>
   </div>
@@ -1546,6 +1553,127 @@ var GUITAR_STRINGS = [
   {name:'E4', freq:329.63}
 ];
 
+// ── Metrónomo ─────────────────────────────────────────────
+var metroInterval = null;
+var metroBpm = 80;
+var metroBeats = 4;
+var metroCurrent = 0;
+var metroCtx = null;
+
+function openMetronome(){
+  showView('metronome-view');
+  renderMetronome();
+}
+
+function renderMetronome(){
+  var el=document.getElementById('metronome-view');
+  if(!el) return;
+  var running=metroInterval!==null;
+  el.innerHTML=
+    '<button class="back-btn" onclick="stopMetronome();showList()">&#8592; Volver</button>'+
+    '<div style="max-width:360px;margin:0 auto;padding:8px 0">'+
+      '<div class="tuner-card">'+
+        '<div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px">Metrónomo</div>'+
+        // Beats visuales
+        '<div id="metro-beats-row" style="display:flex;justify-content:center;gap:10px;margin-bottom:24px">'+
+          Array.from({length:metroBeats},function(_,i){
+            return '<div id="mb'+i+'" style="width:32px;height:32px;border-radius:50%;background:'+(i===0?'var(--accent)':'var(--surface2)')+';border:2px solid var(--border);transition:background .05s"></div>';
+          }).join('')+
+        '</div>'+
+        // BPM display
+        '<div style="font-family:var(--font-mono);font-size:64px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px">'+metroBpm+'</div>'+
+        '<div style="font-size:12px;color:var(--text3);margin-bottom:20px">BPM</div>'+
+        // Slider
+        '<input type="range" id="metro-bpm-slider" min="30" max="240" value="'+metroBpm+'" '+
+          'oninput="metroBpmChange(this.value)" '+
+          'style="width:100%;accent-color:var(--accent);margin-bottom:16px">'+
+        // Presets BPM
+        '<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">'+
+          [60,80,100,120,140,160].map(function(b){
+            return '<button onclick="metroBpmChange('+b+')" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text2);cursor:pointer">'+b+'</button>';
+          }).join('')+
+        '</div>'+
+        // Compás
+        '<div style="font-size:13px;color:var(--text2);margin-bottom:10px">Compás</div>'+
+        '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px">'+
+          [2,3,4,6].map(function(b){
+            return '<button onclick="metroBeatsChange('+b+')" style="background:'+(b===metroBeats?'var(--accent-bg)':'var(--surface2)')+';border:1px solid '+(b===metroBeats?'var(--accent)':'var(--border)')+';border-radius:var(--r-sm);padding:6px 14px;font-family:var(--font-mono);font-size:14px;color:'+(b===metroBeats?'var(--accent)':'var(--text2)')+';cursor:pointer">'+b+'/4</button>';
+          }).join('')+
+        '</div>'+
+        // Botón play/stop
+        '<button id="metro-btn" onclick="toggleMetronome()" style="width:100%;padding:14px;border:none;border-radius:var(--r-sm);font-family:var(--font-body);font-size:16px;font-weight:600;cursor:pointer;background:'+(running?'var(--red-bg)':'var(--accent)')+';color:'+(running?'var(--red)':'#fff')+'">'+
+          (running?'⏹ Detener':'▶ Iniciar')+
+        '</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function metroBpmChange(val){
+  metroBpm=parseInt(val);
+  var sl=document.getElementById('metro-bpm-slider');
+  if(sl) sl.value=metroBpm;
+  var disp=document.querySelector('#metronome-view .tuner-card div[style*="font-size:64px"]');
+  if(disp) disp.textContent=metroBpm;
+  if(metroInterval) { stopMetronome(); startMetronome(); }
+}
+
+function metroBeatsChange(b){
+  metroBeats=b;
+  metroCurrent=0;
+  if(metroInterval) { stopMetronome(); startMetronome(); }
+  else renderMetronome();
+}
+
+function toggleMetronome(){
+  if(metroInterval) stopMetronome();
+  else startMetronome();
+  renderMetronome();
+}
+
+function startMetronome(){
+  metroCurrent=0;
+  metroCtx = new (window.AudioContext||window.webkitAudioContext)();
+  metroTick();
+  metroInterval=setInterval(function(){
+    metroCurrent=(metroCurrent+1)%metroBeats;
+    metroTick();
+  }, 60000/metroBpm);
+}
+
+function stopMetronome(){
+  if(metroInterval){clearInterval(metroInterval);metroInterval=null;}
+  if(metroCtx){metroCtx.close();metroCtx=null;}
+  metroCurrent=0;
+}
+
+function metroTick(){
+  // Sonido
+  if(metroCtx){
+    var osc=metroCtx.createOscillator();
+    var gain=metroCtx.createGain();
+    osc.connect(gain);gain.connect(metroCtx.destination);
+    osc.frequency.value=metroCurrent===0?1000:800;
+    gain.gain.setValueAtTime(0.3,metroCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.08);
+    osc.start(metroCtx.currentTime);
+    osc.stop(metroCtx.currentTime+0.08);
+  }
+  // Visual
+  for(var i=0;i<metroBeats;i++){
+    var dot=document.getElementById('mb'+i);
+    if(dot) dot.style.background=i===metroCurrent?(metroCurrent===0?'var(--accent)':'var(--green)'):'var(--surface2)';
+  }
+}
+
+
+function toggleToolsMenu(el){
+  var sub=document.getElementById("tools-submenu");
+  var arrow=document.getElementById("tools-arrow");
+  var open=sub&&sub.style.display!=="none";
+  if(sub) sub.style.display=open?"none":"block";
+  if(arrow) arrow.innerHTML=open?"&#9662;":"&#9652;";
+}
+
 function openTuner(){
   showView('tuner-view');
   renderTuner();
@@ -1560,9 +1688,23 @@ function renderTuner(){
       '<div class="tuner-card">'+
         '<div id="tuner-note" class="tuner-note no-signal">--</div>'+
         '<div id="tuner-freq" class="tuner-freq">-- Hz</div>'+
-        '<div class="tuner-bar-wrap">'+
-          '<div id="tuner-bar" class="tuner-bar" style="width:4px;height:100%;left:50%;background:var(--text3);transform:translateX(-50%)"></div>'+
-        '</div>'+
+        '<svg id="tuner-needle-svg" viewBox="0 0 200 110" style="width:100%;max-width:280px;margin:0 auto 8px;display:block">'+
+          '<!-- Arco de fondo -->'+
+          '<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--border2)" stroke-width="3"/>'+
+          '<!-- Zona verde central -->'+
+          '<path d="M 93 25 A 80 80 0 0 1 107 25" fill="none" stroke="var(--green)" stroke-width="6" stroke-linecap="round"/>'+
+          '<!-- Marcas de zona -->'+
+          '<path d="M 20 100 A 80 80 0 0 1 53 33" fill="none" stroke="var(--amber)" stroke-width="3" opacity="0.4"/>'+
+          '<path d="M 147 33 A 80 80 0 0 1 180 100" fill="none" stroke="var(--amber)" stroke-width="3" opacity="0.4"/>'+
+          '<!-- Aguja -->'+
+          '<line id="tuner-needle" x1="100" y1="100" x2="100" y2="22" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>'+
+          '<!-- Punto central -->'+
+          '<circle cx="100" cy="100" r="5" fill="var(--accent)"/>'+
+          '<!-- Labels -->'+
+          '<text x="14" y="108" font-size="9" fill="var(--text3)" text-anchor="middle">-50</text>'+
+          '<text x="186" y="108" font-size="9" fill="var(--text3)" text-anchor="middle">+50</text>'+
+          '<text x="100" y="108" font-size="9" fill="var(--green)" text-anchor="middle">0</text>'+
+        '</svg>'+
         '<div id="tuner-cents" class="tuner-cents" style="color:var(--text3)">Toca una cuerda</div>'+
         '<div class="tuner-strings">'+
           GUITAR_STRINGS.map(function(s,i){
@@ -1671,13 +1813,19 @@ function updateTunerUI(freq){
   noteEl.className='tuner-note'+(inTune?' in-tune':'');
   freqEl.textContent=freq.toFixed(1)+' Hz';
 
-  // Barra de afinación (-50 a +50 cents)
-  var pct=Math.max(0,Math.min(100,50+cents));
-  var color=inTune?'var(--green)':Math.abs(cents)>20?'var(--red)':'var(--amber)';
-  barEl.style.width='8px';
-  barEl.style.left=pct+'%';
-  barEl.style.background=color;
-  barEl.style.transform='translateX(-50%)';
+  // Aguja SVG (-50 a +50 cents → -90° a +90°)
+  var needle=document.getElementById('tuner-needle');
+  if(needle){
+    var angle=Math.max(-85,Math.min(85, cents * 1.7)); // mapear cents a grados
+    var rad=(angle-90)*Math.PI/180; // -90° = apunta izq, 0° = centro, +90° = der
+    var nx=100+78*Math.cos(rad);
+    var ny=100+78*Math.sin(rad);
+    needle.setAttribute('x2', nx.toFixed(1));
+    needle.setAttribute('y2', ny.toFixed(1));
+    var color=inTune?'var(--green)':Math.abs(cents)>20?'var(--red)':'var(--amber)';
+    needle.setAttribute('stroke', color);
+  }
+  var barEl=document.getElementById('tuner-bar'); // compatibilidad
 
   if(inTune){
     centsEl.textContent='✓ Afinado';
@@ -2447,10 +2595,10 @@ async function addUserAction(){
   else toast('Error: '+r.error);
 }
 function showView(v){
-  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view','tuner-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view','tuner-view','metronome-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const t=document.getElementById(v);if(t)t.style.display='block';
   // Actualizar nombre en el header
-  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil','tuner-view':'Afinador'};
+  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil','tuner-view':'Afinador','metronome-view':'Metrónomo'};
   const hn=document.getElementById('header-section-name');
   if(hn) hn.textContent=names[v]||'Cancionero';
   // Mostrar botón Nueva solo en la vista de canciones
