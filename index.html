@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.83</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.84</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1240,11 +1240,8 @@ async function loadEvents(){
 
 async function openCalendar(){
   showView('calendar-view');
-  // Mostrar spinner mientras carga
-  var el=document.getElementById('calendar-view');
-  if(el) el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-size:14px">&#8635; Cargando...</div>';
-  await loadEvents();
-  renderCalendar();
+  renderCalendar(); // mostrar con datos actuales primero
+  loadEvents().then(function(){ renderCalendar(); }); // luego refrescar
 }
 
 function renderCalendar(){
@@ -1307,8 +1304,8 @@ function renderCalendar(){
     '</div>';
 }
 
-async function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}await loadEvents();renderCalendar();}
-async function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}await loadEvents();renderCalendar();}
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
 
 function calDayClick(day){
   var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
