@@ -507,7 +507,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxWZ3XcwgRXMUTEJ-jsEFUtwT2xkptxGv5ikyJR-XTT_I_wsQFlc09TuEYj4jEdjW5SaA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxwu_nTZUa3WznA9j6_jby1C1oXLjXZeMsP6Ulxe4qV3p4j6SfrntgQA_mx_9IXRZcXSA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -1701,9 +1701,12 @@ var mfInterval=null,mfBpm=80,mfBeats=4,mfCurrent=0,mfCtx=null,mfActive=false;
 function openMetroFloat(){
   if(!currentSong) return;
   mfBpm=parseInt(currentSong.bpm)||80;
-  var rawMeter=currentSong.meter||'4';
-  var mMatch=String(rawMeter).match(/^(\d+)/);
+  var rawMeter=String(currentSong.meter||'4');
+  // Si llegó como fecha de Sheets, ignorar y usar 4/4
+  if(rawMeter.length>5&&rawMeter.indexOf('-')>0) rawMeter='4';
+  var mMatch=rawMeter.match(/^(\d+)/);
   mfBeats=mMatch?parseInt(mMatch[1]):4;
+  if(mfBeats<2||mfBeats>12) mfBeats=4;
   mfCurrent=0;
   document.getElementById('metro-float').style.display='block';
   renderMetroFloat();
