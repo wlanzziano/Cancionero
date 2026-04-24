@@ -507,7 +507,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyD43-T5jFcgPd74x8SVlxogzN30NV4Xm14pvqbcjxaqpaYklyN1VR0zIOh1TdEJDQE3w/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwU5kmlnvIFQcAy1axprAP2MgqAyq323ZSasr1qqZPsz8WZrBY7R-oTGmP69pGkXCe1Qg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -2450,8 +2450,6 @@ async function loadSongs(){
     if(icon)icon.classList.remove('spin');
     if(r.ok){
       songs=r.songs||[];
-      // DEBUG temporal — ver meter de las canciones
-      songs.forEach(function(s){if(s.meter||s.bpm)console.log('Song:',s.title,'bpm:',s.bpm,'meter:',s.meter,'raw meter type:',typeof s.meter);});
       // Guardar en caché local
       try{localStorage.setItem('cancionero_songs_cache',JSON.stringify(songs));
           localStorage.setItem('cancionero_songs_cache_ts',Date.now());}catch(e){}
