@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.80</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.81</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1238,8 +1238,12 @@ async function loadEvents(){
   if(r.ok) events=r.events||[];
 }
 
-function openCalendar(){
+async function openCalendar(){
   showView('calendar-view');
+  // Mostrar spinner mientras carga
+  var el=document.getElementById('calendar-view');
+  if(el) el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-size:14px">&#8635; Cargando...</div>';
+  await loadEvents();
   renderCalendar();
 }
 
@@ -1425,14 +1429,12 @@ async function saveNewEvent(){
     usuarios:getSelectedUsers()};
   var r=await api({action:'add_event',event:ev});
   if(r.ok){
-    ev.id=r.id;
-    events.push(ev);
-    // Sincronizar mes del calendario al mes del evento guardado
+    // Navegar al mes del evento guardado
     var evDate=new Date(ev.fecha+'T12:00:00');
     calYear=evDate.getFullYear();
     calMonth=evDate.getMonth();
-    openCalendar();
     toast('✓ Evento guardado');
+    openCalendar(); // recarga del servidor
   }
   else toast('Error: '+r.error);
 }
@@ -1450,13 +1452,19 @@ async function saveEditEvent(){
     notas:(document.getElementById('ev-notas').value||'').trim(),
     usuarios:getSelectedUsers()};
   var r=await api({action:'edit_event',event:ev});
-  if(r.ok){var i=events.findIndex(function(e){return e.id===id;});if(i>=0)events[i]=ev;openEventDetail(id);toast('Evento actualizado');}
+  if(r.ok){
+    var evDate2=new Date(ev.fecha+'T12:00:00');
+    calYear=evDate2.getFullYear();
+    calMonth=evDate2.getMonth();
+    toast('✓ Evento actualizado');
+    openCalendar();
+  }
   else toast('Error: '+r.error);
 }
 
 async function deleteEventAction(id){
   var r=await apiGet({action:'delete_event',id:id});
-  if(r.ok){events=events.filter(function(e){return e.id!==id;});openCalendar();toast('Evento eliminado');}
+  if(r.ok){toast('✓ Evento eliminado');openCalendar();}
   else toast('Error: '+r.error);
 }
 
