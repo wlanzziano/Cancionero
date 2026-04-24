@@ -2450,6 +2450,8 @@ async function loadSongs(){
     if(icon)icon.classList.remove('spin');
     if(r.ok){
       songs=r.songs||[];
+      // DEBUG temporal — ver meter de las canciones
+      songs.forEach(function(s){if(s.meter||s.bpm)console.log('Song:',s.title,'bpm:',s.bpm,'meter:',s.meter,'raw meter type:',typeof s.meter);});
       // Guardar en caché local
       try{localStorage.setItem('cancionero_songs_cache',JSON.stringify(songs));
           localStorage.setItem('cancionero_songs_cache_ts',Date.now());}catch(e){}
