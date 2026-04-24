@@ -355,7 +355,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.75</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.76</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1242,24 +1242,24 @@ function renderCalendar(){
   const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const DAYS=['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
   const monthEvents=events.filter(function(ev){
-    var d=new Date(ev.fecha+'T12:00:00');
-    return d.getFullYear()===y&&d.getMonth()===m;
+    var evDate=new Date(ev.fecha+'T12:00:00');
+    return evDate.getFullYear()===y&&evDate.getMonth()===m;
   });
   var eventsByDay={};
   monthEvents.forEach(function(ev){
-    var d=new Date(ev.fecha+'T12:00:00').getDate();
-    if(!eventsByDay[d]) eventsByDay[d]=[];
-    eventsByDay[d].push(ev);
+    var evDay=new Date(ev.fecha+'T12:00:00').getDate();
+    if(!eventsByDay[evDay]) eventsByDay[d]=[];
+    eventsByDay[evDay].push(ev);
   });
   var days='';
   DAYS.forEach(function(d){days+='<div class="cal-dow">'+d+'</div>';});
   for(var i=0;i<firstDay;i++) days+='<div class="cal-day other-month"></div>';
-  for(var d=1;d<=daysInMonth;d++){
-    var isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
-    var evs=eventsByDay[d]||[];
+  for(var dayNum=1;dayNum<=daysInMonth;dayNum++){
+    var isToday=dayNum===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    var evs=eventsByDay[dayNum]||[];
     var cls='cal-day'+(isToday?' today':'')+(evs.length?' has-event':'');
-    days+='<div class="'+cls+'" onclick="calDayClick('+d+')">'
-      +'<div class="cal-day-num">'+d+'</div>'+(evs.length?'<div class="cal-dot"></div>':'')+'</div>';
+    days+='<div class="'+cls+'" onclick="calDayClick('+dayNum+')">'
+      +'<div class="cal-day-num">'+dayNum+'</div>'+(evs.length?'<div class="cal-dot"></div>':'')+'</div>';
   }
   var upcoming=[...monthEvents].sort(function(a,b){return new Date(a.fecha)-new Date(b.fecha);});
   var evList=upcoming.length?upcoming.map(function(ev){
