@@ -301,6 +301,25 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .user-check-name{font-size:14px;color:var(--text);flex:1}
 .user-check-role{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:4px;padding:1px 6px}
 .profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:12px}
+.tuner-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;max-width:360px;margin:0 auto}
+.tuner-note{font-family:var(--font-display);font-size:80px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px;transition:color .2s}
+.tuner-note.in-tune{color:var(--green)}
+.tuner-note.no-signal{color:var(--text3)}
+.tuner-freq{font-size:13px;color:var(--text3);margin-bottom:20px;font-family:var(--font-mono)}
+.tuner-bar-wrap{width:100%;height:12px;background:var(--surface2);border-radius:6px;margin:0 auto 12px;position:relative;overflow:hidden}
+.tuner-bar{height:100%;border-radius:6px;transition:width .1s,background .2s;position:absolute;left:0;right:0;margin:auto}
+.tuner-cents{font-size:14px;font-weight:600;margin-bottom:20px}
+.tuner-cents.low{color:var(--amber)}
+.tuner-cents.high{color:var(--amber)}
+.tuner-cents.intune{color:var(--green)}
+.tuner-needle-wrap{width:100%;height:80px;position:relative;margin-bottom:16px}
+.tuner-strings{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.tuner-string{width:44px;height:44px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .15s}
+.tuner-string:hover{border-color:var(--accent);color:var(--accent)}
+.tuner-string.active{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.tuner-btn{width:100%;padding:12px;border:none;border-radius:var(--r-sm);font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:16px}
+.tuner-btn.start{background:var(--accent);color:#fff}
+.tuner-btn.stop{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -361,7 +380,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.86</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.87</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -369,6 +388,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div id="users-view" style="display:none"></div>
   <div id="chords-view" style="display:none"></div>
   <div id="calendar-view" style="display:none"></div>
+<div id="tuner-view" style="display:none"></div>
 <div id="profile-view" style="display:none"></div>
 <div id="setlists-view" style="display:none"></div>
 </div>
@@ -381,6 +401,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="side-menu-item" onclick="closeSideMenu();showList()">&#127925; Canciones</div>
       <div class="side-menu-item" onclick="closeSideMenu();openSetlists()">&#127897;&#65039; Setlists</div>
       <div class="side-menu-item" onclick="closeSideMenu();openCalendar()">&#128197; Calendario</div>
+      <div class="side-menu-item" onclick="closeSideMenu();openTuner()">&#127929; Afinador</div>
       <div class="side-menu-item" onclick="closeSideMenu();openProfile()">&#128100; Mi perfil</div>
       <div class="side-menu-sep"></div>
       <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()" style="display:none">&#127928; Acordes</div>
@@ -455,7 +476,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz0EjA5XFq18r7-nAHhOXLXAZ9pVsw-i-9eGUsee4SgW-FkgRhq8dnscKrtaZ1kWYR4/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxWZ3XcwgRXMUTEJ-jsEFUtwT2xkptxGv5ikyJR-XTT_I_wsQFlc09TuEYj4jEdjW5SaA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -1508,6 +1529,185 @@ async function saveChangeCode(){
 }
 
 
+// ── Afinador ──────────────────────────────────────────────
+var tunerStream = null;
+var tunerCtx = null;
+var tunerAnalyser = null;
+var tunerActive = false;
+var tunerAnimFrame = null;
+
+var NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var GUITAR_STRINGS = [
+  {name:'E2', freq:82.41},
+  {name:'A2', freq:110.00},
+  {name:'D3', freq:146.83},
+  {name:'G3', freq:196.00},
+  {name:'B3', freq:246.94},
+  {name:'E4', freq:329.63}
+];
+
+function openTuner(){
+  showView('tuner-view');
+  renderTuner();
+}
+
+function renderTuner(){
+  var el=document.getElementById('tuner-view');
+  if(!el) return;
+  el.innerHTML=
+    '<button class="back-btn" onclick="stopTuner();showList()">&#8592; Volver</button>'+
+    '<div style="padding:8px 0">'+
+      '<div class="tuner-card">'+
+        '<div id="tuner-note" class="tuner-note no-signal">--</div>'+
+        '<div id="tuner-freq" class="tuner-freq">-- Hz</div>'+
+        '<div class="tuner-bar-wrap">'+
+          '<div id="tuner-bar" class="tuner-bar" style="width:4px;height:100%;left:50%;background:var(--text3);transform:translateX(-50%)"></div>'+
+        '</div>'+
+        '<div id="tuner-cents" class="tuner-cents" style="color:var(--text3)">Toca una cuerda</div>'+
+        '<div class="tuner-strings">'+
+          GUITAR_STRINGS.map(function(s,i){
+            return '<div class="tuner-string" id="tstr-'+i+'" onclick="tunerHighlightString('+i+')">'+s.name+'</div>';
+          }).join('')+
+        '</div>'+
+        '<button id="tuner-btn" class="tuner-btn start" onclick="toggleTuner()">&#127908; Activar micrófono</button>'+
+      '</div>'+
+    '</div>';
+}
+
+async function toggleTuner(){
+  if(tunerActive) stopTuner();
+  else await startTuner();
+}
+
+async function startTuner(){
+  try{
+    tunerStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    tunerCtx = new (window.AudioContext||window.webkitAudioContext)();
+    tunerAnalyser = tunerCtx.createAnalyser();
+    tunerAnalyser.fftSize = 4096;
+    var src = tunerCtx.createMediaStreamSource(tunerStream);
+    src.connect(tunerAnalyser);
+    tunerActive = true;
+    var btn=document.getElementById('tuner-btn');
+    if(btn){btn.textContent='⏹ Detener';btn.className='tuner-btn stop';}
+    tunerLoop();
+  }catch(e){
+    toast('No se pudo acceder al micrófono: '+e.message);
+  }
+}
+
+function stopTuner(){
+  tunerActive=false;
+  if(tunerAnimFrame) cancelAnimationFrame(tunerAnimFrame);
+  if(tunerStream) tunerStream.getTracks().forEach(function(t){t.stop();});
+  if(tunerCtx) tunerCtx.close();
+  tunerStream=null;tunerCtx=null;tunerAnalyser=null;
+  var note=document.getElementById('tuner-note');
+  var freq=document.getElementById('tuner-freq');
+  var cents=document.getElementById('tuner-cents');
+  var bar=document.getElementById('tuner-bar');
+  var btn=document.getElementById('tuner-btn');
+  if(note){note.textContent='--';note.className='tuner-note no-signal';}
+  if(freq) freq.textContent='-- Hz';
+  if(cents){cents.textContent='Toca una cuerda';cents.style.color='var(--text3)';}
+  if(bar){bar.style.left='50%';bar.style.background='var(--text3)';}
+  if(btn){btn.textContent='🎙 Activar micrófono';btn.className='tuner-btn start';}
+  document.querySelectorAll('.tuner-string').forEach(function(s){s.classList.remove('active');});
+}
+
+function tunerLoop(){
+  if(!tunerActive||!tunerAnalyser) return;
+  var buf=new Float32Array(tunerAnalyser.fftSize);
+  tunerAnalyser.getFloatTimeDomainData(buf);
+  var freq=autoCorrelate(buf, tunerCtx.sampleRate);
+  if(freq>60 && freq<1400){
+    updateTunerUI(freq);
+  }
+  tunerAnimFrame=requestAnimationFrame(tunerLoop);
+}
+
+function autoCorrelate(buf, sampleRate){
+  var SIZE=buf.length;
+  var rms=0;
+  for(var i=0;i<SIZE;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.01) return -1;
+  var r1=0,r2=SIZE-1,thres=0.2;
+  for(var i=0;i<SIZE/2;i++) if(Math.abs(buf[i])<thres){r1=i;break;}
+  for(var i=1;i<SIZE/2;i++) if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break;}
+  buf=buf.slice(r1,r2);SIZE=buf.length;
+  var c=new Array(SIZE).fill(0);
+  for(var i=0;i<SIZE;i++) for(var j=0;j<SIZE-i;j++) c[i]=c[i]+buf[j]*buf[j+i];
+  var d=0;while(c[d]>c[d+1]) d++;
+  var maxval=-1,maxpos=-1;
+  for(var i=d;i<SIZE;i++){if(c[i]>maxval){maxval=c[i];maxpos=i;}}
+  var T0=maxpos;
+  var x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+  var a=(x1+x3-2*x2)/2,b=(x3-x1)/2;
+  if(a) T0=T0-b/(2*a);
+  return sampleRate/T0;
+}
+
+function freqToNote(freq){
+  var noteNum=12*(Math.log(freq/440)/Math.log(2));
+  return Math.round(noteNum)+69;
+}
+
+function updateTunerUI(freq){
+  var noteNum=freqToNote(freq);
+  var noteName=NOTES[noteNum%12];
+  var octave=Math.floor(noteNum/12)-1;
+  var targetFreq=440*Math.pow(2,(noteNum-69)/12);
+  var cents=Math.round(1200*Math.log(freq/targetFreq)/Math.log(2));
+  var inTune=Math.abs(cents)<=5;
+
+  var noteEl=document.getElementById('tuner-note');
+  var freqEl=document.getElementById('tuner-freq');
+  var centsEl=document.getElementById('tuner-cents');
+  var barEl=document.getElementById('tuner-bar');
+  if(!noteEl) return;
+
+  noteEl.textContent=noteName+octave;
+  noteEl.className='tuner-note'+(inTune?' in-tune':'');
+  freqEl.textContent=freq.toFixed(1)+' Hz';
+
+  // Barra de afinación (-50 a +50 cents)
+  var pct=Math.max(0,Math.min(100,50+cents));
+  var color=inTune?'var(--green)':Math.abs(cents)>20?'var(--red)':'var(--amber)';
+  barEl.style.width='8px';
+  barEl.style.left=pct+'%';
+  barEl.style.background=color;
+  barEl.style.transform='translateX(-50%)';
+
+  if(inTune){
+    centsEl.textContent='✓ Afinado';
+    centsEl.style.color='var(--green)';
+  } else {
+    centsEl.textContent=(cents>0?'+':'')+cents+' cents '+(cents>0?'(muy alto)':'(muy bajo)');
+    centsEl.style.color=Math.abs(cents)>20?'var(--red)':'var(--amber)';
+  }
+
+  // Resaltar cuerda más cercana
+  var minDist=999,closestIdx=-1;
+  GUITAR_STRINGS.forEach(function(s,i){
+    var d=Math.abs(freq-s.freq);
+    if(d<minDist){minDist=d;closestIdx=i;}
+  });
+  if(minDist<30){
+    document.querySelectorAll('.tuner-string').forEach(function(el,i){
+      el.classList.toggle('active',i===closestIdx);
+    });
+  }
+}
+
+function tunerHighlightString(i){
+  document.querySelectorAll('.tuner-string').forEach(function(el,j){
+    el.classList.toggle('active',i===j);
+  });
+  toast('Cuerda '+GUITAR_STRINGS[i].name+' — '+GUITAR_STRINGS[i].freq.toFixed(2)+' Hz');
+}
+
+
 function slDragStart(e, idx){
   dragSrcIdx = idx;
   e.currentTarget.classList.add('dragging');
@@ -2247,10 +2447,10 @@ async function addUserAction(){
   else toast('Error: '+r.error);
 }
 function showView(v){
-  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view','tuner-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const t=document.getElementById(v);if(t)t.style.display='block';
   // Actualizar nombre en el header
-  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil'};
+  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil','tuner-view':'Afinador'};
   const hn=document.getElementById('header-section-name');
   if(hn) hn.textContent=names[v]||'Cancionero';
   // Mostrar botón Nueva solo en la vista de canciones
