@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.90</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.90c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2597,7 +2597,7 @@ function formHTML(s){
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field"><label>Compás</label><select id="f-meter"><option value="">— Sin compás —</option><option value="4/4" ${s&&s.meter==='4/4'?'selected':''}>4/4 (común)</option><option value="3/4" ${s&&s.meter==='3/4'?'selected':''}>3/4 (vals)</option><option value="2/4" ${s&&s.meter==='2/4'?'selected':''}>2/4</option><option value="6/8" ${s&&s.meter==='6/8'?'selected':''}>6/8</option><option value="5/4" ${s&&s.meter==='5/4'?'selected':''}>5/4</option><option value="7/8" ${s&&s.meter==='7/8'?'selected':''}>7/8</option><option value="libre" ${s&&s.meter==='libre'?'selected':''}>Libre</option></select></div>
+        <div class="field"><label>Compás</label><select id="f-meter"><option value="">— Sin compás —</option><option value="4/4" ${s&&(s.meter=='4/4'||s.meter==='4')?'selected':''}>4/4 (común)</option><option value="3/4" ${s&&(s.meter=='3/4'||s.meter==='3')?'selected':''}>3/4 (vals)</option><option value="2/4" ${s&&(s.meter=='2/4'||s.meter==='2')?'selected':''}>2/4</option><option value="6/8" ${s&&(s.meter=='6/8'||s.meter==='6')?'selected':''}>6/8</option><option value="5/4" ${s&&(s.meter=='5/4'||s.meter==='5')?'selected':''}>5/4</option><option value="7/8" ${s&&s.meter==='7/8'?'selected':''}>7/8</option><option value="libre" ${s&&s.meter==='libre'?'selected':''}>Libre</option></select></div>
         <div class="field"><label>&#160;</label><div style="font-size:12px;color:var(--text3);padding-top:10px">El compás activa el acento en el primer tiempo del metrónomo</div></div>
       </div>
       <div class="field"><label>Letra con acordes *</label>
@@ -2650,9 +2650,11 @@ async function saveSongEdit(id){
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
   const r=await api({action:'edit',song:{id,title,artist,key,bpm,meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
   if(r.ok){
+    // Recargar canciones del servidor para tener datos frescos (incluyendo meter, tpSpeed)
+    await loadSongs();
     const idx=songs.findIndex(s=>String(s.id)===String(id));
-    if(idx!==-1)songs[idx]={...songs[idx],title,artist,key,bpm,meter:(vals?vals.meter:''),tags:(vals?vals.tags:[]),spotify:(vals?vals.spotify:''),sections:parseBody(body)};
-    currentSong=songs[idx];semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
+    currentSong=idx>=0?songs[idx]:currentSong;
+    semitones=0;showView('song-view');drawSong();toast('✓ Cambios guardados');
   }else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
 }
 function doDelete(id,name){confirmDelete('song',id,name);}
