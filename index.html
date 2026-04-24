@@ -273,6 +273,28 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .conv-btn{flex:1;border:none;border-radius:var(--r-sm);padding:11px;font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer}
 .conv-btn.primary{background:var(--accent);color:#fff}
 .conv-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-month{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)}
+.cal-nav{background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 12px;color:var(--text2);cursor:pointer;font-size:16px;transition:all .15s}
+.cal-nav:hover{border-color:var(--accent);color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:20px}
+.cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:6px 0;text-transform:uppercase}
+.cal-day{min-height:40px;border-radius:var(--r-sm);padding:4px;cursor:pointer;transition:all .15s;position:relative;text-align:center}
+.cal-day:hover{background:var(--surface2)}
+.cal-day.other-month{opacity:.3}
+.cal-day.today{background:var(--accent-bg);border:1px solid var(--accent)}
+.cal-day.has-event{font-weight:700;color:var(--text)}
+.cal-day-num{font-size:13px;color:var(--text2)}
+.cal-day.has-event .cal-day-num{color:var(--accent)}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin:2px auto 0}
+.cal-event-list{margin-top:4px}
+.cal-event-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.cal-event-item:hover{border-color:var(--accent);background:var(--accent-bg)}
+.cal-event-date{font-size:11px;color:var(--text3);margin-bottom:4px}
+.cal-event-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cal-event-meta{font-size:12px;color:var(--text2)}
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:12px}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -333,14 +355,16 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.74</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.75</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
   <div id="add-view" style="display:none"></div>
   <div id="users-view" style="display:none"></div>
   <div id="chords-view" style="display:none"></div>
-  <div id="setlists-view" style="display:none"></div>
+  <div id="calendar-view" style="display:none"></div>
+<div id="profile-view" style="display:none"></div>
+<div id="setlists-view" style="display:none"></div>
 </div>
 <!-- Menú lateral -->
 <div class="side-menu" id="side-menu">
@@ -1193,6 +1217,247 @@ async function removeFromSetlist(songId){
 }
 
 // Drag & drop
+
+// ── Eventos & Calendario ──────────────────────────────────
+async function loadEvents(){
+  const r=await apiGet({action:'events'});
+  if(r.ok) events=r.events||[];
+}
+
+function openCalendar(){
+  showView('calendar-view');
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const el=document.getElementById('calendar-view');
+  if(!el) return;
+  const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
+  const today=new Date();
+  const y=calYear, m=calMonth;
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const DAYS=['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+  const monthEvents=events.filter(function(ev){
+    var d=new Date(ev.fecha+'T12:00:00');
+    return d.getFullYear()===y&&d.getMonth()===m;
+  });
+  var eventsByDay={};
+  monthEvents.forEach(function(ev){
+    var d=new Date(ev.fecha+'T12:00:00').getDate();
+    if(!eventsByDay[d]) eventsByDay[d]=[];
+    eventsByDay[d].push(ev);
+  });
+  var days='';
+  DAYS.forEach(function(d){days+='<div class="cal-dow">'+d+'</div>';});
+  for(var i=0;i<firstDay;i++) days+='<div class="cal-day other-month"></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    var evs=eventsByDay[d]||[];
+    var cls='cal-day'+(isToday?' today':'')+(evs.length?' has-event':'');
+    days+='<div class="'+cls+'" onclick="calDayClick('+d+')">'
+      +'<div class="cal-day-num">'+d+'</div>'+(evs.length?'<div class="cal-dot"></div>':'')+'</div>';
+  }
+  var upcoming=[...monthEvents].sort(function(a,b){return new Date(a.fecha)-new Date(b.fecha);});
+  var evList=upcoming.length?upcoming.map(function(ev){
+    var sl=setlists.find(function(s){return String(s.id)===String(ev.setlistId);});
+    var fecha=new Date(ev.fecha+'T12:00:00');
+    var fechaStr=fecha.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+    return '<div class="cal-event-item" onclick="openEventDetail(\''+ev.id+'\')">'+
+      '<div class="cal-event-date">'+fechaStr+'</div>'+
+      '<div class="cal-event-name">'+escH(ev.name)+'</div>'+
+      (sl?'<div class="cal-event-meta">&#127908; '+escH(sl.name)+'</div>':'')+
+      (ev.lugar?'<div class="cal-event-meta">&#128205; '+escH(ev.lugar)+'</div>':'')+
+      '</div>';
+  }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">No hay eventos este mes</div>';
+  el.innerHTML=
+    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
+    '<div class="form-card">'+
+      '<div class="cal-header">'+
+        '<button class="cal-nav" onclick="calPrev()">&#8249;</button>'+
+        '<div class="cal-month">'+MONTHS[m]+' '+y+'</div>'+
+        '<button class="cal-nav" onclick="calNext()">&#8250;</button>'+
+      '</div>'+
+      '<div class="cal-grid">'+days+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Eventos del mes</div>'+
+        (canEdit?'<button class="sv-action-btn" onclick="openNewEvent()" style="font-size:12px;padding:5px 12px">+ Nuevo</button>':'')+
+      '</div>'+
+      '<div class="cal-event-list">'+evList+'</div>'+
+    '</div>';
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+function calDayClick(day){
+  var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  var evs=events.filter(function(ev){return ev.fecha===dateStr;});
+  if(!evs.length){if(currentUser.role!=='lector') openNewEvent(dateStr);return;}
+  if(evs.length===1) openEventDetail(evs[0].id);
+}
+
+function openEventDetail(id){
+  var ev=events.find(function(e){return e.id===id;});
+  if(!ev) return;
+  var canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
+  var sl=setlists.find(function(s){return String(s.id)===String(ev.setlistId);});
+  var fecha=new Date(ev.fecha+'T12:00:00');
+  var fechaStr=fecha.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var el=document.getElementById('calendar-view');
+  var setlistSection='';
+  if(sl){
+    var slSongs=(sl.songs||[]).map(function(sid){return songs.find(function(s){return String(s.id)===String(sid);});}).filter(Boolean);
+    setlistSection='<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Setlist: '+escH(sl.name)+'</div>'
+      +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="prevView=\'calendar-view\';openSong(\''+s.id+'\')">'
+        +'<span style="font-size:12px;color:var(--text3);min-width:20px">'+(i+1)+'</span>'
+        +'<div><div style="font-size:14px;font-weight:500;color:var(--text)">'+escH(s.title)+'</div>'
+        +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div></div></div>';}).join('')
+      +'</div>';
+  }
+  var usersList=ev.usuarios&&ev.usuarios.length
+    ?'<div style="margin-top:10px"><span style="font-size:12px;color:var(--text3)">Asignados: </span>'
+      +ev.usuarios.map(function(u){return '<span style="font-size:12px;background:var(--surface2);border-radius:4px;padding:2px 8px;margin:2px;display:inline-block">'+escH(u)+'</span>';}).join('')+'</div>':'';
+  el.innerHTML=
+    '<button class="back-btn" onclick="openCalendar()">&#8592; Calendario</button>'+
+    '<div class="form-card">'+
+      '<div style="font-size:12px;color:var(--text3);margin-bottom:6px">'+fechaStr+'</div>'+
+      '<div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px">'+escH(ev.name)+'</div>'+
+      (ev.lugar?'<div style="font-size:13px;color:var(--text2);margin-bottom:4px">&#128205; '+escH(ev.lugar)+'</div>':'')+
+      (ev.notas?'<div style="font-size:13px;color:var(--text2);margin-bottom:8px">&#128221; '+escH(ev.notas)+'</div>':'')+
+      usersList+setlistSection+
+      (canEdit?'<div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">'
+        +'<button class="sv-action-btn" onclick="openEditEvent(\''+ev.id+'\')" style="font-size:13px">&#9998; Editar</button>'
+        +'<button class="song-del" onclick="confirmDelete(\'event\',\''+ev.id+'\',\''+escH(ev.name)+'\',function(){deleteEventAction(\''+ev.id+'\');})">&#10005; Eliminar</button>'
+        +'</div>':'')+
+    '</div>';
+}
+
+async function loadUsersList(){
+  if(allUsersList.length) return;
+  var r=await apiGet({action:'users_list'});
+  if(r.ok) allUsersList=r.users||[];
+}
+
+function getSelectedUsers(){
+  var cbs=document.querySelectorAll('#ev-users-wrap input[type=checkbox]:checked');
+  return Array.from(cbs).map(function(cb){return cb.value;});
+}
+
+function eventFormHTML(ev,dateStr){
+  var slOptions=setlists.map(function(sl){return '<option value="'+escH(sl.id)+'"'+(ev&&String(sl.id)===String(ev.setlistId)?' selected':'')+'>'+escH(sl.name)+'</option>';}).join('');
+  var usersOpts=allUsersList.map(function(u){
+    var chk=ev&&(ev.usuarios||[]).includes(u.name)?'checked':'';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;cursor:pointer">'
+      +'<input type="checkbox" value="'+escH(u.name)+'" '+chk+' style="accent-color:var(--accent)"> '+escH(u.name)+'</label>';}).join('');
+  return '<div class="field"><label>Nombre del evento *</label><input type="text" id="ev-name" value="'+(ev?escH(ev.name):'')+'" placeholder="Ej: Misa de Domingo"></div>'
+    +'<div class="field"><label>Fecha *</label><input type="date" id="ev-fecha" value="'+(ev?ev.fecha:(dateStr||new Date().toISOString().split("T")[0]))+'"></div>'
+    +'<div class="field"><label>Lugar</label><input type="text" id="ev-lugar" value="'+(ev?escH(ev.lugar):'')+'" placeholder="Ej: Parroquia San José"></div>'
+    +'<div class="field"><label>Setlist</label><select id="ev-setlist" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none"><option value="">— Sin setlist —</option>'+slOptions+'</select></div>'
+    +'<div class="field"><label>Notas</label><textarea id="ev-notas" rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;resize:vertical">'+(ev?escH(ev.notas):'')+'</textarea></div>'
+    +'<div class="field"><label>Usuarios asignados <span style="font-size:11px;color:var(--text3)">(vacío = todos lo ven)</span></label>'
+    +'<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;max-height:200px;overflow-y:auto" id="ev-users-wrap">'+usersOpts+'</div></div>';
+}
+
+async function openNewEvent(dateStr){
+  await loadUsersList();
+  var el=document.getElementById('calendar-view');
+  el.innerHTML='<button class="back-btn" onclick="openCalendar()">&#8592; Calendario</button>'
+    +'<div class="form-card"><div class="form-title" style="margin-bottom:20px">Nuevo evento</div>'
+    +eventFormHTML(null,dateStr)
+    +'<div class="form-actions"><button class="btn-save" onclick="saveNewEvent()">Guardar evento</button></div></div>';
+}
+
+async function openEditEvent(id){
+  await loadUsersList();
+  var ev=events.find(function(e){return e.id===id;});
+  if(!ev) return;
+  var el=document.getElementById('calendar-view');
+  el.innerHTML='<button class="back-btn" onclick="openEventDetail(\''+id+'\')">&#8592; Volver</button>'
+    +'<div class="form-card"><div class="form-title" style="margin-bottom:20px">Editar evento</div>'
+    +eventFormHTML(ev,null)
+    +'<input type="hidden" id="ev-id" value="'+id+'">'
+    +'<div class="form-actions"><button class="btn-save" onclick="saveEditEvent()">Guardar cambios</button></div></div>';
+}
+
+async function saveNewEvent(){
+  var name=(document.getElementById('ev-name').value||'').trim();
+  var fecha=document.getElementById('ev-fecha').value;
+  if(!name||!fecha){toast('Nombre y fecha son requeridos');return;}
+  var ev={name:name,fecha:fecha,
+    lugar:(document.getElementById('ev-lugar').value||'').trim(),
+    setlistId:document.getElementById('ev-setlist').value||'',
+    notas:(document.getElementById('ev-notas').value||'').trim(),
+    usuarios:getSelectedUsers()};
+  var r=await api({action:'add_event',event:ev});
+  if(r.ok){ev.id=r.id;events.push(ev);openCalendar();toast('Evento guardado');}
+  else toast('Error: '+r.error);
+}
+
+async function saveEditEvent(){
+  var name=(document.getElementById('ev-name').value||'').trim();
+  var fecha=document.getElementById('ev-fecha').value;
+  if(!name||!fecha){toast('Nombre y fecha son requeridos');return;}
+  var id=document.getElementById('ev-id').value;
+  var ev={id:id,name:name,fecha:fecha,
+    lugar:(document.getElementById('ev-lugar').value||'').trim(),
+    setlistId:document.getElementById('ev-setlist').value||'',
+    notas:(document.getElementById('ev-notas').value||'').trim(),
+    usuarios:getSelectedUsers()};
+  var r=await api({action:'edit_event',event:ev});
+  if(r.ok){var i=events.findIndex(function(e){return e.id===id;});if(i>=0)events[i]=ev;openEventDetail(id);toast('Evento actualizado');}
+  else toast('Error: '+r.error);
+}
+
+async function deleteEventAction(id){
+  var r=await apiGet({action:'delete_event',id:id});
+  if(r.ok){events=events.filter(function(e){return e.id!==id;});openCalendar();toast('Evento eliminado');}
+  else toast('Error: '+r.error);
+}
+
+// ── Perfil / Cambio de código ─────────────────────────────
+function openProfile(){
+  showView('profile-view');
+  renderProfile();
+}
+
+function renderProfile(){
+  var el=document.getElementById('profile-view');
+  if(!el||!currentUser) return;
+  var initial=currentUser.name?currentUser.name[0].toUpperCase():'?';
+  el.innerHTML=
+    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
+    '<div class="form-card">'+
+      '<div class="profile-avatar">'+initial+'</div>'+
+      '<div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px">'+escH(currentUser.name)+'</div>'+
+      '<div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">'
+        +'<span class="role-badge role-'+currentUser.role+'">'+currentUser.role+'</span>'+
+      '</div>'+
+      '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px">Cambiar código de acceso</div>'+
+      '<div class="field"><label>Nuevo código</label><input type="password" id="prof-new" placeholder="Mínimo 4 caracteres"></div>'+
+      '<div class="field"><label>Confirmar nuevo código</label><input type="password" id="prof-confirm" placeholder="Repite el nuevo código"></div>'+
+      '<div class="form-actions"><button class="btn-save" onclick="saveChangeCode()">Cambiar código</button></div>'+
+    '</div>';
+}
+
+async function saveChangeCode(){
+  var newCode=(document.getElementById('prof-new').value||'').trim();
+  var confirm=(document.getElementById('prof-confirm').value||'').trim();
+  if(!newCode||!confirm){toast('Completa todos los campos');return;}
+  if(newCode!==confirm){toast('Los códigos no coinciden');return;}
+  if(newCode.length<4){toast('El código debe tener al menos 4 caracteres');return;}
+  var r=await api({action:'change_code',newCode:newCode});
+  if(r.ok){
+    currentUser.token=r.token;
+    localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
+    toast('Código cambiado correctamente');
+    renderProfile();
+  } else toast('Error: '+r.error);
+}
+
+
 function slDragStart(e, idx){
   dragSrcIdx = idx;
   e.currentTarget.classList.add('dragging');
@@ -1607,7 +1872,7 @@ function init(){calcCH();loadSavedTheme();
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();loadCustomChords();loadSetlists();return;
+      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadEvents();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -1932,10 +2197,10 @@ async function addUserAction(){
   else toast('Error: '+r.error);
 }
 function showView(v){
-  ['list-view','song-view','add-view','users-view','chords-view','setlists-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const t=document.getElementById(v);if(t)t.style.display='block';
   // Actualizar nombre en el header
-  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists'};
+  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil'};
   const hn=document.getElementById('header-section-name');
   if(hn) hn.textContent=names[v]||'Cancionero';
 }
