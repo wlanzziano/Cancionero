@@ -355,7 +355,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.77</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.78</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1275,8 +1275,9 @@ function renderCalendar(){
     return '<div class="cal-event-item" onclick="openEventDetail(\''+ev.id+'\')">'+
       '<div class="cal-event-date">'+fechaStr+'</div>'+
       '<div class="cal-event-name">'+escH(ev.name)+'</div>'+
+      (ev.hora?'<div class="cal-event-meta">&#128336; '+ev.hora+'</div>':'')+
       (sl?'<div class="cal-event-meta">&#127908; '+escH(sl.name)+'</div>':'')+
-      (ev.lugar?'<div class="cal-event-meta">&#128205; '+escH(ev.lugar)+'</div>':'')+
+      (ev.lugar?'<div class="cal-event-meta">&#127968; '+escH(ev.lugar)+'</div>':'')+
       '</div>';
   }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">No hay eventos este mes</div>';
   el.innerHTML=
@@ -1331,9 +1332,10 @@ function openEventDetail(id){
   el.innerHTML=
     '<button class="back-btn" onclick="openCalendar()">&#8592; Calendario</button>'+
     '<div class="form-card">'+
-      '<div style="font-size:12px;color:var(--text3);margin-bottom:6px">'+fechaStr+'</div>'+
+      '<div style="font-size:12px;color:var(--text3);margin-bottom:6px">'+fechaStr+(ev.hora?' · &#128336; '+ev.hora:'')+'</div>'+
       '<div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px">'+escH(ev.name)+'</div>'+
-      (ev.lugar?'<div style="font-size:13px;color:var(--text2);margin-bottom:4px">&#128205; '+escH(ev.lugar)+'</div>':'')+
+      (ev.lugar?'<div style="font-size:13px;color:var(--text2);margin-bottom:4px">&#127968; '+escH(ev.lugar)+'</div>':'')+
+      (ev.direccion?'<div style="font-size:13px;color:var(--text2);margin-bottom:4px">&#128205; '+escH(ev.direccion)+'</div>':'')+
       (ev.notas?'<div style="font-size:13px;color:var(--text2);margin-bottom:8px">&#128221; '+escH(ev.notas)+'</div>':'')+
       usersList+setlistSection+
       (canEdit?'<div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">'
@@ -1362,7 +1364,9 @@ function eventFormHTML(ev,dateStr){
       +'<input type="checkbox" value="'+escH(u.name)+'" '+chk+' style="accent-color:var(--accent)"> '+escH(u.name)+'</label>';}).join('');
   return '<div class="field"><label>Nombre del evento *</label><input type="text" id="ev-name" value="'+(ev?escH(ev.name):'')+'" placeholder="Ej: Misa de Domingo"></div>'
     +'<div class="field"><label>Fecha *</label><input type="date" id="ev-fecha" value="'+(ev?ev.fecha:(dateStr||new Date().toISOString().split("T")[0]))+'"></div>'
-    +'<div class="field"><label>Lugar</label><input type="text" id="ev-lugar" value="'+(ev?escH(ev.lugar):'')+'" placeholder="Ej: Parroquia San José"></div>'
+    +'<div class="field"><label>Hora</label><input type="time" id="ev-hora" value="'+(ev&&ev.hora?ev.hora:'')+'"></div>'
+    +'<div class="field"><label>Dirección <span style="font-size:11px;color:var(--text3)">(opcional)</span></label><input type="text" id="ev-direccion" value="'+(ev?escH(ev.direccion||ev.lugar):'')+'" placeholder="Ej: Calle 10 #5-20"></div>'
+    +'<div class="field"><label>Lugar / Nombre del sitio <span style="font-size:11px;color:var(--text3)">(opcional)</span></label><input type="text" id="ev-lugar" value="'+(ev?escH(ev.lugar):'')+'" placeholder="Ej: Parroquia San José"></div>'
     +'<div class="field"><label>Setlist</label><select id="ev-setlist" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none"><option value="">— Sin setlist —</option>'+slOptions+'</select></div>'
     +'<div class="field"><label>Notas</label><textarea id="ev-notas" rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;resize:vertical">'+(ev?escH(ev.notas):'')+'</textarea></div>'
     +'<div class="field"><label>Usuarios asignados <span style="font-size:11px;color:var(--text3)">(vacío = todos lo ven)</span></label>'
@@ -1395,6 +1399,8 @@ async function saveNewEvent(){
   var fecha=document.getElementById('ev-fecha').value;
   if(!name||!fecha){toast('Nombre y fecha son requeridos');return;}
   var ev={name:name,fecha:fecha,
+    hora:(document.getElementById('ev-hora').value||'').trim(),
+    direccion:(document.getElementById('ev-direccion').value||'').trim(),
     lugar:(document.getElementById('ev-lugar').value||'').trim(),
     setlistId:document.getElementById('ev-setlist').value||'',
     notas:(document.getElementById('ev-notas').value||'').trim(),
@@ -1410,6 +1416,8 @@ async function saveEditEvent(){
   if(!name||!fecha){toast('Nombre y fecha son requeridos');return;}
   var id=document.getElementById('ev-id').value;
   var ev={id:id,name:name,fecha:fecha,
+    hora:(document.getElementById('ev-hora').value||'').trim(),
+    direccion:(document.getElementById('ev-direccion').value||'').trim(),
     lugar:(document.getElementById('ev-lugar').value||'').trim(),
     setlistId:document.getElementById('ev-setlist').value||'',
     notas:(document.getElementById('ev-notas').value||'').trim(),
@@ -1443,24 +1451,26 @@ function renderProfile(){
       '<div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">'
         +'<span class="role-badge role-'+currentUser.role+'">'+currentUser.role+'</span>'+
       '</div>'+
-      '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px">Cambiar código de acceso</div>'+
-      '<div class="field"><label>Nuevo código</label><input type="password" id="prof-new" placeholder="Mínimo 4 caracteres"></div>'+
-      '<div class="field"><label>Confirmar nuevo código</label><input type="password" id="prof-confirm" placeholder="Repite el nuevo código"></div>'+
+      '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px">Cambiar contraseña</div>'+
+      '<div class="field"><label>Contraseña actual</label><input type="password" id="prof-old" placeholder="Tu contraseña actual"></div>'+
+      '<div class="field"><label>Nueva contraseña</label><input type="password" id="prof-new" placeholder="Mínimo 4 caracteres"></div>'+
+      '<div class="field"><label>Confirmar nueva contraseña</label><input type="password" id="prof-confirm" placeholder="Repite la nueva contraseña"></div>'+
       '<div class="form-actions"><button class="btn-save" onclick="saveChangeCode()">Cambiar código</button></div>'+
     '</div>';
 }
 
 async function saveChangeCode(){
+  var oldCode=(document.getElementById('prof-old').value||'').trim();
   var newCode=(document.getElementById('prof-new').value||'').trim();
   var confirm=(document.getElementById('prof-confirm').value||'').trim();
-  if(!newCode||!confirm){toast('Completa todos los campos');return;}
-  if(newCode!==confirm){toast('Los códigos no coinciden');return;}
-  if(newCode.length<4){toast('El código debe tener al menos 4 caracteres');return;}
-  var r=await api({action:'change_code',newCode:newCode});
+  if(!oldCode||!newCode||!confirm){toast('Completa todos los campos');return;}
+  if(newCode!==confirm){toast('Las contraseñas no coinciden');return;}
+  if(newCode.length<4){toast('La contraseña debe tener al menos 4 caracteres');return;}
+  var r=await api({action:'change_code',oldCode:oldCode,newCode:newCode});
   if(r.ok){
     currentUser.token=r.token;
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
-    toast('Código cambiado correctamente');
+    toast('Contraseña cambiada correctamente');
     renderProfile();
   } else toast('Error: '+r.error);
 }
