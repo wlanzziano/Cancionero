@@ -301,6 +301,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .user-check-name{font-size:14px;color:var(--text);flex:1}
 .user-check-role{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:4px;padding:1px 6px}
 .profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:12px}
+.metro-float-wrap{position:fixed;bottom:0;left:0;right:0;z-index:400;background:var(--surface);border-top:2px solid var(--accent);border-radius:var(--r) var(--r) 0 0;padding:16px 16px 28px;animation:slideUp .25s ease}
+.metro-float-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.metro-float-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text)}
+.metro-float-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:2px 8px}
+.metro-beat-dot{width:24px;height:24px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);transition:background .05s;flex-shrink:0}
 .tuner-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;max-width:360px;margin:0 auto}
 .tuner-note{font-family:var(--font-display);font-size:80px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px;transition:color .2s}
 .tuner-note.in-tune{color:var(--green)}
@@ -380,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.88</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.89</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -459,6 +464,25 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <button class="tp-btn" onclick="tpSpeedUp()" title="Más rápido">+</button>
 </div>
 <div class="toast" id="toast"></div>
+<div id="metro-float" style="display:none">
+  <div class="metro-float-wrap">
+    <div class="metro-float-header">
+      <div class="metro-float-title">&#9201;&#65039; Metrónomo</div>
+      <button class="metro-float-close" onclick="closeMetroFloat()">&#10005;</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px" id="mf-beats-row"></div>
+    <div style="text-align:center;margin-bottom:10px">
+      <span id="mf-bpm-display" style="font-family:var(--font-mono);font-size:48px;font-weight:700;color:var(--accent)">80</span>
+      <span style="font-size:13px;color:var(--text3)"> BPM</span>
+    </div>
+    <input type="range" id="mf-bpm-slider" min="30" max="240" value="80" oninput="mfBpmChange(this.value)"
+      style="width:100%;accent-color:var(--accent);margin-bottom:12px">
+    <button id="mf-btn" onclick="toggleMetroFloat()"
+      style="width:100%;padding:11px;border:none;border-radius:var(--r-sm);font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff">
+      &#9654; Iniciar
+    </button>
+  </div>
+</div>
 <div class="conv-modal" id="conv-modal">
   <div class="conv-backdrop" onclick="closeConv()"></div>
   <div class="conv-box">
@@ -1666,6 +1690,101 @@ function metroTick(){
 }
 
 
+// ── Metrónomo flotante ────────────────────────────────────
+var mfInterval=null,mfBpm=80,mfBeats=4,mfCurrent=0,mfCtx=null,mfActive=false;
+
+function openMetroFloat(){
+  if(!currentSong) return;
+  mfBpm=parseInt(currentSong.bpm)||80;
+  var rawMeter=currentSong.meter||'4';
+  var mMatch=String(rawMeter).match(/^(\d+)/);
+  mfBeats=mMatch?parseInt(mMatch[1]):4;
+  mfCurrent=0;
+  document.getElementById('metro-float').style.display='block';
+  renderMetroFloat();
+}
+
+function closeMetroFloat(){
+  stopMetroFloat();
+  var el=document.getElementById('metro-float');
+  if(el) el.style.display='none';
+}
+
+function renderMetroFloat(){
+  var d=document.getElementById('mf-bpm-display');
+  var sl=document.getElementById('mf-bpm-slider');
+  var br=document.getElementById('mf-beats-row');
+  var btn=document.getElementById('mf-btn');
+  if(d) d.textContent=mfBpm;
+  if(sl) sl.value=mfBpm;
+  if(br){
+    br.innerHTML='';
+    for(var i=0;i<mfBeats;i++){
+      var dot=document.createElement('div');
+      dot.className='metro-beat-dot';
+      dot.id='mfd'+i;
+      br.appendChild(dot);
+    }
+  }
+  if(btn){
+    btn.innerHTML=mfActive?'&#9646;&#9646; Detener':'&#9654; Iniciar';
+    btn.style.background=mfActive?'var(--red-bg)':'var(--accent)';
+    btn.style.color=mfActive?'var(--red)':'#fff';
+    btn.style.border=mfActive?'1px solid var(--red-border)':'none';
+  }
+}
+
+function mfBpmChange(val){
+  mfBpm=parseInt(val);
+  var d=document.getElementById('mf-bpm-display');
+  if(d) d.textContent=mfBpm;
+  if(mfActive){stopMetroFloat();startMetroFloat();}
+}
+
+function toggleMetroFloat(){
+  if(mfActive) stopMetroFloat();
+  else startMetroFloat();
+  renderMetroFloat();
+}
+
+function startMetroFloat(){
+  mfCurrent=0;mfActive=true;
+  mfCtx=new (window.AudioContext||window.webkitAudioContext)();
+  mfTick();
+  mfInterval=setInterval(function(){
+    mfCurrent=(mfCurrent+1)%mfBeats;
+    mfTick();
+  },60000/mfBpm);
+}
+
+function stopMetroFloat(){
+  mfActive=false;
+  if(mfInterval){clearInterval(mfInterval);mfInterval=null;}
+  if(mfCtx){mfCtx.close();mfCtx=null;}
+  mfCurrent=0;
+  for(var i=0;i<mfBeats;i++){
+    var d=document.getElementById('mfd'+i);
+    if(d) d.style.background='var(--surface2)';
+  }
+}
+
+function mfTick(){
+  if(mfCtx){
+    var osc=mfCtx.createOscillator();
+    var gain=mfCtx.createGain();
+    osc.connect(gain);gain.connect(mfCtx.destination);
+    osc.frequency.value=mfCurrent===0?1000:800;
+    gain.gain.setValueAtTime(0.3,mfCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,mfCtx.currentTime+0.08);
+    osc.start(mfCtx.currentTime);osc.stop(mfCtx.currentTime+0.08);
+  }
+  for(var i=0;i<mfBeats;i++){
+    var d=document.getElementById('mfd'+i);
+    if(d) d.style.background=i===mfCurrent?(mfCurrent===0?'var(--accent)':'var(--green)'):'var(--surface2)';
+  }
+}
+
+
 function toggleToolsMenu(el){
   var sub=document.getElementById("tools-submenu");
   var arrow=document.getElementById("tools-arrow");
@@ -2440,6 +2559,7 @@ function drawSong(){
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
+        ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm} BPM</button>`:''}
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
@@ -2608,7 +2728,7 @@ function showView(v){
     addBtn.style.display=(v==='list-view'&&canEdit)?'block':'none';
   }
 }
-function showList(){tpHideBar();showView('list-view');renderList();}
+function showList(){tpHideBar();if(typeof closeMetroFloat==='function')closeMetroFloat();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
   lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
