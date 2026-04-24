@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.89</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.90</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1650,13 +1650,16 @@ function metroBeatsChange(b){
 
 function toggleMetronome(){
   if(metroInterval) stopMetronome();
-  else startMetronome();
+  else {
+    try{ metroCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    if(metroCtx&&metroCtx.state==='suspended') metroCtx.resume();
+    startMetronome();
+  }
   renderMetronome();
 }
 
 function startMetronome(){
   metroCurrent=0;
-  metroCtx = new (window.AudioContext||window.webkitAudioContext)();
   metroTick();
   metroInterval=setInterval(function(){
     metroCurrent=(metroCurrent+1)%metroBeats;
@@ -1671,16 +1674,18 @@ function stopMetronome(){
 }
 
 function metroTick(){
-  // Sonido
-  if(metroCtx){
-    var osc=metroCtx.createOscillator();
-    var gain=metroCtx.createGain();
-    osc.connect(gain);gain.connect(metroCtx.destination);
-    osc.frequency.value=metroCurrent===0?1000:800;
-    gain.gain.setValueAtTime(0.3,metroCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.08);
-    osc.start(metroCtx.currentTime);
-    osc.stop(metroCtx.currentTime+0.08);
+  if(metroCtx&&metroCtx.state!=='closed'){
+    try{
+      var osc=metroCtx.createOscillator();
+      var gain=metroCtx.createGain();
+      osc.connect(gain);gain.connect(metroCtx.destination);
+      osc.frequency.value=metroCurrent===0?1200:900;
+      var vol=metroCurrent===0?0.5:0.25;
+      gain.gain.setValueAtTime(vol,metroCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.1);
+      osc.start(metroCtx.currentTime);
+      osc.stop(metroCtx.currentTime+0.1);
+    }catch(e){}
   }
   // Visual
   for(var i=0;i<metroBeats;i++){
@@ -1743,13 +1748,17 @@ function mfBpmChange(val){
 
 function toggleMetroFloat(){
   if(mfActive) stopMetroFloat();
-  else startMetroFloat();
+  else {
+    // Crear AudioContext aquí — requerido por iOS Safari (interacción directa)
+    try{ mfCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    if(mfCtx&&mfCtx.state==='suspended') mfCtx.resume();
+    startMetroFloat();
+  }
   renderMetroFloat();
 }
 
 function startMetroFloat(){
   mfCurrent=0;mfActive=true;
-  mfCtx=new (window.AudioContext||window.webkitAudioContext)();
   mfTick();
   mfInterval=setInterval(function(){
     mfCurrent=(mfCurrent+1)%mfBeats;
@@ -1769,14 +1778,18 @@ function stopMetroFloat(){
 }
 
 function mfTick(){
-  if(mfCtx){
-    var osc=mfCtx.createOscillator();
-    var gain=mfCtx.createGain();
-    osc.connect(gain);gain.connect(mfCtx.destination);
-    osc.frequency.value=mfCurrent===0?1000:800;
-    gain.gain.setValueAtTime(0.3,mfCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,mfCtx.currentTime+0.08);
-    osc.start(mfCtx.currentTime);osc.stop(mfCtx.currentTime+0.08);
+  if(mfCtx&&mfCtx.state!=='closed'){
+    try{
+      var osc=mfCtx.createOscillator();
+      var gain=mfCtx.createGain();
+      osc.connect(gain);gain.connect(mfCtx.destination);
+      // Primer tiempo más agudo (acento)
+      osc.frequency.value=mfCurrent===0?1200:900;
+      var vol=mfCurrent===0?0.5:0.25;
+      gain.gain.setValueAtTime(vol,mfCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,mfCtx.currentTime+0.1);
+      osc.start(mfCtx.currentTime);osc.stop(mfCtx.currentTime+0.1);
+    }catch(e){}
   }
   for(var i=0;i<mfBeats;i++){
     var d=document.getElementById('mfd'+i);
@@ -2559,7 +2572,7 @@ function drawSong(){
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
-        ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm} BPM</button>`:''}
+        ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm}${s.meter?' · '+s.meter:''}</button>`:''}
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
@@ -2567,8 +2580,8 @@ function drawSong(){
     </div>`;
 }
 function doTranspose(d){semitones+=d;drawSong();}
-function openAdd(){showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);},50);}
-function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);},50);}
+function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);},50);}
+function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);},50);}
 function formHTML(s){
   const isEdit=!!s;const body=s?songToText(s):'';
   return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
