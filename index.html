@@ -507,7 +507,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxsmmAwYUdZpdRDAWnZIwTGTCtNkOC0-CZY14lltXqCJtOroJtHt7s5mmvfJqz0aEZArw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbw6U18orRuEB7m3mcnzzFyV4Cf4uabhbIZhebTtXrbkJR_7rdG4x-aY2KugyrC2zmH6Sw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -2506,8 +2506,6 @@ function renderList(){
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
       <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text"><span onclick="event.stopPropagation();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}');" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${escH(s.artist)}</span></div></div>
-      <span class="song-key-badge">${escH(s.key)}</span>
-      ${s.bpm?`<span class="song-bpm-badge">&#9836; ${s.bpm}</span>`:''}
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
@@ -2571,7 +2569,7 @@ function drawSong(){
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
         <span class="sv-artist" onclick="showList();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px" title="Ver canciones de ${escH(s.artist)}">${escH(s.artist)}</span>
-        ${s.bpm?`<span class="sv-bpm">&#9836; ${s.bpm} BPM</span>`:''}
+        
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
