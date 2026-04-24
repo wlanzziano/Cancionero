@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.84</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.85</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1261,7 +1261,7 @@ function renderCalendar(){
   var eventsByDay={};
   monthEvents.forEach(function(ev){
     var evDay=new Date(ev.fecha+'T12:00:00').getDate();
-    if(!eventsByDay[evDay]) eventsByDay[d]=[];
+    if(!eventsByDay[evDay]) eventsByDay[evDay]=[];
     eventsByDay[evDay].push(ev);
   });
   var days='';
