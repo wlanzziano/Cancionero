@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.82</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.83</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1307,8 +1307,8 @@ function renderCalendar(){
     '</div>';
 }
 
-function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
-function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+async function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}await loadEvents();renderCalendar();}
+async function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}await loadEvents();renderCalendar();}
 
 function calDayClick(day){
   var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
