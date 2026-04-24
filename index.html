@@ -361,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.81</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.82</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -455,7 +455,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxYDel2KvvUzAI2B61vInYkDiBlA8ZEYvk9bDty4oNMg18ZgW0ci_uPTvgPeqW5hYCHxQ/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxVn3wfNhkPG7cCAQRIYkuWa_HJPK5h_DyWzcXhRmyBqbkk3e3e4DrcR-f-O5biHmNTYg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -1401,7 +1401,7 @@ async function openNewEvent(dateStr){
   el.innerHTML='<button class="back-btn" onclick="openCalendar()">&#8592; Calendario</button>'
     +'<div class="form-card"><div class="form-title" style="margin-bottom:20px">Nuevo evento</div>'
     +eventFormHTML(null,dateStr)
-    +'<div class="form-actions"><button class="btn-save" onclick="saveNewEvent()">Guardar evento</button></div></div>';
+    +'<div class="form-actions" style="display:flex;gap:10px">'+'<button class="btn-cancel" onclick="openCalendar()">Cancelar</button>'+'<button class="btn-save" onclick="saveNewEvent()">Guardar evento</button>'+'</div></div>';
 }
 
 async function openEditEvent(id){
@@ -1413,7 +1413,7 @@ async function openEditEvent(id){
     +'<div class="form-card"><div class="form-title" style="margin-bottom:20px">Editar evento</div>'
     +eventFormHTML(ev,null)
     +'<input type="hidden" id="ev-id" value="'+id+'">'
-    +'<div class="form-actions"><button class="btn-save" onclick="saveEditEvent()">Guardar cambios</button></div></div>';
+    +'<div class="form-actions" style="display:flex;gap:10px">'+'<button class="btn-cancel" onclick="openCalendar()">Cancelar</button>'+'<button class="btn-save" onclick="saveEditEvent()">Guardar cambios</button>'+'</div></div>';
 }
 
 async function saveNewEvent(){
