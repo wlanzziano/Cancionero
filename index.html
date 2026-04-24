@@ -294,6 +294,12 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .cal-event-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
 .cal-event-meta{font-size:12px;color:var(--text2)}
 .profile-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.user-check-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s;margin-bottom:4px}
+.user-check-item:hover{background:var(--surface2)}
+.user-check-item.selected{background:var(--accent-bg);border:1px solid var(--accent-border)}
+.user-check-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.user-check-name{font-size:14px;color:var(--text);flex:1}
+.user-check-role{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:4px;padding:1px 6px}
 .profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:12px}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
@@ -355,7 +361,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nano</span> · v2.79</div>
+      <div class="footer">Powered by <span>Nano</span> · v2.80</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -449,7 +455,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxeHIRtzvV0p50l5KewncN4JYq8csjUwUa1EVzMGATGuShDaVK7J2MXEfc40jA6mZlasg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxYDel2KvvUzAI2B61vInYkDiBlA8ZEYvk9bDty4oNMg18ZgW0ci_uPTvgPeqW5hYCHxQ/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -1351,6 +1357,12 @@ async function loadUsersList(){
   if(r.ok) allUsersList=r.users||[];
 }
 
+function toggleUserCheck(item){
+  var cb=item.querySelector('input[type=checkbox]');
+  if(!cb) return;
+  cb.checked=!cb.checked;
+  item.classList.toggle('selected', cb.checked);
+}
 function getSelectedUsers(){
   var cbs=document.querySelectorAll('#ev-users-wrap input[type=checkbox]:checked');
   return Array.from(cbs).map(function(cb){return cb.value;});
@@ -1360,8 +1372,12 @@ function eventFormHTML(ev,dateStr){
   var slOptions=setlists.map(function(sl){return '<option value="'+escH(sl.id)+'"'+(ev&&String(sl.id)===String(ev.setlistId)?' selected':'')+'>'+escH(sl.name)+'</option>';}).join('');
   var usersOpts=allUsersList.map(function(u){
     var chk=ev&&(ev.usuarios||[]).includes(u.name)?'checked':'';
-    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;cursor:pointer">'
-      +'<input type="checkbox" value="'+escH(u.name)+'" '+chk+' style="accent-color:var(--accent)"> '+escH(u.name)+'</label>';}).join('');
+    var sel=chk?'selected':'';
+    return '<div class="user-check-item '+sel+'" onclick="toggleUserCheck(this)">'
+      +'<input type="checkbox" value="'+escH(u.name)+'" '+chk+'>'
+      +'<span class="user-check-name">'+escH(u.name)+'</span>'
+      +'<span class="user-check-role">'+escH(u.role)+'</span>'
+      +'</div>';}).join('');
   return '<div class="field"><label>Nombre del evento *</label><input type="text" id="ev-name" value="'+(ev?escH(ev.name):'')+'" placeholder="Ej: Misa de Domingo"></div>'
     +'<div class="field"><label>Fecha *</label><input type="date" id="ev-fecha" value="'+(ev?ev.fecha:(dateStr||new Date().toISOString().split("T")[0]))+'"></div>'
     +'<div class="field"><label>Hora</label><input type="time" id="ev-hora" value="'+(ev&&ev.hora?ev.hora:'')+'"></div>'
@@ -1370,7 +1386,9 @@ function eventFormHTML(ev,dateStr){
     +'<div class="field"><label>Setlist</label><select id="ev-setlist" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none"><option value="">— Sin setlist —</option>'+slOptions+'</select></div>'
     +'<div class="field"><label>Notas</label><textarea id="ev-notas" rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;resize:vertical">'+(ev?escH(ev.notas):'')+'</textarea></div>'
     +'<div class="field"><label>Usuarios asignados <span style="font-size:11px;color:var(--text3)">(vacío = todos lo ven)</span></label>'
-    +'<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;max-height:200px;overflow-y:auto" id="ev-users-wrap">'+usersOpts+'</div></div>';
+    +'<div style="border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;max-height:220px;overflow-y:auto;background:var(--surface)" id="ev-users-wrap">'
+    +(usersOpts||'<div style="font-size:13px;color:var(--text3);padding:8px">Cargando usuarios...</div>')
+    +'</div></div>';
 }
 
 async function openNewEvent(dateStr){
@@ -1406,7 +1424,16 @@ async function saveNewEvent(){
     notas:(document.getElementById('ev-notas').value||'').trim(),
     usuarios:getSelectedUsers()};
   var r=await api({action:'add_event',event:ev});
-  if(r.ok){ev.id=r.id;events.push(ev);openCalendar();toast('Evento guardado');}
+  if(r.ok){
+    ev.id=r.id;
+    events.push(ev);
+    // Sincronizar mes del calendario al mes del evento guardado
+    var evDate=new Date(ev.fecha+'T12:00:00');
+    calYear=evDate.getFullYear();
+    calMonth=evDate.getMonth();
+    openCalendar();
+    toast('✓ Evento guardado');
+  }
   else toast('Error: '+r.error);
 }
 
