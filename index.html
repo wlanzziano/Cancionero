@@ -2582,12 +2582,9 @@ function openSong(id, fromEventId){
   } else {
     // Guardar vista anterior detectando cuál está visible
     ['list-view','setlists-view','chords-view','users-view','calendar-view'].forEach(function(vid){
-     var el=document.getElementById(vid);
-     if(el && getComputedStyle(el).display !== 'none'){
-      prevView = vid;
-   }
-});
-
+      var el=document.getElementById(vid);
+      if(el&&el.style.display!=='none') prevView=vid;
+    });
   }
   semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
 }
