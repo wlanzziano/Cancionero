@@ -2520,12 +2520,16 @@ var prevEventId=null; // guardar evento del cual se abrió la canción
 function openSong(id, fromEventId){
   currentSong=songs.find(s=>String(s.id)===String(id));
   if(!currentSong)return;
-  if(fromEventId) prevEventId=fromEventId;
-  // Guardar vista anterior
-  ['list-view','setlists-view','chords-view','users-view','calendar-view'].forEach(function(vid){
-    var el=document.getElementById(vid);
-    if(el&&el.style.display!=='none') prevView=vid;
-  });
+  if(fromEventId){
+    prevEventId=fromEventId;
+    prevView='calendar-view'; // venimos del detalle de un evento
+  } else {
+    // Guardar vista anterior detectando cuál está visible
+    ['list-view','setlists-view','chords-view','users-view','calendar-view'].forEach(function(vid){
+      var el=document.getElementById(vid);
+      if(el&&el.style.display!=='none') prevView=vid;
+    });
+  }
   semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
 }
 function drawSong(){
@@ -2571,7 +2575,7 @@ function drawSong(){
     secs+='<div style="height:2px"></div>';
   });
   document.getElementById('song-view').innerHTML=`
-    <button class="back-btn" onclick="prevView==='setlists-view'?(showView('setlists-view'),renderSetlistDetail()):prevView==='calendar-view'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="console.log('prevView:',prevView,'prevEventId:',prevEventId);prevView==='setlists-view'?(showView('setlists-view'),renderSetlistDetail()):prevView==='calendar-view'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
     <div class="sv-card">
       <div class="sv-title">${escH(s.title)}</div>
       <div class="sv-meta">
