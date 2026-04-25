@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.90d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.90e</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -900,7 +900,7 @@ async function openChordsManager(){
 async function renderChordsManager(){
   const cv = document.getElementById('chords-view');
   const canEdit = currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
-  cv.innerHTML = `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
+  cv.innerHTML = `<button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
     <div class="form-card">
       <div class="form-title" style="margin-bottom:4px">Acordes</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Toca cualquier acorde para ver su diagrama</div>
@@ -1151,7 +1151,7 @@ async function openSetlists(){
   showView('setlists-view');
   window.scrollTo(0,0);
   const el = document.getElementById('setlists-view');
-  el.innerHTML = '<button class="back-btn" onclick="showList()">&#8592; Volver</button><div style="color:var(--text3);font-size:14px;padding:20px 0">Cargando...</div>';
+  el.innerHTML = '<button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button><div style="color:var(--text3);font-size:14px;padding:20px 0">Cargando...</div>';
   await loadSetlists();
   renderSetlists();
 }
@@ -1169,7 +1169,7 @@ function renderSetlists(){
     '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
 
   el.innerHTML = `
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">Setlists</div>
       <button class="btn-add" onclick="createSetlist()">+ Nuevo</button>
@@ -1291,9 +1291,14 @@ async function loadEvents(){
 }
 
 async function openCalendar(){
+  prevEventId=null;
   showView('calendar-view');
-  renderCalendar(); // mostrar con datos actuales primero
-  loadEvents().then(function(){ renderCalendar(); }); // luego refrescar
+  renderCalendar();
+  loadEvents().then(function(){
+    // Solo re-renderizar si seguimos mostrando el grid del calendario
+    var el=document.getElementById('calendar-view');
+    if(el&&el.querySelector('.cal-grid')) renderCalendar();
+  });
 }
 
 function renderCalendar(){
@@ -1340,7 +1345,7 @@ function renderCalendar(){
       '</div>';
   }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">No hay eventos este mes</div>';
   el.innerHTML=
-    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
+    '<button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>'+
     '<div class="form-card">'+
       '<div class="cal-header">'+
         '<button class="cal-nav" onclick="calPrev()">&#8249;</button>'+
@@ -1379,7 +1384,7 @@ function openEventDetail(id){
     var slSongs=(sl.songs||[]).map(function(sid){return songs.find(function(s){return String(s.id)===String(sid);});}).filter(Boolean);
     setlistSection='<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
       +'<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Setlist: '+escH(sl.name)+'</div>'
-      +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="prevView=\'calendar-view\';openSong(\''+s.id+'\')">'
+      +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openSong(\''+s.id+'\',\''+ev.id+'\')">'
         +'<span style="font-size:12px;color:var(--text3);min-width:20px">'+(i+1)+'</span>'
         +'<div><div style="font-size:14px;font-weight:500;color:var(--text)">'+escH(s.title)+'</div>'
         +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div></div></div>';}).join('')
@@ -1528,7 +1533,7 @@ function renderProfile(){
   if(!el||!currentUser) return;
   var initial=currentUser.name?currentUser.name[0].toUpperCase():'?';
   el.innerHTML=
-    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
+    '<button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>'+
     '<div class="form-card">'+
       '<div class="profile-avatar">'+initial+'</div>'+
       '<div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px">'+escH(currentUser.name)+'</div>'+
@@ -2511,11 +2516,13 @@ function renderList(){
     </div>`).join('');
 }
 var prevView='list-view';
-function openSong(id){
+var prevEventId=null; // guardar evento del cual se abrió la canción
+function openSong(id, fromEventId){
   currentSong=songs.find(s=>String(s.id)===String(id));
   if(!currentSong)return;
+  if(fromEventId) prevEventId=fromEventId;
   // Guardar vista anterior
-  ['list-view','setlists-view','chords-view','users-view'].forEach(function(vid){
+  ['list-view','setlists-view','chords-view','users-view','calendar-view'].forEach(function(vid){
     var el=document.getElementById(vid);
     if(el&&el.style.display!=='none') prevView=vid;
   });
@@ -2585,7 +2592,7 @@ function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.g
 function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);},50);}
 function formHTML(s){
   const isEdit=!!s;const body=s?songToText(s):'';
-  return `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
+  return `<button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
     <div class="form-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div class="form-title" style="margin-bottom:0">${isEdit?'Editar canción':'Nueva canción'}</div>${!isEdit?`<button type="button" onclick="openConv()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 12px;font-family:var(--font-body);font-size:12px;color:var(--text2);cursor:pointer">📋 Importar texto</button>`:''}</div>
       <div class="row-2">
@@ -2689,7 +2696,7 @@ async function openUsers(){
     ?'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option><option value="admin">&#128081; Admin</option>'
     :'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option>';
   document.getElementById('users-view').innerHTML=`
-    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
+    <button class="back-btn" onclick="prevView===\'setlists-view\'?(showView(\'setlists-view\'),renderSetlistDetail()):prevView===\'calendar-view\'?(prevEventId?openEventDetail(prevEventId):openCalendar()):showList()">&#8592; Volver</button>
     <div class="form-card">
       <div class="form-title" style="margin-bottom:16px">Usuarios</div>
       <div id="users-list"><div style="color:var(--text3);font-size:14px">Cargando...</div></div>
