@@ -325,6 +325,11 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .tuner-btn{width:100%;padding:12px;border:none;border-radius:var(--r-sm);font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:16px}
 .tuner-btn.start{background:var(--accent);color:#fff}
 .tuner-btn.stop{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 0;border-top:1px solid var(--border);margin-top:8px;flex-wrap:wrap}
+.page-btn{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;font-family:var(--font-body);font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;min-width:36px;text-align:center}
+.page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.page-btn:disabled{opacity:.3;cursor:default}
+.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -385,7 +390,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.93</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.93a</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2035,12 +2040,7 @@ function slBuildAvail(list){
   var totalPg=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
   if(slAvailPage>=totalPg) slAvailPage=0;
   var paged=filtered.slice(slAvailPage*PAGE_SIZE,(slAvailPage+1)*PAGE_SIZE);
-  var pgControls=filtered.length>PAGE_SIZE
-    ?'<div class="pagination">'
-      +'<button class="page-btn" onclick="slAvailPage--;slFilter()" '+(slAvailPage===0?'disabled':'')+'>&#8592;</button>'
-      +'<span class="page-info">Pág '+(slAvailPage+1)+' / '+totalPg+'</span>'
-      +'<button class="page-btn" onclick="slAvailPage++;slFilter()" '+(slAvailPage>=totalPg-1?'disabled':'')+'>&#8594;</button>'
-      +'</div>':'';
+  var pgControls=buildPagination(slAvailPage,totalPg,'goToSlPage');
   return paged.map(function(s){
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
       +'<div style="flex:1;min-width:0">'
@@ -2584,13 +2584,11 @@ function renderList(){
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
   // Controles de paginación
-  if(filtered.length>PAGE_SIZE){
+  var pgHtml=buildPagination(listPage,totalPages,'goToPage');
+  if(pgHtml){
     var pgDiv=document.createElement('div');
-    pgDiv.className='pagination';
-    pgDiv.innerHTML='<button class="page-btn" onclick="listPage--;renderList()" '+(listPage===0?'disabled':'')+'>&#8592; Anterior</button>'
-      +'<span class="page-info">Pág '+(listPage+1)+' / '+totalPages+'</span>'
-      +'<button class="page-btn" onclick="listPage++;renderList()" '+(listPage>=totalPages-1?'disabled':'')+'>Siguiente &#8594;</button>';
-    list.appendChild(pgDiv);
+    pgDiv.innerHTML=pgHtml;
+    list.appendChild(pgDiv.firstChild);
   }
 }
 var prevView='list-view';
@@ -2612,6 +2610,30 @@ function goToSetlist(btn){
   showView('setlists-view');
   renderSetlistDetail();
 }
+function buildPagination(currentPage, totalPages, onClickFn){
+  if(totalPages<=1) return '';
+  var btns='';
+  // Primera
+  btns+='<button class="page-btn" onclick="'+onClickFn+'(0)" '+(currentPage===0?'disabled':'')+'>&#171;</button>';
+  // Anterior
+  btns+='<button class="page-btn" onclick="'+onClickFn+'('+(currentPage-1)+')" '+(currentPage===0?'disabled':'')+'>&#8249;</button>';
+  // Páginas numéricas — mostrar max 5 alrededor de la actual
+  var start=Math.max(0,currentPage-2);
+  var end=Math.min(totalPages-1,currentPage+2);
+  if(start>0) btns+='<span style="color:var(--text3);padding:0 4px;font-size:13px">...</span>';
+  for(var p=start;p<=end;p++){
+    btns+='<button class="page-btn'+(p===currentPage?' active':'')+'" onclick="'+onClickFn+'('+p+')">'+(p+1)+'</button>';
+  }
+  if(end<totalPages-1) btns+='<span style="color:var(--text3);padding:0 4px;font-size:13px">...</span>';
+  // Siguiente
+  btns+='<button class="page-btn" onclick="'+onClickFn+'('+(currentPage+1)+')" '+(currentPage>=totalPages-1?'disabled':'')+'>&#8250;</button>';
+  // Última
+  btns+='<button class="page-btn" onclick="'+onClickFn+'('+(totalPages-1)+')" '+(currentPage>=totalPages-1?'disabled':'')+'>&#187;</button>';
+  return '<div class="pagination">'+btns+'</div>';
+}
+function goToPage(p){listPage=p;renderList();}
+function goToSlPage(p){slAvailPage=p;slFilter();}
+
 function goBack(){
   if(prevView==='setlists-view'&&currentSetlist){
     showView('setlists-view'); renderSetlistDetail();
