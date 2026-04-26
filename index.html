@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.90d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.91a</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -900,7 +900,7 @@ async function openChordsManager(){
 async function renderChordsManager(){
   const cv = document.getElementById('chords-view');
   const canEdit = currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
-  cv.innerHTML = `<button class="back-btn" onclick="goBack()">&#8592; Volver</button>
+  cv.innerHTML = `<button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="form-card">
       <div class="form-title" style="margin-bottom:4px">Acordes</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Toca cualquier acorde para ver su diagrama</div>
@@ -1149,13 +1149,11 @@ async function openSetlists(){
   selectedSlIdx=null;
   slQ="";
   slLetter="#";
-  slQ="";
-  slLetter="#";
   tpHideBar();
   showView('setlists-view');
   window.scrollTo(0,0);
   const el = document.getElementById('setlists-view');
-  el.innerHTML = '<button class="back-btn" onclick="goBack()">&#8592; Volver</button><div style="color:var(--text3);font-size:14px;padding:20px 0">Cargando...</div>';
+  el.innerHTML = '<button class="back-btn" onclick="showList()">&#8592; Volver</button><div style="color:var(--text3);font-size:14px;padding:20px 0">Cargando...</div>';
   await loadSetlists();
   renderSetlists();
 }
@@ -1173,7 +1171,7 @@ function renderSetlists(){
     '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
 
   el.innerHTML = `
-    <button class="back-btn" onclick="goBack()">&#8592; Volver</button>
+    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">Setlists</div>
       <button class="btn-add" onclick="createSetlist()">+ Nuevo</button>
@@ -1227,16 +1225,8 @@ function renderSetlistDetail(){
   const availItems = available.length ? `
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">Agregar canciones</div>
-      <input type="text" id="sl-q" placeholder="&#128269; Buscar..."
-        oninput="slFilter()"
-        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:8px;box-sizing:border-box">
-      <div id="sl-abc" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
-        ${['#','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].map(l=>
-          `<button onclick="slAlpha('${l}')" id="slab-${l}"
-            style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer">${l}</button>`
-        ).join('')}
-      </div>
-      <div id="sl-avail-wrap">${slBuildAvail(available)}</div>
+      <div id="sl-search-wrap"></div>
+      <div id="sl-avail-wrap"></div>
     </div>` : '';
 
   el.innerHTML = `
@@ -1250,6 +1240,7 @@ function renderSetlistDetail(){
     </div>
     <div id="sl-song-list">${songItems}</div>
     ${availItems}`;
+  slInitSearch(available);
 }
 
 async function addToSetlist(songId){
@@ -1344,7 +1335,7 @@ function renderCalendar(){
       '</div>';
   }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0">No hay eventos este mes</div>';
   el.innerHTML=
-    '<button class="back-btn" onclick="goBack()">&#8592; Volver</button>'+
+    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
     '<div class="form-card">'+
       '<div class="cal-header">'+
         '<button class="cal-nav" onclick="calPrev()">&#8249;</button>'+
@@ -1382,7 +1373,9 @@ function openEventDetail(id){
   if(sl){
     var slSongs=(sl.songs||[]).map(function(sid){return songs.find(function(s){return String(s.id)===String(sid);});}).filter(Boolean);
     setlistSection='<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Setlist: '+escH(sl.name)+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Setlist: '+escH(sl.name)+'</div>'+
+        '<button class="sv-action-btn" style="font-size:12px;padding:4px 10px" data-slid="'+sl.id+'" onclick="goToSetlist(this)">&#127897; Ver Setlist</button>'+'</div>'
       +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="prevView=\'calendar-view\';openSong(\''+s.id+'\')">'
         +'<span style="font-size:12px;color:var(--text3);min-width:20px">'+(i+1)+'</span>'
         +'<div><div style="font-size:14px;font-weight:500;color:var(--text)">'+escH(s.title)+'</div>'
@@ -1532,7 +1525,7 @@ function renderProfile(){
   if(!el||!currentUser) return;
   var initial=currentUser.name?currentUser.name[0].toUpperCase():'?';
   el.innerHTML=
-    '<button class="back-btn" onclick="goBack()">&#8592; Volver</button>'+
+    '<button class="back-btn" onclick="showList()">&#8592; Volver</button>'+
     '<div class="form-card">'+
       '<div class="profile-avatar">'+initial+'</div>'+
       '<div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px">'+escH(currentUser.name)+'</div>'+
@@ -2008,6 +2001,65 @@ function slDragOver(e, idx){
 function slDragEnd(){
   document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
+// ── Buscador setlist ──────────────────────────────────────
+function slInitSearch(available){
+  var wrap=document.getElementById('sl-search-wrap');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  var inp=document.createElement('input');
+  inp.type='text'; inp.id='sl-q'; inp.placeholder='Buscar...';
+  inp.oninput=slFilter;
+  inp.style.cssText='width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:8px;box-sizing:border-box';
+  wrap.appendChild(inp);
+  var row=document.createElement('div');
+  row.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px';
+  ['#','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].forEach(function(l){
+    var btn=document.createElement('button');
+    btn.textContent=l; btn.id='slab-'+l;
+    btn.style.cssText='background:none;border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer';
+    btn.onclick=function(){slAlpha(l);};
+    row.appendChild(btn);
+  });
+  wrap.appendChild(row);
+  slFilter();
+}
+function slBuildAvail(list){
+  var q=(slQ||'').toLowerCase();
+  var l=slLetter||'#';
+  var filtered=list.filter(function(s){
+    var okQ=!q||s.title.toLowerCase().indexOf(q)>=0||s.artist.toLowerCase().indexOf(q)>=0;
+    var okL=l==='#'||(s.title.charAt(0).toUpperCase()===l);
+    return okQ&&okL;
+  });
+  if(!filtered.length) return '<p style="color:var(--text3);font-size:13px;padding:8px 0">Sin resultados</p>';
+  return filtered.map(function(s){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(s.title)+'</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div>'
+      +'</div>'
+      +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" data-sid="'+String(s.id)+'" onclick="slAddBtn(this)">+ Agregar</button>'
+      +'</div>';
+  }).join('');
+}
+function slAddBtn(btn){addToSetlist(btn.dataset.sid);}
+function slFilter(){
+  slQ=(document.getElementById('sl-q')||{}).value||'';
+  if(!currentSetlist) return;
+  var avail=songs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
+  var w=document.getElementById('sl-avail-wrap');
+  if(w) w.innerHTML=slBuildAvail(avail);
+}
+function slAlpha(l){
+  slLetter=l;
+  document.querySelectorAll('[id^="slab-"]').forEach(function(b){
+    b.style.background=b.id==='slab-'+l?'var(--accent-bg)':'none';
+    b.style.borderColor=b.id==='slab-'+l?'var(--accent)':'var(--border)';
+    b.style.color=b.id==='slab-'+l?'var(--accent)':'var(--text2)';
+  });
+  slFilter();
+}
+
 async function slMoveUp(idx){
   if(idx===0) return;
   var arr=[...(currentSetlist.songs||[])];
@@ -2519,6 +2571,14 @@ var slQ='';
 var slLetter='#';
 var slQ='';
 var slLetter='#';
+function goToSetlist(btn){
+  var slid=btn.dataset.slid;
+  var sl=setlists.find(function(s){return String(s.id)===String(slid);});
+  if(!sl) return;
+  currentSetlist=sl;
+  showView('setlists-view');
+  renderSetlistDetail();
+}
 function goBack(){
   if(prevView==='setlists-view'&&currentSetlist){
     showView('setlists-view'); renderSetlistDetail();
@@ -2703,7 +2763,7 @@ async function openUsers(){
     ?'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option><option value="admin">&#128081; Admin</option>'
     :'<option value="lector">&#128065; Lector</option><option value="editor">&#9998; Editor</option>';
   document.getElementById('users-view').innerHTML=`
-    <button class="back-btn" onclick="goBack()">&#8592; Volver</button>
+    <button class="back-btn" onclick="showList()">&#8592; Volver</button>
     <div class="form-card">
       <div class="form-title" style="margin-bottom:16px">Usuarios</div>
       <div id="users-list"><div style="color:var(--text3);font-size:14px">Cargando...</div></div>
