@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.91a</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.92</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1376,7 +1376,7 @@ function openEventDetail(id){
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
         '<div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Setlist: '+escH(sl.name)+'</div>'+
         '<button class="sv-action-btn" style="font-size:12px;padding:4px 10px" data-slid="'+sl.id+'" onclick="goToSetlist(this)">&#127897; Ver Setlist</button>'+'</div>'
-      +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="prevView=\'calendar-view\';openSong(\''+s.id+'\')">'
+      +slSongs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">'
         +'<span style="font-size:12px;color:var(--text3);min-width:20px">'+(i+1)+'</span>'
         +'<div><div style="font-size:14px;font-weight:500;color:var(--text)">'+escH(s.title)+'</div>'
         +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div></div></div>';}).join('')
@@ -2596,7 +2596,7 @@ function openSong(id){
 }
 function drawSong(){
   const s=currentSong,st=semitones;
-  const badge=st===0?'Original':(st>0?'+':'')+st+' st';
+  const badge=(st>0?'+':'')+st+' st';
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   let secs='';
   s.sections.forEach(sec=>{
