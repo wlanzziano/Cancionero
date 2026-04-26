@@ -2554,7 +2554,14 @@ function slSetAlpha(l){
 }
 
 
-function goBack(){ showList(); }
+function goBack(){
+  if(prevView==='setlists-view'&&currentSetlist){
+    showView('setlists-view');
+    renderSetlistDetail();
+  } else {
+    showList();
+  }
+}
 
 function openSong(id){
   currentSong=songs.find(s=>String(s.id)===String(id));
