@@ -199,7 +199,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sl-card.dragging{opacity:.4;border-color:var(--accent)}
 .sl-card.drag-over{border-color:var(--accent);background:var(--surface2)}
 .sl-drag-handle{color:var(--text3);font-size:18px;cursor:grab;flex-shrink:0;user-select:none}
-.sl-alpha-active{background:var(--accent-bg)!important;border-color:var(--accent)!important;color:var(--accent)!important}
 .sl-card.selected{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 2px var(--accent)}
 .sl-move-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:10px;cursor:pointer;padding:2px 5px;line-height:1;transition:all .15s}
 .sl-move-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
@@ -386,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.91</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.90d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1148,6 +1147,10 @@ async function loadSetlists(){
 
 async function openSetlists(){
   selectedSlIdx=null;
+  slQ="";
+  slLetter="#";
+  slQ="";
+  slLetter="#";
   tpHideBar();
   showView('setlists-view');
   window.scrollTo(0,0);
@@ -1216,7 +1219,7 @@ function renderSetlistDetail(){
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
         <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
       </div>
-      <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="prevSetlistId=currentSetlist.id;prevView='setlists-view';openSong('${s.id}')">Abrir</button>
+      <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="prevView='setlists-view';openSong('${s.id}')">Abrir</button>
       <button class="song-del" onclick="removeFromSetlist('${s.id}')">&#10005;</button>
     </div>`).join('') :
     '<div style="color:var(--text3);font-size:13px;padding:12px 0">Agrega canciones desde abajo</div>';
@@ -1224,16 +1227,16 @@ function renderSetlistDetail(){
   const availItems = available.length ? `
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px">Agregar canciones</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${available.map(s=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
-            <div style="font-size:12px;color:var(--text2)">${escH(s.artist)} · ${escH(s.key)}</div>
-          </div>
-          <button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="addToSetlist('${s.id}')">+ Agregar</button>
-        </div>`).join('')}
+      <input type="text" id="sl-q" placeholder="&#128269; Buscar..."
+        oninput="slFilter()"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:8px;box-sizing:border-box">
+      <div id="sl-abc" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        ${['#','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].map(l=>
+          `<button onclick="slAlpha('${l}')" id="slab-${l}"
+            style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;font-family:var(--font-mono);color:var(--text2);cursor:pointer">${l}</button>`
+        ).join('')}
       </div>
+      <div id="sl-avail-wrap">${slBuildAvail(available)}</div>
     </div>` : '';
 
   el.innerHTML = `
@@ -2504,7 +2507,7 @@ function renderList(){
   const list=document.getElementById('song-list');
   if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
   list.innerHTML=filtered.map((s,i)=>`
-    <div class="song-card" onclick="prevSetlistId=currentSetlist.id;prevView='setlists-view';openSong('${s.id}')">
+    <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
       <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text"><span onclick="event.stopPropagation();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}');" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${escH(s.artist)}</span></div></div>
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
@@ -2512,57 +2515,15 @@ function renderList(){
     </div>`).join('');
 }
 var prevView='list-view';
-var prevSetlistId=null;
-var slAvailQ="";
-var slAvailAlpha="#";
-
-// ── Buscador de canciones disponibles en setlist ──────────
-function slRenderAvail(available, q){
-  var alpha=slAvailAlpha;
-  var filtered=available.filter(function(s){
-    var matchQ=!q||s.title.toLowerCase().indexOf(q.toLowerCase())>=0||s.artist.toLowerCase().indexOf(q.toLowerCase())>=0;
-    var matchA=alpha==="#"||s.title.charAt(0).toUpperCase()===alpha;
-    return matchQ&&matchA;
-  });
-  if(!filtered.length) return '<div style="color:var(--text3);font-size:13px;padding:8px 0">Sin resultados</div>';
-  return filtered.map(function(s){
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(s.title)+'</div>'
-      +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div>'
-      +'</div>'
-      +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" data-sid="'+s.id+'" onclick="slAddClick(this)">+ Agregar</button>'
-      +'</div>';
-  }).join('');
-}
-function slAddClick(btn){
-  addToSetlist(btn.dataset.sid);
-}
-function slFilterAvail(){
-  var el=document.getElementById('sl-avail-search');
-  slAvailQ=el?el.value:'';
-  var available=songs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
-  var wrap=document.getElementById('sl-avail-list');
-  if(wrap) wrap.innerHTML=slRenderAvail(available,slAvailQ);
-}
-function slSetAlpha(l){
-  slAvailAlpha=l;
-  document.querySelectorAll('[id^="sla-"]').forEach(function(b){b.classList.remove('sl-alpha-active');});
-  var btn=document.getElementById('sla-'+l);
-  if(btn) btn.classList.add('sl-alpha-active');
-  slFilterAvail();
-}
-
-
+var slQ='';
+var slLetter='#';
+var slQ='';
+var slLetter='#';
 function goBack(){
   if(prevView==='setlists-view'&&currentSetlist){
-    showView('setlists-view');
-    renderSetlistDetail();
-  } else {
-    showList();
-  }
+    showView('setlists-view'); renderSetlistDetail();
+  } else { showList(); }
 }
-
 function openSong(id){
   currentSong=songs.find(s=>String(s.id)===String(id));
   if(!currentSong)return;
@@ -2571,7 +2532,7 @@ function openSong(id){
     var el=document.getElementById(vid);
     if(el&&el.style.display!=='none') prevView=vid;
   });
-  semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
+  semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);var bgs=document.getElementById('btn-go-setlist');if(bgs)bgs.style.display=currentSetlist?'inline-flex':'none';
 }
 function drawSong(){
   const s=currentSong,st=semitones;
@@ -2626,7 +2587,7 @@ function drawSong(){
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm}${s.meter?' · '+s.meter:''}</button>`:''}
-        ${currentSetlist?`<button class="sv-action-btn" onclick="showView('setlists-view');renderSetlistDetail()">&#127908; Setlist</button>`:''}
+        <button class="sv-action-btn" id="btn-go-setlist" style="display:none" onclick="showView('setlists-view');renderSetlistDetail()">&#127908; Setlist</button>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
       </div>
@@ -2797,7 +2758,7 @@ function showView(v){
     addBtn.style.display=(v==='list-view'&&canEdit)?'block':'none';
   }
 }
-function showList(){prevSetlistId=null;tpHideBar();if(typeof closeMetroFloat==='function')closeMetroFloat();showView('list-view');renderList();}
+function showList(){tpHideBar();if(typeof closeMetroFloat==='function')closeMetroFloat();showView('list-view');renderList();}
 function parseBody(text){
   const lines=text.split('\n');const sections=[];let current={label:'',lines:[]};
   lines.forEach(raw=>{const t=raw.trim();if(!t){if(current.lines.length)current.lines.push({chords:[],lyric:''});return;}if(t.startsWith('#')){if(current.lines.length||current.label)sections.push(current);current={label:t.replace(/^#+\s*/,''),lines:[]};return;}current.lines.push(parseLine(t));});
