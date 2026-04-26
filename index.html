@@ -385,7 +385,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.92</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.93</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2032,7 +2032,16 @@ function slBuildAvail(list){
     return okQ&&okL;
   });
   if(!filtered.length) return '<p style="color:var(--text3);font-size:13px;padding:8px 0">Sin resultados</p>';
-  return filtered.map(function(s){
+  var totalPg=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(slAvailPage>=totalPg) slAvailPage=0;
+  var paged=filtered.slice(slAvailPage*PAGE_SIZE,(slAvailPage+1)*PAGE_SIZE);
+  var pgControls=filtered.length>PAGE_SIZE
+    ?'<div class="pagination">'
+      +'<button class="page-btn" onclick="slAvailPage--;slFilter()" '+(slAvailPage===0?'disabled':'')+'>&#8592;</button>'
+      +'<span class="page-info">Pág '+(slAvailPage+1)+' / '+totalPg+'</span>'
+      +'<button class="page-btn" onclick="slAvailPage++;slFilter()" '+(slAvailPage>=totalPg-1?'disabled':'')+'>&#8594;</button>'
+      +'</div>':'';
+  return paged.map(function(s){
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(s.title)+'</div>'
@@ -2040,10 +2049,11 @@ function slBuildAvail(list){
       +'</div>'
       +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" data-sid="'+String(s.id)+'" onclick="slAddBtn(this)">+ Agregar</button>'
       +'</div>';
-  }).join('');
+  }).join('')+pgControls;
 }
 function slAddBtn(btn){addToSetlist(btn.dataset.sid);}
 function slFilter(){
+  slAvailPage=0;
   slQ=(document.getElementById('sl-q')||{}).value||'';
   if(!currentSetlist) return;
   var avail=songs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
@@ -2051,6 +2061,7 @@ function slFilter(){
   if(w) w.innerHTML=slBuildAvail(avail);
 }
 function slAlpha(l){
+  slAvailPage=0;
   slLetter=l;
   document.querySelectorAll('[id^="slab-"]').forEach(function(b){
     b.style.background=b.id==='slab-'+l?'var(--accent-bg)':'none';
@@ -2172,7 +2183,8 @@ function renderTagBar(){
   wrap.style.display=tagsOpen?'flex':'none';
 }
 
-function setTag(t){activeTag=t;activeArtist=null;renderList();}
+function setTag(t){
+  listPage=0;activeTag=t;activeArtist=null;renderList();}
 
 var tagsOpen=false;
 var activeAlpha=null;
@@ -2202,6 +2214,7 @@ function renderAlphaBar(){
 }
 
 function setAlpha(letter){
+  listPage=0;
   activeAlpha=letter;
   renderList();
 }
@@ -2558,13 +2571,27 @@ function renderList(){
   const canDel=currentUser.role==='admin';
   const list=document.getElementById('song-list');
   if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
-  list.innerHTML=filtered.map((s,i)=>`
+  // Paginación
+  var totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(listPage>=totalPages) listPage=0;
+  var paged=filtered.slice(listPage*PAGE_SIZE,(listPage+1)*PAGE_SIZE);
+  var offset=listPage*PAGE_SIZE;
+  list.innerHTML=paged.map((s,i)=>`
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
       <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text"><span onclick="event.stopPropagation();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}');" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${escH(s.artist)}</span></div></div>
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
+  // Controles de paginación
+  if(filtered.length>PAGE_SIZE){
+    var pgDiv=document.createElement('div');
+    pgDiv.className='pagination';
+    pgDiv.innerHTML='<button class="page-btn" onclick="listPage--;renderList()" '+(listPage===0?'disabled':'')+'>&#8592; Anterior</button>'
+      +'<span class="page-info">Pág '+(listPage+1)+' / '+totalPages+'</span>'
+      +'<button class="page-btn" onclick="listPage++;renderList()" '+(listPage>=totalPages-1?'disabled':'')+'>Siguiente &#8594;</button>';
+    list.appendChild(pgDiv);
+  }
 }
 var prevView='list-view';
 var slQ='';
