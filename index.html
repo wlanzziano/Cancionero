@@ -520,7 +520,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxH42BcYBbDMuUr7k3zZnCz5ehaq5RAzgeY539ADYGCJ8w0kACgrIXSxTXxPgSLpOwU1A/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwyE8XY0DLwO8tiX9jI5h1dWozQvDrnZyDeLRjCmUU8QPDPngMcm-22Mr4_kbLArrFGag/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -2579,6 +2579,13 @@ function renderList(){
   const canDel=currentUser.role==='admin';
   const list=document.getElementById('song-list');
   if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
+  // Un título = una fila en el listado (duplicados se abren en modal)
+  var seen={};
+  filtered=filtered.filter(function(s){
+    var k=s.title.trim().toLowerCase();
+    if(seen[k]) return false;
+    seen[k]=true; return true;
+  });
   // Paginación
   var totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
   if(listPage>=totalPages) listPage=0;
@@ -2647,65 +2654,6 @@ function goBack(){
     showView('setlists-view'); renderSetlistDetail();
   } else { showList(); }
 }
-
-// ── Selector de versiones ─────────────────────────────────
-function closeVModal(){
-  var el=document.getElementById('v-modal');
-  if(el) el.style.display='none';
-}
-
-function openSongDirect(id){
-  currentSong=songs.find(function(s){return String(s.id)===String(id);});
-  if(!currentSong) return;
-  semitones=0; tpPause(); showView('song-view'); drawSong(); tpLoadSpeed(); tpShowBar(); window.scrollTo(0,0);
-  var bgs=document.getElementById('btn-go-setlist');
-  if(bgs) bgs.style.display=currentSetlist?'inline-flex':'none';
-}
-
-function showVModal(title, matches){
-  closeVModal();
-  var el=document.getElementById('v-modal');
-  if(!el) return;
-  var box=document.createElement('div');
-  box.className='v-box';
-  var h=document.createElement('div');
-  h.style.cssText='font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px';
-  h.textContent=title;
-  box.appendChild(h);
-  var sub=document.createElement('div');
-  sub.style.cssText='font-size:13px;color:var(--text3);margin-bottom:14px';
-  sub.textContent=matches.length+' versiones — ¿cuál deseas abrir?';
-  box.appendChild(sub);
-  matches.forEach(function(s,i){
-    var row=document.createElement('div');
-    row.className='v-item';
-    row.onclick=(function(sid){return function(){closeVModal();openSongDirect(sid);};})(s.id);
-    var num=document.createElement('div');
-    num.className='v-num';
-    num.textContent=i+1;
-    var info=document.createElement('div');
-    var t=document.createElement('div');
-    t.style.cssText='font-size:14px;font-weight:500;color:var(--text)';
-    t.textContent=s.title;
-    var meta=[];
-    if(s.artist) meta.push(s.artist);
-    if(s.key) meta.push(s.key);
-    if(s.bpm) meta.push(s.bpm+' BPM');
-    var md=document.createElement('div');
-    md.style.cssText='font-size:12px;color:var(--text2)';
-    md.textContent=meta.join(' · ');
-    info.appendChild(t); info.appendChild(md);
-    row.appendChild(num); row.appendChild(info);
-    box.appendChild(row);
-  });
-  var btn=document.createElement('button');
-  btn.className='v-cancel'; btn.textContent='Cancelar'; btn.onclick=closeVModal;
-  box.appendChild(btn);
-  el.innerHTML=''; el.appendChild(box);
-  el.onclick=function(e){if(e.target===el)closeVModal();};
-  el.style.display='flex';
-}
-
 function openSong(id){
   var target=songs.find(function(s){return String(s.id)===String(id);});
   if(!target) return;
@@ -2794,6 +2742,7 @@ function formHTML(s){
       <div class="row-2b">
         <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
+        <div class="field"><label>Versión <span style="font-size:11px;color:var(--text3)">(opcional: Full, Básica, Piano...)</span></label><input type="text" id="f-version" value="${s&&s.version?s.version:''}" placeholder="Ej: Full, Básica, Piano, Ofertorio"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>Compás</label><select id="f-meter"><option value="">— Sin compás —</option><option value="4/4" ${s&&(s.meter=='4/4'||s.meter==='4')?'selected':''}>4/4 (común)</option><option value="3/4" ${s&&(s.meter=='3/4'||s.meter==='3')?'selected':''}>3/4 (vals)</option><option value="2/4" ${s&&(s.meter=='2/4'||s.meter==='2')?'selected':''}>2/4</option><option value="6/8" ${s&&(s.meter=='6/8'||s.meter==='6')?'selected':''}>6/8</option><option value="5/4" ${s&&(s.meter=='5/4'||s.meter==='5')?'selected':''}>5/4</option><option value="7/8" ${s&&s.meter==='7/8'?'selected':''}>7/8</option><option value="libre" ${s&&s.meter==='libre'?'selected':''}>Libre</option></select></div>
@@ -2824,6 +2773,7 @@ function getFormValues(){
   const body=document.getElementById('f-body').value.trim();
   const bpmEl=document.getElementById('f-bpm');
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
+  const version=(document.getElementById('f-version')||{}).value||'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
   var spInput=document.getElementById('f-spotify');
@@ -2839,7 +2789,7 @@ async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -2847,7 +2797,7 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
   if(r.ok){
     // Recargar canciones del servidor para tener datos frescos (incluyendo meter, tpSpeed)
     await loadSongs();
@@ -3064,6 +3014,63 @@ function exportPDF(){
   win.document.close();
 }
 init();
+// ── Selector de versiones ─────────────────────────────────
+function closeVModal(){
+  var el=document.getElementById('v-modal');
+  if(el) el.style.display='none';
+}
+function openSongDirect(id){
+  currentSong=songs.find(function(s){return String(s.id)===String(id);});
+  if(!currentSong) return;
+  semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
+  var bgs=document.getElementById('btn-go-setlist');
+  if(bgs) bgs.style.display=currentSetlist?'inline-flex':'none';
+}
+function showVModal(title, matches){
+  closeVModal();
+  var el=document.getElementById('v-modal');
+  if(!el) return;
+  var box=document.createElement('div');
+  box.className='v-box';
+  var h=document.createElement('div');
+  h.style.cssText='font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px';
+  h.textContent=title;
+  box.appendChild(h);
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:13px;color:var(--text3);margin-bottom:14px';
+  sub.textContent='Selecciona una versión:';
+  box.appendChild(sub);
+  matches.forEach(function(s,i){
+    var row=document.createElement('div');
+    row.className='v-item';
+    row.onclick=(function(sid){return function(){closeVModal();openSongDirect(sid);};})(s.id);
+    var num=document.createElement('div');
+    num.className='v-num';
+    num.textContent=i+1;
+    var info=document.createElement('div');
+    info.style.flex='1';
+    var t=document.createElement('div');
+    t.style.cssText='font-size:14px;font-weight:600;color:var(--accent)';
+    t.textContent=s.version||'(sin nombre)';
+    var meta=[];
+    if(s.artist) meta.push(s.artist);
+    if(s.key) meta.push(s.key);
+    if(s.bpm) meta.push(s.bpm+' BPM');
+    var md=document.createElement('div');
+    md.style.cssText='font-size:12px;color:var(--text2)';
+    md.textContent=meta.join(' · ');
+    info.appendChild(t); info.appendChild(md);
+    row.appendChild(num); row.appendChild(info);
+    box.appendChild(row);
+  });
+  var btn=document.createElement('button');
+  btn.className='v-cancel'; btn.textContent='Cancelar'; btn.onclick=closeVModal;
+  box.appendChild(btn);
+  el.innerHTML=''; el.appendChild(box);
+  el.onclick=function(e){if(e.target===el)closeVModal();};
+  el.style.display='flex';
+}
+
 // Registrar Service Worker para PWA
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
