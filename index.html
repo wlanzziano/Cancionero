@@ -2582,7 +2582,8 @@ function renderList(){
   // Un título = una fila en el listado (duplicados se abren en modal)
   var seen={};
   filtered=filtered.filter(function(s){
-    var k=s.title.trim().toLowerCase();
+    var k=(s.title||'').trim().toLowerCase();
+    if(!k) return true;
     if(seen[k]) return false;
     seen[k]=true; return true;
   });
@@ -2607,11 +2608,6 @@ function renderList(){
   }
 }
 var prevView='list-view';
-var slQ='';
-var slLetter='#';
-var listPage=0;
-var PAGE_SIZE=50;
-var slAvailPage=0;
 var slQ='';
 var slLetter='#';
 var listPage=0;
@@ -2783,7 +2779,7 @@ function getFormValues(){
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
   var meterEl=document.getElementById('f-meter');
   var meter=meterEl?meterEl.value:'';
-  return{title,artist,key,bpm,meter,tags,spotify,body};
+  return{title,artist,key,bpm,version,meter,tags,spotify,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
