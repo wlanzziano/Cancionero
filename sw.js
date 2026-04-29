@@ -1,5 +1,5 @@
 // ── Cancionero Católico — Service Worker ──────────────────
-const CACHE_NAME = 'cancionero-v3';
+const CACHE_NAME = 'cancionero-v4';
 const STATIC_FILES = [
   '/Cancionero/',
   '/Cancionero/index.html',
