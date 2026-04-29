@@ -336,7 +336,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .v-item:hover{border-color:var(--accent);background:var(--accent-bg)}
 .v-num{width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .v-cancel{width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:var(--font-body);font-size:14px;cursor:pointer;margin-top:4px}
-.v-cancel:hover{border-color:var(--accent);color:var(--accent)}
 @media(max-width:480px){#app{padding:0 12px 80px}.sv-card,.form-card{padding:16px}.sv-title{font-size:19px}.lyric-line{font-size:12px}.chord-row-txt{font-size:12px}.chord-pill{font-size:11px}.header-title{font-size:15px}.chord-table{font-size:12px}.chord-cell{font-size:12px}.lyric-cell{font-size:12px}}
 @media(max-width:480px) and (orientation:portrait){.chord-table{font-size:11px}.chord-cell{font-size:11px}.lyric-cell{font-size:11px}.lyrics-wrap{font-size:11px}}
 @media(max-width:380px) and (orientation:portrait){.chord-table{font-size:10px}.chord-cell{font-size:10px}.lyric-cell{font-size:10px}}
@@ -397,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.93a</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2579,14 +2578,8 @@ function renderList(){
   const canDel=currentUser.role==='admin';
   const list=document.getElementById('song-list');
   if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
-  // Un título = una fila en el listado (duplicados se abren en modal)
   var seen={};
-  filtered=filtered.filter(function(s){
-    var k=(s.title||'').trim().toLowerCase();
-    if(!k) return true;
-    if(seen[k]) return false;
-    seen[k]=true; return true;
-  });
+  filtered=filtered.filter(function(s){var k=(s.title||'').trim().toLowerCase();if(!k)return true;if(seen[k])return false;seen[k]=true;return true;});
   // Paginación
   var totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
   if(listPage>=totalPages) listPage=0;
@@ -2608,6 +2601,11 @@ function renderList(){
   }
 }
 var prevView='list-view';
+var slQ='';
+var slLetter='#';
+var listPage=0;
+var PAGE_SIZE=50;
+var slAvailPage=0;
 var slQ='';
 var slLetter='#';
 var listPage=0;
@@ -2652,15 +2650,15 @@ function goBack(){
 }
 function openSong(id){
   var target=songs.find(function(s){return String(s.id)===String(id);});
-  if(!target) return;
+  if(!target)return;
   ['list-view','setlists-view','chords-view','users-view'].forEach(function(vid){
     var el=document.getElementById(vid);
-    if(el&&el.style.display!=='none') prevView=vid;
+    if(el&&el.style.display!=='none')prevView=vid;
   });
   var dupes=songs.filter(function(s){
     return s.title.trim().toLowerCase()===target.title.trim().toLowerCase();
   });
-  if(dupes.length>1) showVModal(target.title, dupes);
+  if(dupes.length>1)showVModal(target.title,dupes);
   else openSongDirect(id);
 }
 function drawSong(){
@@ -2738,7 +2736,7 @@ function formHTML(s){
       <div class="row-2b">
         <div class="field"><label>Artista / Autor</label><input type="text" id="f-artist" value="${escH(s?s.artist:'')}" placeholder="Ej: Cesáreo Gabaraín"></div>
         <div class="field"><label>BPM</label><input type="number" id="f-bpm" value="${s&&s.bpm?s.bpm:''}" placeholder="120" min="40" max="300"></div>
-        <div class="field"><label>Versión <span style="font-size:11px;color:var(--text3)">(opcional: Full, Básica, Piano...)</span></label><input type="text" id="f-version" value="${s&&s.version?s.version:''}" placeholder="Ej: Full, Básica, Piano, Ofertorio"></div>
+        <div class="field"><label>Versión <span style="font-size:11px;color:var(--text3)">(opcional)</span></label><input type="text" id="f-version" value="${s&&s.version?s.version:''}" placeholder="Full, Básica, Piano..."></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>Compás</label><select id="f-meter"><option value="">— Sin compás —</option><option value="4/4" ${s&&(s.meter=='4/4'||s.meter==='4')?'selected':''}>4/4 (común)</option><option value="3/4" ${s&&(s.meter=='3/4'||s.meter==='3')?'selected':''}>3/4 (vals)</option><option value="2/4" ${s&&(s.meter=='2/4'||s.meter==='2')?'selected':''}>2/4</option><option value="6/8" ${s&&(s.meter=='6/8'||s.meter==='6')?'selected':''}>6/8</option><option value="5/4" ${s&&(s.meter=='5/4'||s.meter==='5')?'selected':''}>5/4</option><option value="7/8" ${s&&s.meter==='7/8'?'selected':''}>7/8</option><option value="libre" ${s&&s.meter==='libre'?'selected':''}>Libre</option></select></div>
@@ -2779,7 +2777,7 @@ function getFormValues(){
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
   var meterEl=document.getElementById('f-meter');
   var meter=meterEl?meterEl.value:'';
-  return{title,artist,key,bpm,version,meter,tags,spotify,body};
+  return{title,artist,key,bpm,meter,tags,spotify,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
@@ -3010,59 +3008,41 @@ function exportPDF(){
   win.document.close();
 }
 init();
-// ── Selector de versiones ─────────────────────────────────
-function closeVModal(){
-  var el=document.getElementById('v-modal');
-  if(el) el.style.display='none';
-}
+function closeVModal(){var el=document.getElementById('v-modal');if(el)el.style.display='none';}
 function openSongDirect(id){
   currentSong=songs.find(function(s){return String(s.id)===String(id);});
-  if(!currentSong) return;
+  if(!currentSong)return;
   semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
   var bgs=document.getElementById('btn-go-setlist');
-  if(bgs) bgs.style.display=currentSetlist?'inline-flex':'none';
+  if(bgs)bgs.style.display=currentSetlist?'inline-flex':'none';
 }
-function showVModal(title, matches){
+function showVModal(title,matches){
   closeVModal();
-  var el=document.getElementById('v-modal');
-  if(!el) return;
-  var box=document.createElement('div');
-  box.className='v-box';
+  var el=document.getElementById('v-modal');if(!el)return;
+  var box=document.createElement('div');box.className='v-box';
   var h=document.createElement('div');
   h.style.cssText='font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px';
-  h.textContent=title;
-  box.appendChild(h);
+  h.textContent=title;box.appendChild(h);
   var sub=document.createElement('div');
   sub.style.cssText='font-size:13px;color:var(--text3);margin-bottom:14px';
-  sub.textContent='Selecciona una versión:';
-  box.appendChild(sub);
+  sub.textContent='Selecciona una versión:';box.appendChild(sub);
   matches.forEach(function(s,i){
-    var row=document.createElement('div');
-    row.className='v-item';
+    var row=document.createElement('div');row.className='v-item';
     row.onclick=(function(sid){return function(){closeVModal();openSongDirect(sid);};})(s.id);
-    var num=document.createElement('div');
-    num.className='v-num';
-    num.textContent=i+1;
-    var info=document.createElement('div');
-    info.style.flex='1';
+    var num=document.createElement('div');num.className='v-num';num.textContent=i+1;
+    var info=document.createElement('div');info.style.flex='1';
     var t=document.createElement('div');
     t.style.cssText='font-size:14px;font-weight:600;color:var(--accent)';
-    t.textContent=s.version||'(sin nombre)';
-    var meta=[];
-    if(s.artist) meta.push(s.artist);
-    if(s.key) meta.push(s.key);
-    if(s.bpm) meta.push(s.bpm+' BPM');
-    var md=document.createElement('div');
-    md.style.cssText='font-size:12px;color:var(--text2)';
+    t.textContent=s.version||(s.key?s.key+' - '+s.artist:s.artist)||'Versión '+(i+1);
+    var md=document.createElement('div');md.style.cssText='font-size:12px;color:var(--text2)';
+    var meta=[];if(s.key)meta.push(s.key);if(s.bpm)meta.push(s.bpm+' BPM');
     md.textContent=meta.join(' · ');
-    info.appendChild(t); info.appendChild(md);
-    row.appendChild(num); row.appendChild(info);
-    box.appendChild(row);
+    info.appendChild(t);info.appendChild(md);
+    row.appendChild(num);row.appendChild(info);box.appendChild(row);
   });
-  var btn=document.createElement('button');
-  btn.className='v-cancel'; btn.textContent='Cancelar'; btn.onclick=closeVModal;
+  var btn=document.createElement('button');btn.className='v-cancel';btn.textContent='Cancelar';btn.onclick=closeVModal;
   box.appendChild(btn);
-  el.innerHTML=''; el.appendChild(box);
+  el.innerHTML='';el.appendChild(box);
   el.onclick=function(e){if(e.target===el)closeVModal();};
   el.style.display='flex';
 }
