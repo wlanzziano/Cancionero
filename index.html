@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3032,11 +3032,10 @@ function showVModal(title,matches){
     var num=document.createElement('div');num.className='v-num';num.textContent=i+1;
     var info=document.createElement('div');info.style.flex='1';
     var t=document.createElement('div');
-    t.style.cssText='font-size:14px;font-weight:600;color:var(--accent)';
-    t.textContent=s.version||(s.key?s.key+' - '+s.artist:s.artist)||'Versión '+(i+1);
-    var md=document.createElement('div');md.style.cssText='font-size:12px;color:var(--text2)';
-    var meta=[];if(s.key)meta.push(s.key);if(s.bpm)meta.push(s.bpm+' BPM');
-    md.textContent=meta.join(' · ');
+    t.style.cssText='font-size:15px;font-weight:600;color:var(--text)';
+    t.textContent=s.title;
+    var md=document.createElement('div');md.style.cssText='font-size:13px;color:var(--accent);font-weight:500';
+    md.textContent=s.version||'(sin versión)';
     info.appendChild(t);info.appendChild(md);
     row.appendChild(num);row.appendChild(info);box.appendChild(row);
   });
