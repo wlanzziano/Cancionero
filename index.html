@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -519,7 +519,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   </div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz2Xf1J--oq8Tgt2woKgmPjRwl0fOOmdLV_2vZfLAMnr-l0H-A3bQfNrPwRywQqYSV5eg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyg5sJhpDyelT0l2hIEitzXWnPycJYQoViEQbz4WSUdyHwc3kHRpva4JYu_iCZpofGMyQ/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let CH=8.4;
@@ -2777,7 +2777,7 @@ function getFormValues(){
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
   var meterEl=document.getElementById('f-meter');
   var meter=meterEl?meterEl.value:'';
-  return{title,artist,key,bpm,meter,tags,spotify,body};
+  return{title,artist,key,bpm,version,meter,tags,spotify,body};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
