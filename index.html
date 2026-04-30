@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94a</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94b</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2522,9 +2522,7 @@ async function loadSongs(){
   const icon=document.getElementById('sync-icon');if(icon)icon.classList.add('spin');
   const banner=document.getElementById('offline-banner');
   try{
-    console.log('Llamando songs...');
     const r=await apiGet({action:'songs'});
-    console.log('Respuesta songs:',JSON.stringify(r).substring(0,200));
     if(icon)icon.classList.remove('spin');
     if(r.ok){
       songs=r.songs||[];
@@ -2566,7 +2564,7 @@ function renderList(){
   var sortEl=document.getElementById('sort-select');
   var sortBy=sortEl?sortEl.value:'title';
   var alphaField=sortBy==='artist'?'artist':'title';
-  const filtered=songs.filter(function(s){
+  var filtered=songs.filter(function(s){
     var mq=!q||(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).toLowerCase().indexOf(q)>=0;
     var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
     var ma=!activeArtist||s.artist===activeArtist;
