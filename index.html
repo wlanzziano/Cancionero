@@ -2522,7 +2522,9 @@ async function loadSongs(){
   const icon=document.getElementById('sync-icon');if(icon)icon.classList.add('spin');
   const banner=document.getElementById('offline-banner');
   try{
+    console.log('Llamando songs...');
     const r=await apiGet({action:'songs'});
+    console.log('Respuesta songs:',JSON.stringify(r).substring(0,200));
     if(icon)icon.classList.remove('spin');
     if(r.ok){
       songs=r.songs||[];
