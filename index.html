@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -821,7 +821,7 @@ function parseChordKey(name){
 
 function buildChordSVG(position){
   const {frets, fingers, baseFret=1, barres=[]} = position;
-  const W=180, H=200, padL=28, padT=44, strGap=24, fretGap=28, nFrets=4, nStrings=6;
+  const W=180, H=230, padL=28, padT=44, strGap=24, fretGap=28, nFrets=5, nStrings=6;
   const w = strGap*(nStrings-1);
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:var(--font-mono)">`;
 
