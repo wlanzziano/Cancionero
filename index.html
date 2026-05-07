@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.95b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96b</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2715,12 +2715,72 @@ function drawSong(){
   const badge = st === 0 ? s.key : (transKey || s.key) + ' (' + (st>0?'+':'') + st + ')';
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   let secs='';
+  
+  // Detectar si una sección es instrumental (solo intro e instrumental)
+  const instrumentalLabels = ['intro','instrumental'];
+  function isInstrumental(label){
+    if(!label) return false;
+    const l = label.toLowerCase().trim();
+    return instrumentalLabels.some(k => l.indexOf(k) >= 0);
+  }
+  
+  // Renderizar línea instrumental: acordes separados por " - ", acordes juntos = mismo compás
+  function renderInstrumentalLine(line, st){
+    const chords = [...line.chords].sort((a,b) => a.pos - b.pos);
+    if(chords.length === 0) return '';
+    
+    // Agrupar acordes por posición (acordes con posiciones consecutivas = mismo compás)
+    // La idea: si hay espacio entre acordes en el texto original, es nuevo compás
+    const lyric = line.lyric || '';
+    let groups = [];
+    let currentGroup = [];
+    
+    chords.forEach((c, i) => {
+      const txd = txChord(c.ch, st);
+      if(i === 0){
+        currentGroup.push(txd);
+      } else {
+        // Ver si hay espacio/separación entre este acorde y el anterior
+        const prevChord = chords[i-1];
+        const textBetween = lyric.slice(prevChord.pos, c.pos).trim();
+        // Si hay texto entre acordes (aunque sea espacios significativos), nuevo compás
+        // Si están pegados (posiciones muy cercanas), mismo compás
+        const posDiff = c.pos - prevChord.pos;
+        if(posDiff <= 1 || textBetween === ''){
+          // Mismo compás: acordes pegados
+          currentGroup.push(txd);
+        } else {
+          // Nuevo compás
+          groups.push(currentGroup);
+          currentGroup = [txd];
+        }
+      }
+    });
+    if(currentGroup.length > 0) groups.push(currentGroup);
+    
+    // Renderizar: grupos separados por " - ", acordes dentro del grupo por espacio
+    const rendered = groups.map(g => g.map(ch => {
+      const sc = ch.replace(/'/g, "\\'");
+      return `<span class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(ch)}</span>`;
+    }).join(' ')).join(' <span style="color:var(--text3);margin:0 4px">–</span> ');
+    
+    return `<div class="instrumental-line" style="font-family:var(--font-mono);font-size:14px;padding:4px 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px">${rendered}</div>`;
+  }
+  
   s.sections.forEach(sec=>{
     var isBold=sec.label?['coro','estribillo','chorus'].some(function(k){return sec.label.toLowerCase().indexOf(k)>=0;}):false;
+    var isInstr = isInstrumental(sec.label);
     if(sec.label){secs+=`<div class="sec-label${isBold?' bold':''}">${escH(sec.label)}</div>`;}
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
-      if(!line.lyric&&!line.chords.length){secs+='<div style="height:6px"></div>';}else{
+      
+      // Si es sección instrumental y la línea solo tiene acordes (sin letra significativa)
+      const hasOnlyChords = line.chords.length > 0 && (!line.lyric || line.lyric.trim().replace(/[\s\-–—|]/g,'') === '');
+      
+      if(isInstr && hasOnlyChords){
+        // Renderizado especial para instrumentales
+        secs += renderInstrumentalLine(line, st);
+      } else if(!line.lyric&&!line.chords.length){secs+='<div style="height:6px"></div>';}else{
       // Build segments: split lyric by chord positions
       const lyric=line.lyric||'';
       const positions=[...line.chords].sort((a,b)=>a.pos-b.pos);
