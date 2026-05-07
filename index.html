@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.94d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.95</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -522,6 +522,44 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyg5sJhpDyelT0l2hIEitzXWnPycJYQoViEQbz4WSUdyHwc3kHRpva4JYu_iCZpofGMyQ/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+// Círculo de quintas: tonalidades que prefieren bemoles
+const FLAT_KEYS=['F','Bb','Eb','Ab','Db','Gb','Cb','Dm','Gm','Cm','Fm','Bbm','Ebm','Abm'];
+// Tonalidades que prefieren sostenidos
+const SHARP_KEYS=['G','D','A','E','B','F#','C#','Em','Bm','F#m','C#m','G#m','D#m','A#m'];
+
+// Determina si una tonalidad usa bemoles (true) o sostenidos (false)
+function useFlats(key){
+  if(!key) return false;
+  // Normalizar: quitar espacios y manejar minúsculas
+  const k = key.trim();
+  // Si la tonalidad tiene 'b' en el nombre → usa bemoles
+  if(k.includes('b')) return true;
+  // Si la tonalidad tiene '#' en el nombre → usa sostenidos
+  if(k.includes('#')) return false;
+  // Buscar en las listas del círculo de quintas
+  if(FLAT_KEYS.some(f => f.toLowerCase() === k.toLowerCase())) return true;
+  if(SHARP_KEYS.some(s => s.toLowerCase() === k.toLowerCase())) return false;
+  // Por defecto: C y Am pueden usar cualquiera, preferir sostenidos
+  return false;
+}
+
+// Calcula la nueva tonalidad después de transponer
+function getTransposedKey(originalKey, semitones){
+  if(!originalKey || originalKey === '?') return null;
+  const m = originalKey.match(/^([A-G][b#]?)(m?)$/i);
+  if(!m) return null;
+  let root = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+  const isMinor = m[2].toLowerCase() === 'm';
+  let i = NS.indexOf(root);
+  if(i === -1) i = NF.indexOf(root);
+  if(i === -1) return null;
+  const newIdx = ((i + semitones) % 12 + 12) % 12;
+  // Decidir notación basada en la nueva posición en el círculo
+  const flats = useFlats(originalKey);
+  const newRoot = flats ? NF[newIdx] : NS[newIdx];
+  return newRoot + (isMinor ? 'm' : '');
+}
 let CH=8.4;
 function calcCH(){
   const el=document.createElement('span');
@@ -535,12 +573,20 @@ window.addEventListener('resize',()=>{calcCH();if(currentSong)drawSong();});
 function txChord(ch,st){
   const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;
   let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;
-  const root=NS[((i+st)%12+12)%12];
+  
+  // Usar círculo de quintas: decidir si usar bemoles o sostenidos
+  // basado en la tonalidad original de la canción
+  const origKey = currentSong ? currentSong.key : null;
+  const transposedKey = getTransposedKey(origKey, st);
+  const flats = transposedKey ? useFlats(transposedKey) : useFlats(origKey);
+  const noteArr = flats ? NF : NS;
+  
+  const root=noteArr[((i+st)%12+12)%12];
   const suffix=m[2];
   const slashM=suffix.match(/^(.*\/)([A-G][b#]?)$/);
   if(slashM){
     let bi=NS.indexOf(slashM[2]);if(bi===-1)bi=NF.indexOf(slashM[2]);
-    if(bi!==-1)return root+slashM[1]+NS[((bi+st)%12+12)%12];
+    if(bi!==-1)return root+slashM[1]+noteArr[((bi+st)%12+12)%12];
   }
   return root+suffix;
 }
@@ -2663,7 +2709,9 @@ function openSong(id){
 }
 function drawSong(){
   const s=currentSong,st=semitones;
-  const badge=(st>0?'+':'')+st+' st';
+  // Mostrar tonalidad transpuesta si hay transposición
+  const transKey = st !== 0 ? getTransposedKey(s.key, st) : null;
+  const badge = st === 0 ? s.key : (transKey || s.key) + ' (' + (st>0?'+':'') + st + ')';
   const canEdit=currentUser.role==='admin'||currentUser.role==='editor';
   let secs='';
   s.sections.forEach(sec=>{
