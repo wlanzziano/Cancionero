@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2724,47 +2724,39 @@ function drawSong(){
     return instrumentalLabels.some(k => l.indexOf(k) >= 0);
   }
   
-  // Renderizar línea instrumental: acordes separados por " - ", acordes juntos = mismo compás
+  // Renderizar línea instrumental: acordes y guiones en línea horizontal
   function renderInstrumentalLine(line, st){
     const chords = [...line.chords].sort((a,b) => a.pos - b.pos);
-    if(chords.length === 0) return '';
+    if(chords.length === 0 && !line.lyric) return '';
     
-    // Agrupar acordes por posición (acordes con posiciones consecutivas = mismo compás)
-    // La idea: si hay espacio entre acordes en el texto original, es nuevo compás
     const lyric = line.lyric || '';
-    let groups = [];
-    let currentGroup = [];
+    let result = '';
+    let lastPos = 0;
     
     chords.forEach((c, i) => {
-      const txd = txChord(c.ch, st);
-      if(i === 0){
-        currentGroup.push(txd);
-      } else {
-        // Ver si hay espacio/separación entre este acorde y el anterior
-        const prevChord = chords[i-1];
-        const textBetween = lyric.slice(prevChord.pos, c.pos).trim();
-        // Si hay texto entre acordes (aunque sea espacios significativos), nuevo compás
-        // Si están pegados (posiciones muy cercanas), mismo compás
-        const posDiff = c.pos - prevChord.pos;
-        if(posDiff <= 1 || textBetween === ''){
-          // Mismo compás: acordes pegados
-          currentGroup.push(txd);
-        } else {
-          // Nuevo compás
-          groups.push(currentGroup);
-          currentGroup = [txd];
+      // Agregar texto antes del acorde (guiones, espacios, etc.)
+      if(c.pos > lastPos){
+        const textBefore = lyric.slice(lastPos, c.pos);
+        if(textBefore.trim()){
+          result += `<span style="color:var(--text3);margin:0 2px">${escH(textBefore.trim())}</span> `;
         }
       }
+      // Agregar el acorde
+      const txd = txChord(c.ch, st);
+      const sc = txd.replace(/'/g, "\\'");
+      result += `<span class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(txd)}</span> `;
+      lastPos = c.pos;
     });
-    if(currentGroup.length > 0) groups.push(currentGroup);
     
-    // Renderizar: grupos separados por " - ", acordes dentro del grupo por espacio
-    const rendered = groups.map(g => g.map(ch => {
-      const sc = ch.replace(/'/g, "\\'");
-      return `<span class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(ch)}</span>`;
-    }).join(' ')).join(' <span style="color:var(--text3);margin:0 4px">–</span> ');
+    // Agregar texto restante después del último acorde
+    if(lastPos < lyric.length){
+      const textAfter = lyric.slice(lastPos).trim();
+      if(textAfter){
+        result += `<span style="color:var(--text3);margin:0 2px">${escH(textAfter)}</span>`;
+      }
+    }
     
-    return `<div class="instrumental-line" style="font-family:var(--font-mono);font-size:14px;padding:4px 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px">${rendered}</div>`;
+    return `<div class="instrumental-line" style="font-family:var(--font-mono);font-size:14px;padding:4px 0;display:flex;flex-wrap:wrap;align-items:center;gap:4px">${result}</div>`;
   }
   
   s.sections.forEach(sec=>{
@@ -2774,11 +2766,12 @@ function drawSong(){
     sec.lines.forEach(line=>{
       if(!line.lyric&&!line.chords.length)return;
       
-      // Si es sección instrumental y la línea solo tiene acordes (sin letra significativa)
-      const hasOnlyChords = line.chords.length > 0 && (!line.lyric || line.lyric.trim().replace(/[\s\-–—|]/g,'') === '');
+      // Si es sección instrumental y tiene acordes (la "letra" son solo guiones, espacios, barras)
+      const lyricsWithoutSymbols = (line.lyric || '').replace(/[\s\-–—|/\\_.·:]+/g, '');
+      const isChordOnlyLine = line.chords.length > 0 && lyricsWithoutSymbols === '';
       
-      if(isInstr && hasOnlyChords){
-        // Renderizado especial para instrumentales
+      if(isInstr && isChordOnlyLine){
+        // Renderizado especial para instrumentales: todo en una línea horizontal
         secs += renderInstrumentalLine(line, st);
       } else if(!line.lyric&&!line.chords.length){secs+='<div style="height:6px"></div>';}else{
       // Build segments: split lyric by chord positions
