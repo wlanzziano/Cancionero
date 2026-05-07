@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.96d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -607,6 +607,15 @@ let tpInterval=null,tpActive=false,tpSpeed=2.0;
 
 function tpShowBar(){document.getElementById('tp-bar').style.display='flex';}
 function tpHideBar(){tpPause();document.getElementById('tp-bar').style.display='none';}
+function tpToggleBar(){
+  const bar = document.getElementById('tp-bar');
+  if(bar.style.display === 'flex'){
+    tpHideBar();
+  } else {
+    tpLoadSpeed();
+    tpShowBar();
+  }
+}
 
 function tpToggle(){
   tpActive=!tpActive;
@@ -2816,6 +2825,7 @@ function drawSong(){
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
         <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm}${s.meter?' · '+s.meter:''}</button>`:''}
+        <button class="sv-action-btn" onclick="tpToggleBar()" title="Teleprompter">&#9654; TP</button>
         <button class="sv-action-btn" id="btn-go-setlist" style="display:none" onclick="showView('setlists-view');renderSetlistDetail()">&#127908; Setlist</button>
         <button class="sv-action-btn ml-auto" onclick="exportPDF()">&#8595; PDF</button>
         ${canEdit?`<button class="sv-action-btn edit" onclick="openEdit('${s.id}')">&#9998; Editar</button>`:''}
