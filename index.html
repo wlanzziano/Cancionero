@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2635,7 +2635,14 @@ function renderList(){
   const list=document.getElementById('song-list');
   if(!filtered.length){list.innerHTML='<div class="empty"><div style="font-size:36px;opacity:.4;margin-bottom:8px">&#127925;</div><p>No se encontraron canciones</p></div>';return;}
   var seen={};
-  filtered=filtered.filter(function(s){var k=(s.title||'').trim().toLowerCase();if(!k)return true;if(seen[k])return false;seen[k]=true;return true;});
+  // Agrupar solo si tienen MISMO título Y MISMO artista (versiones de la misma canción)
+  filtered=filtered.filter(function(s){
+    var k=(s.title||'').trim().toLowerCase()+'|||'+(s.artist||'').trim().toLowerCase();
+    if(!k)return true;
+    if(seen[k])return false;
+    seen[k]=true;
+    return true;
+  });
   // Paginación
   var totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
   if(listPage>=totalPages) listPage=0;
