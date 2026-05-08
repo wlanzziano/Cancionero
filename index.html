@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97b</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2712,7 +2712,9 @@ function openSong(id){
     if(el&&el.style.display!=='none')prevView=vid;
   });
   var dupes=songs.filter(function(s){
-    return s.title.trim().toLowerCase()===target.title.trim().toLowerCase();
+    // Solo considera duplicado si tiene MISMO título Y MISMO artista
+    return s.title.trim().toLowerCase()===target.title.trim().toLowerCase() 
+        && s.artist.trim().toLowerCase()===target.artist.trim().toLowerCase();
   });
   if(dupes.length>1)showVModal(target.title,dupes);
   else openSongDirect(id);
@@ -3146,9 +3148,11 @@ function showVModal(title,matches){
     var t=document.createElement('div');
     t.style.cssText='font-size:15px;font-weight:600;color:var(--text)';
     t.textContent=s.title;
-    var md=document.createElement('div');md.style.cssText='font-size:13px;color:var(--accent);font-weight:500';
-    md.textContent=s.version||'(sin versión)';
-    info.appendChild(t);info.appendChild(md);
+    var art=document.createElement('div');art.style.cssText='font-size:13px;color:var(--accent);font-weight:500';
+    art.textContent=s.artist||'(sin artista)';
+    var ver=document.createElement('div');ver.style.cssText='font-size:12px;color:var(--text3)';
+    ver.textContent=s.version?'Versión: '+s.version:'';
+    info.appendChild(t);info.appendChild(art);if(s.version)info.appendChild(ver);
     row.appendChild(num);row.appendChild(info);box.appendChild(row);
   });
   var btn=document.createElement('button');btn.className='v-cancel';btn.textContent='Cancelar';btn.onclick=closeVModal;
