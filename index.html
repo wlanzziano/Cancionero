@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.97e</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -593,6 +593,7 @@ function txChord(ch,st){
 }
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song',pendingDeleteCb=null;
+let userGroups=[]; // Grupos de usuarios para visibilidad de canciones
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
   try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
@@ -2537,7 +2538,7 @@ function init(){calcCH();loadSavedTheme();
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();return;
+      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -2554,7 +2555,7 @@ async function doLogin(){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
-    showApp();loadSongs();loadEvents();
+    showApp();loadSongs();loadEvents();loadGroups();
   }else{err.textContent=r.error||'Código incorrecto';}
 }
 function doLogout(){
@@ -2621,6 +2622,8 @@ function renderList(){
   var sortBy=sortEl?sortEl.value:'title';
   var alphaField=sortBy==='artist'?'artist':'title';
   var filtered=songs.filter(function(s){
+    // Filtro de visibilidad: solo mostrar canciones que el usuario puede ver
+    if(!canUserSeeSong(s,currentUser))return false;
     var mq=!q||(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).toLowerCase().indexOf(q)>=0;
     var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
     var ma=!activeArtist||s.artist===activeArtist;
@@ -2651,7 +2654,7 @@ function renderList(){
   list.innerHTML=paged.map((s,i)=>`
     <div class="song-card" onclick="openSong('${s.id}')">
       <span class="song-num">${i+1}</span>
-      <div class="song-info"><div class="song-title-text">${escH(s.title)}</div><div class="song-artist-text"><span onclick="event.stopPropagation();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}');" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${escH(s.artist)}</span></div></div>
+      <div class="song-info"><div class="song-title-text">${escH(s.title)}${s.visibility==='private'?' 🔒':''}</div><div class="song-artist-text"><span onclick="event.stopPropagation();filterByArtist('${escH(s.artist).replace(/'/g,'&#39;')}');" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">${escH(s.artist)}</span></div></div>
       ${canEdit?`<button class="song-edit" onclick="event.stopPropagation();openEdit('${s.id}')" title="Editar">&#9998;</button>`:''}
       ${canDel?`<button class="song-del" onclick="event.stopPropagation();doDelete('${s.id}','${escH(s.title).replace(/'/g,'&#39;')}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
@@ -2844,10 +2847,92 @@ function drawSong(){
     </div>`;
 }
 function doTranspose(d){semitones+=d;drawSong();}
-function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);},50);}
-function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);},50);}
+function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);initVisibilityChips(null);},50);}
+function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);initVisibilityChips(s);},50);}
+
+// === Funciones de Visibilidad ===
+function toggleVisibilityOptions(){
+  const isPrivate=document.querySelector('input[name="f-visibility"]:checked')?.value==='private';
+  const opts=document.getElementById('visibility-options');
+  if(opts)opts.style.display=isPrivate?'block':'none';
+}
+
+function initVisibilityChips(song){
+  const groupsWrap=document.getElementById('visibility-groups');
+  const usersWrap=document.getElementById('visibility-users');
+  if(!groupsWrap||!usersWrap)return;
+  
+  const selectedUsers=song&&song.allowedUsers?song.allowedUsers:[];
+  const selectedGroups=song&&song.allowedGroups?song.allowedGroups:[];
+  
+  // Renderizar grupos
+  if(userGroups.length===0){
+    groupsWrap.innerHTML='<span style="font-size:12px;color:var(--text3);font-style:italic">No hay grupos creados</span>';
+  }else{
+    groupsWrap.innerHTML=userGroups.map(g=>{
+      const sel=selectedGroups.includes(g.name);
+      return `<span class="tag-chip${sel?' sel':''}" data-group="${escH(g.name)}" onclick="toggleVisGroup(this)" style="cursor:pointer">${escH(g.name)}</span>`;
+    }).join('');
+  }
+  
+  // Renderizar usuarios (excluyendo al usuario actual)
+  const allUsers=getAllUsers().filter(u=>u.name!==currentUser.name);
+  if(allUsers.length===0){
+    usersWrap.innerHTML='<span style="font-size:12px;color:var(--text3);font-style:italic">No hay otros usuarios</span>';
+  }else{
+    usersWrap.innerHTML=allUsers.map(u=>{
+      const sel=selectedUsers.includes(u.name);
+      return `<span class="tag-chip${sel?' sel':''}" data-user="${escH(u.name)}" onclick="toggleVisUser(this)" style="cursor:pointer">${escH(u.name)}</span>`;
+    }).join('');
+  }
+}
+
+function toggleVisGroup(el){el.classList.toggle('sel');}
+function toggleVisUser(el){el.classList.toggle('sel');}
+
+function getVisibilityValues(){
+  const visibility=document.querySelector('input[name="f-visibility"]:checked')?.value||'public';
+  if(visibility==='public')return{visibility:'public',allowedUsers:[],allowedGroups:[]};
+  
+  const groupEls=document.querySelectorAll('#visibility-groups .tag-chip.sel');
+  const userEls=document.querySelectorAll('#visibility-users .tag-chip.sel');
+  const allowedGroups=[].map.call(groupEls,el=>el.dataset.group);
+  const allowedUsers=[].map.call(userEls,el=>el.dataset.user);
+  
+  // Siempre incluir al creador
+  if(!allowedUsers.includes(currentUser.name))allowedUsers.push(currentUser.name);
+  
+  return{visibility,allowedUsers,allowedGroups};
+}
+
+function getAllUsers(){
+  // Obtener lista de usuarios del sistema
+  const cached=localStorage.getItem('users');
+  if(cached){try{return JSON.parse(cached);}catch(e){}}
+  return[];
+}
+
+function canUserSeeSong(song,user){
+  if(!song.visibility||song.visibility==='public')return true;
+  if(!user)return false;
+  // Admin siempre ve todo
+  if(user.role==='admin')return true;
+  // Creador siempre ve su canción
+  if(song.createdBy===user.name)return true;
+  // Verificar si está en usuarios permitidos
+  if(song.allowedUsers&&song.allowedUsers.includes(user.name))return true;
+  // Verificar si está en algún grupo permitido
+  if(song.allowedGroups&&song.allowedGroups.length>0){
+    for(const gName of song.allowedGroups){
+      const group=userGroups.find(g=>g.name===gName);
+      if(group&&group.members&&group.members.includes(user.name))return true;
+    }
+  }
+  return false;
+}
 function formHTML(s){
   const isEdit=!!s;const body=s?songToText(s):'';
+  const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
   return `<button class="back-btn" onclick="goBack()">&#8592; Volver</button>
     <div class="form-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div class="form-title" style="margin-bottom:0">${isEdit?'Editar canción':'Nueva canción'}</div>${!isEdit?`<button type="button" onclick="openConv()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 12px;font-family:var(--font-body);font-size:12px;color:var(--text2);cursor:pointer">📋 Importar texto</button>`:''}</div>
@@ -2876,6 +2961,27 @@ function formHTML(s){
           <button type="button" onclick="addCustomTag()" class="btn-cancel" style="flex-shrink:0;font-size:13px">+ Tag</button>
         </div>
       </div>
+      ${canEdit?`<div class="field"><label>Visibilidad</label>
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text)">
+            <input type="radio" name="f-visibility" value="public" ${!s||!s.visibility||s.visibility==='public'?'checked':''} onchange="toggleVisibilityOptions()"> 🌐 Pública
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text)">
+            <input type="radio" name="f-visibility" value="private" ${s&&s.visibility==='private'?'checked':''} onchange="toggleVisibilityOptions()"> 🔒 Privada
+          </label>
+        </div>
+        <div id="visibility-options" style="display:${s&&s.visibility==='private'?'block':'none'};background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Selecciona quién puede ver esta canción:</div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:600">👥 Grupos</div>
+            <div id="visibility-groups" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:600">👤 Usuarios individuales</div>
+            <div id="visibility-users" style="display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto"></div>
+          </div>
+        </div>
+      </div>`:''}
       <div class="form-actions">
         <button class="btn-cancel" onclick="showList()">Cancelar</button>
         <button class="btn-save" id="save-btn" onclick="${isEdit?`saveSongEdit('${s.id}')`:'saveSongNew()'}">${isEdit?'Guardar cambios':'Guardar canción'}</button>
@@ -2899,21 +3005,23 @@ function getFormValues(){
   var tagEls=document.querySelectorAll('#tag-chips-wrap .tag-chip.sel');var tags=[].map.call(tagEls,function(el){return el.dataset.tag;});
   var meterEl=document.getElementById('f-meter');
   var meter=meterEl?meterEl.value:'';
-  return{title,artist,key,bpm,version,meter,tags,spotify,body};
+  // Obtener visibilidad
+  const visVals=getVisibilityValues();
+  return{title,artist,key,bpm,version,meter,tags,spotify,body,...visVals};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,bpm,body,visibility,allowedUsers,allowedGroups}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),createdBy:currentUser.name,visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
 async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
-  const {title,artist,key,bpm,body}=vals;
+  const {title,artist,key,bpm,body,visibility,allowedUsers,allowedGroups}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body)}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),sections:parseBody(body),visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
   if(r.ok){
     // Recargar canciones del servidor para tener datos frescos (incluyendo meter, tpSpeed)
     await loadSongs();
@@ -2969,10 +3077,27 @@ async function openUsers(){
           <button class="btn-save" onclick="addUserAction()">Agregar usuario</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${isAdmin?`<div class="form-card" style="margin-top:16px">
+      <div class="form-title" style="margin-bottom:16px">👥 Grupos de usuarios</div>
+      <div id="groups-list"><div style="color:var(--text3);font-size:14px">Cargando...</div></div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Crear grupo</div>
+        <div class="field"><label>Nombre del grupo</label><input type="text" id="g-name" placeholder="Ej: Coro principal"></div>
+        <div class="form-actions" style="margin-top:12px;padding-top:12px">
+          <button class="btn-save" onclick="addGroupAction()">Crear grupo</button>
+        </div>
+      </div>
+    </div>`:''}`;
   const r=await api({action:'users'});
-  if(r.ok)renderUsersList(r.users||[]);
+  if(r.ok){
+    renderUsersList(r.users||[]);
+    localStorage.setItem('users',JSON.stringify(r.users||[]));
+  }
   else document.getElementById('users-list').innerHTML=`<div style="color:var(--red);font-size:13px">${r.error}</div>`;
+  // Cargar grupos
+  await loadGroups();
+  renderGroupsList();
   window.scrollTo(0,0);
 }
 function renderUsersList(users){
@@ -2985,6 +3110,104 @@ function renderUsersList(users){
       <div class="user-info"><div class="user-name-text">${escH(u.name)}</div><div class="user-role-text">${roleLabel[u.role]||u.role}${currentUser.role==='admin'?' · <span class="user-code">'+escH(u.code)+'</span>':''}</div></div>
       ${currentUser.role==='admin'?`<button class="song-del" onclick="confirmDelete('user','${escH(u.code)}','${escH(u.name)}')" title="Eliminar">&#10005;</button>`:''}
     </div>`).join('');
+}
+
+// === Funciones de Grupos ===
+async function loadGroups(){
+  const cached=localStorage.getItem('userGroups');
+  if(cached){try{userGroups=JSON.parse(cached);}catch(e){userGroups=[];}}
+  const r=await api({action:'get_groups'});
+  if(r.ok&&r.groups){
+    userGroups=r.groups;
+    localStorage.setItem('userGroups',JSON.stringify(userGroups));
+  }
+}
+
+function renderGroupsList(){
+  const wrap=document.getElementById('groups-list');
+  if(!wrap)return;
+  if(!userGroups.length){wrap.innerHTML='<div style="color:var(--text3);font-size:14px;font-style:italic">No hay grupos creados</div>';return;}
+  wrap.innerHTML=userGroups.map(g=>`
+    <div class="user-card" style="cursor:pointer" onclick="openGroupEdit('${escH(g.name)}')">
+      <div class="user-avatar" style="background:var(--accent)">👥</div>
+      <div class="user-info">
+        <div class="user-name-text">${escH(g.name)}</div>
+        <div class="user-role-text">${g.members?g.members.length:0} miembro${g.members&&g.members.length!==1?'s':''}</div>
+      </div>
+      <button class="song-del" onclick="event.stopPropagation();deleteGroup('${escH(g.name)}')" title="Eliminar">&#10005;</button>
+    </div>`).join('');
+}
+
+async function addGroupAction(){
+  const name=document.getElementById('g-name').value.trim();
+  if(!name){toast('El nombre del grupo es obligatorio');return;}
+  if(userGroups.some(g=>g.name.toLowerCase()===name.toLowerCase())){toast('Ya existe un grupo con ese nombre');return;}
+  const newGroup={name,members:[]};
+  userGroups.push(newGroup);
+  localStorage.setItem('userGroups',JSON.stringify(userGroups));
+  await api({action:'save_groups',groups:userGroups});
+  document.getElementById('g-name').value='';
+  renderGroupsList();
+  toast('✓ Grupo creado');
+}
+
+async function deleteGroup(name){
+  if(!confirm('¿Eliminar el grupo "'+name+'"?'))return;
+  userGroups=userGroups.filter(g=>g.name!==name);
+  localStorage.setItem('userGroups',JSON.stringify(userGroups));
+  await api({action:'save_groups',groups:userGroups});
+  renderGroupsList();
+  toast('Grupo eliminado');
+}
+
+function openGroupEdit(name){
+  const group=userGroups.find(g=>g.name===name);
+  if(!group)return;
+  const allUsers=getAllUsers();
+  const members=group.members||[];
+  
+  const modal=document.createElement('div');
+  modal.id='group-edit-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border-radius:var(--r-md);padding:24px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px">Editar grupo: ${escH(name)}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Selecciona los miembros:</div>
+      <div id="group-members-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+        ${allUsers.map(u=>`
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;background:var(--surface2);border-radius:var(--r-sm)">
+            <input type="checkbox" value="${escH(u.name)}" ${members.includes(u.name)?'checked':''}>
+            <span style="font-size:14px;color:var(--text)">${escH(u.name)}</span>
+            <span style="font-size:12px;color:var(--text3);margin-left:auto">${u.role}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-cancel" onclick="closeGroupEdit()">Cancelar</button>
+        <button class="btn-save" onclick="saveGroupMembers('${escH(name)}')">Guardar</button>
+      </div>
+    </div>`;
+  modal.onclick=e=>{if(e.target===modal)closeGroupEdit();};
+  document.body.appendChild(modal);
+}
+
+function closeGroupEdit(){
+  const modal=document.getElementById('group-edit-modal');
+  if(modal)modal.remove();
+}
+
+async function saveGroupMembers(name){
+  const checkboxes=document.querySelectorAll('#group-members-list input[type="checkbox"]:checked');
+  const members=[].map.call(checkboxes,cb=>cb.value);
+  const idx=userGroups.findIndex(g=>g.name===name);
+  if(idx>=0){
+    userGroups[idx].members=members;
+    localStorage.setItem('userGroups',JSON.stringify(userGroups));
+    await api({action:'save_groups',groups:userGroups});
+    renderGroupsList();
+    toast('✓ Grupo actualizado');
+  }
+  closeGroupEdit();
 }
 async function addUserAction(){
   const name=document.getElementById('u-name').value.trim();
