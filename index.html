@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2848,7 +2848,28 @@ function drawSong(){
 }
 function doTranspose(d){semitones+=d;drawSong();}
 function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);initVisibilityChips(null);},50);}
-function openEdit(id){const s=songs.find(x=>String(x.id)===String(id));if(!s)return;tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(s);window.scrollTo(0,0);setTimeout(function(){initTagChips(s.tags||[]);initVisibilityChips(s);},50);}
+async function openEdit(id){
+  // Recargar canciones del servidor para tener la versión más reciente
+  tpHideBar();closeMetroFloat();
+  showView('add-view');
+  document.getElementById('add-view').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">⏳</div>Cargando última versión...</div>';
+  
+  try {
+    await loadSongs(); // Recargar todas las canciones
+    const s = songs.find(x => String(x.id) === String(id));
+    if (!s) {
+      toast('Canción no encontrada');
+      showList();
+      return;
+    }
+    document.getElementById('add-view').innerHTML = formHTML(s);
+    window.scrollTo(0, 0);
+    setTimeout(function(){ initTagChips(s.tags || []); initVisibilityChips(s); }, 50);
+  } catch(e) {
+    toast('Error al cargar la canción');
+    showList();
+  }
+}
 
 // === Funciones de Visibilidad ===
 function toggleVisibilityOptions(){
