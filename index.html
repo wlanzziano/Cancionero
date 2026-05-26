@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98e</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2118,8 +2118,7 @@ function slBuildAvail(list){
   }).join('')+pgControls;
 }
 function slAddBtn(btn){addToSetlist(btn.dataset.sid);}
-function slFilter(){
-  slAvailPage=0;
+function slRenderAvail(){
   slQ=(document.getElementById('sl-q')||{}).value||'';
   if(!currentSetlist) return;
   // Filtrar canciones por visibilidad
@@ -2127,6 +2126,10 @@ function slFilter(){
   var avail=visibleSongs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
   var w=document.getElementById('sl-avail-wrap');
   if(w) w.innerHTML=slBuildAvail(avail);
+}
+function slFilter(){
+  slAvailPage=0;
+  slRenderAvail();
 }
 function slAlpha(l){
   slAvailPage=0;
@@ -2707,7 +2710,7 @@ function buildPagination(currentPage, totalPages, onClickFn){
   return '<div class="pagination">'+btns+'</div>';
 }
 function goToPage(p){listPage=p;renderList();}
-function goToSlPage(p){slAvailPage=p;slFilter();}
+function goToSlPage(p){slAvailPage=p;slRenderAvail();}
 
 function goBack(){
   if(prevView==='setlists-view'&&currentSetlist){
