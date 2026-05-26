@@ -396,7 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v2.98d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1272,7 +1272,9 @@ function openSetlistDetail(id){
 function renderSetlistDetail(){
   const sl = currentSetlist;
   const slSongs = (sl.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
-  const available = songs.filter(s=>!(sl.songs||[]).map(String).includes(String(s.id)));
+  // Filtrar canciones disponibles por visibilidad
+  const visibleSongs = songs.filter(s=>canUserSeeSong(s,currentUser));
+  const available = visibleSongs.filter(s=>!(sl.songs||[]).map(String).includes(String(s.id)));
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
@@ -2120,7 +2122,9 @@ function slFilter(){
   slAvailPage=0;
   slQ=(document.getElementById('sl-q')||{}).value||'';
   if(!currentSetlist) return;
-  var avail=songs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
+  // Filtrar canciones por visibilidad
+  var visibleSongs=songs.filter(function(s){return canUserSeeSong(s,currentUser);});
+  var avail=visibleSongs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
   var w=document.getElementById('sl-avail-wrap');
   if(w) w.innerHTML=slBuildAvail(avail);
 }
@@ -2673,10 +2677,6 @@ var listPage=0;
 var PAGE_SIZE=50;
 var slAvailPage=0;
 var slQ='';
-var slLetter='#';
-var listPage=0;
-var PAGE_SIZE=50;
-var slAvailPage=0;
 function goToSetlist(btn){
   var slid=btn.dataset.slid;
   var sl=setlists.find(function(s){return String(s.id)===String(slid);});
