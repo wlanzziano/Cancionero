@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0j</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3280,7 +3280,7 @@ function formHTML(s){
         <div class="field"><label>&#160;</label><div style="font-size:12px;color:var(--text3);padding-top:10px">El compás activa el acento en el primer tiempo del metrónomo</div></div>
       </div>
       <div class="field"><label>Letra con acordes *</label>
-        <textarea id="f-body" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
+        <textarea id="f-body" style="min-height:350px" placeholder="Escribe la letra y pon los acordes entre [corchetes].&#10;&#10;Ejemplo:&#10;[G]Tú has ve[C]nido a la o[D]rilla&#10;&#10;Separa secciones con # Nombre:&#10;# Verso 1&#10;# Coro">${escH(body)}</textarea>
         <div class="hint">Usa <code>[Acorde]</code> antes de cada cambio · Separa secciones con <code># Nombre</code></div>
       </div>
       <div class="field"><label>Spotify <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none">— pega el enlace de la canción en Spotify (opcional)</span></label><input type="text" id="f-spotify" value="${escH(s&&s.spotify?'https://open.spotify.com/track/'+s.spotify:'')}" placeholder="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"><div class="hint">Clic en ··· → Compartir → Copiar enlace de canción</div></div>
