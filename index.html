@@ -120,7 +120,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .sv-artist{font-size:13px;color:var(--text2)}
 .sv-bpm{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);border-radius:5px;font-family:var(--font-mono);font-size:12px;padding:2px 8px}
-.sv-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin:12px 0}
+.sv-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:12px 0;transition:box-shadow .2s}
+.sv-controls.stuck{position:fixed;top:0;left:0;right:0;z-index:100;border-radius:0;margin:0;box-shadow:0 2px 12px rgba(0,0,0,0.15)}
 .t-group{display:flex;align-items:center;gap:7px}
 .t-label{font-size:12px;color:var(--text3)}
 .t-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font-body)}
@@ -407,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0g</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0h</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3058,6 +3059,103 @@ function drawSong(){
 }
 function doTranspose(d){semitones+=d;drawSong();}
 function resetTranspose(){if(semitones!==0){semitones=0;drawSong();toast('↺ Tonalidad original');}}
+
+// ── Sticky controls en song-view ──
+(function(){
+  let controlsTop = 0;
+  let placeholder = null;
+  
+  function checkSticky(){
+    const controls = document.querySelector('#song-view .sv-controls');
+    if(!controls || document.getElementById('song-view').style.display === 'none') return;
+    
+    if(!placeholder){
+      controlsTop = controls.getBoundingClientRect().top + window.scrollY;
+    }
+    
+    if(window.scrollY > controlsTop - 5){
+      if(!controls.classList.contains('stuck')){
+        controls.classList.add('stuck');
+        if(!placeholder){
+          placeholder = document.createElement('div');
+          placeholder.className = 'sv-controls-placeholder';
+          placeholder.style.height = controls.offsetHeight + 'px';
+          placeholder.style.margin = '12px 0';
+          controls.parentNode.insertBefore(placeholder, controls);
+        }
+      }
+    } else {
+      if(controls.classList.contains('stuck')){
+        controls.classList.remove('stuck');
+        if(placeholder){
+          placeholder.remove();
+          placeholder = null;
+        }
+      }
+    }
+  }
+  
+  window.addEventListener('scroll', checkSticky, {passive: true});
+  
+  // Reset cuando cambia de vista
+  const origShowView = window.showView;
+  window.showView = function(v){
+    const controls = document.querySelector('#song-view .sv-controls');
+    if(controls) controls.classList.remove('stuck');
+    if(placeholder){ placeholder.remove(); placeholder = null; }
+    controlsTop = 0;
+    origShowView(v);
+    if(v === 'song-view'){
+      setTimeout(()=>{
+        const c = document.querySelector('#song-view .sv-controls');
+        if(c) controlsTop = c.getBoundingClientRect().top + window.scrollY;
+      }, 50);
+    }
+  };
+})();
+
+// ── Swipe desde borde izquierdo para volver ──
+(function(){
+  let startX = 0, startY = 0, swiping = false;
+  const edgeZone = 30; // píxeles desde el borde izquierdo
+  
+  document.addEventListener('touchstart', function(e){
+    const touch = e.touches[0];
+    if(touch.clientX <= edgeZone){
+      startX = touch.clientX;
+      startY = touch.clientY;
+      swiping = true;
+    }
+  }, {passive: true});
+  
+  document.addEventListener('touchmove', function(e){
+    if(!swiping) return;
+  }, {passive: true});
+  
+  document.addEventListener('touchend', function(e){
+    if(!swiping) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = Math.abs(touch.clientY - startY);
+    
+    // Si arrastró más de 80px hacia la derecha y no mucho vertical
+    if(dx > 80 && dy < 100){
+      // Simular click en botón volver si existe
+      const backBtn = document.querySelector('#song-view .back-btn') ||
+                      document.querySelector('#add-view .back-btn') ||
+                      document.querySelector('#setlist-play-view .back-btn') ||
+                      document.querySelector('#setlists-view .back-btn') ||
+                      document.querySelector('#calendar-view .back-btn') ||
+                      document.querySelector('#users-view .back-btn') ||
+                      document.querySelector('#chords-view .back-btn') ||
+                      document.querySelector('#profile-view .back-btn');
+      if(backBtn && backBtn.offsetParent !== null){
+        backBtn.click();
+      }
+    }
+    swiping = false;
+  }, {passive: true});
+})();
 function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);initVisibilityChips(null);},50);}
 async function openEdit(id){
   // Recargar canciones del servidor para tener la versión más reciente
