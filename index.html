@@ -118,7 +118,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .t-label{font-size:12px;color:var(--text3)}
 .t-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font-body)}
 .t-btn:hover{border-color:var(--accent);color:var(--accent)}
-.t-badge{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12px;font-weight:500;padding:5px 10px;min-width:68px;text-align:center}
+.t-badge{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12px;font-weight:500;padding:5px 10px;min-width:68px;text-align:center;transition:all .15s}
+.t-badge:hover{background:var(--accent);color:white}
 .sv-action-btn{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--r-sm);color:var(--green);font-family:var(--font-body);font-size:13px;font-weight:500;padding:6px 12px;cursor:pointer}
 .sv-action-btn:hover{background:var(--green-hover)}
 .sv-action-btn.edit{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent)}
@@ -399,7 +400,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2905,7 +2906,7 @@ function drawSong(){
         
         ${(s.tags&&s.tags.length)?s.tags.map(t=>`<span class="tag-pill">${escH(t)}</span>`).join(''):''}      </div>
       ${s.spotify?`<div class="spotify-wrap"><iframe src="https://open.spotify.com/embed/track/${s.spotify}?utm_source=generator&theme=0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe></div>`:''}      <div class="sv-controls">
-        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
+        <div class="t-group"><span class="t-label">Tono</span><button class="t-btn" onclick="doTranspose(-1)">&#8722;</button><span class="t-badge" onclick="resetTranspose()" style="cursor:pointer" title="Click para volver a tonalidad original">${badge}</span><button class="t-btn" onclick="doTranspose(1)">+</button></div>
         ${s.bpm?`<button class="sv-action-btn" onclick="openMetroFloat()" title="Metrónomo">&#9201; ${s.bpm}${s.meter?' · '+s.meter:''}</button>`:''}
         <button class="sv-action-btn" onclick="tpToggleBar()" title="Teleprompter">&#9654; TP</button>
         <button class="sv-action-btn" id="btn-go-setlist" style="display:none" onclick="showView('setlists-view');renderSetlistDetail()">&#127908; Setlist</button>
@@ -2916,6 +2917,7 @@ function drawSong(){
     </div>`;
 }
 function doTranspose(d){semitones+=d;drawSong();}
+function resetTranspose(){if(semitones!==0){semitones=0;drawSong();toast('↺ Tonalidad original');}}
 function openAdd(){tpHideBar();closeMetroFloat();showView('add-view');document.getElementById('add-view').innerHTML=formHTML(null);window.scrollTo(0,0);setTimeout(function(){initTagChips([]);initVisibilityChips(null);},50);}
 async function openEdit(id){
   // Recargar canciones del servidor para tener la versión más reciente
