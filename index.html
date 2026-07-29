@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0i</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0j</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3147,6 +3147,8 @@ function resetTranspose(){if(semitones!==0){semitones=0;drawSong();toast('↺ To
         // Verificar que el botón sea visible (offsetParent !== null y display no sea none)
         if(btn.offsetParent !== null && window.getComputedStyle(btn).display !== 'none'){
           btn.click();
+          // Ir al inicio de la página
+          setTimeout(function(){ window.scrollTo(0, 0); }, 50);
           break;
         }
       }
