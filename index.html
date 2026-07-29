@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0h</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0i</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3140,17 +3140,15 @@ function resetTranspose(){if(semitones!==0){semitones=0;drawSong();toast('↺ To
     
     // Si arrastró más de 80px hacia la derecha y no mucho vertical
     if(dx > 80 && dy < 100){
-      // Simular click en botón volver si existe
-      const backBtn = document.querySelector('#song-view .back-btn') ||
-                      document.querySelector('#add-view .back-btn') ||
-                      document.querySelector('#setlist-play-view .back-btn') ||
-                      document.querySelector('#setlists-view .back-btn') ||
-                      document.querySelector('#calendar-view .back-btn') ||
-                      document.querySelector('#users-view .back-btn') ||
-                      document.querySelector('#chords-view .back-btn') ||
-                      document.querySelector('#profile-view .back-btn');
-      if(backBtn && backBtn.offsetParent !== null){
-        backBtn.click();
+      // Buscar cualquier botón volver visible en la página
+      const allBackBtns = document.querySelectorAll('.back-btn');
+      for(let i = 0; i < allBackBtns.length; i++){
+        const btn = allBackBtns[i];
+        // Verificar que el botón sea visible (offsetParent !== null y display no sea none)
+        if(btn.offsetParent !== null && window.getComputedStyle(btn).display !== 'none'){
+          btn.click();
+          break;
+        }
       }
     }
     swiping = false;
