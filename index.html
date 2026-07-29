@@ -84,6 +84,13 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .alpha-btn.disabled{opacity:.25;cursor:default;pointer-events:none}
 .song-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:border-color .2s,background .2s}
 .song-card:hover{border-color:var(--accent);background:var(--surface2)}
+.setlist-play-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:50}
+.setlist-play-songs{display:flex;flex-direction:column;gap:24px}
+.setlist-song-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;scroll-margin-top:60px}
+.setlist-song-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--accent)}
+.setlist-song-num{background:var(--accent);color:white;font-weight:700;font-size:14px;min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.setlist-song-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)}
+.setlist-song-artist{font-size:13px;color:var(--text2)}
 .song-num{font-family:var(--font-mono);font-size:11px;color:var(--text3);width:20px;flex-shrink:0;text-align:right}
 .song-info{flex:1;min-width:0}
 .song-title-text{font-size:15px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -400,7 +407,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -412,6 +419,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div id="metronome-view" style="display:none"></div>
 <div id="profile-view" style="display:none"></div>
 <div id="setlists-view" style="display:none"></div>
+<div id="setlist-play-view" style="display:none"></div>
 </div>
 <!-- Menú lateral -->
 <div class="side-menu" id="side-menu">
@@ -1373,6 +1381,7 @@ function renderSetlistDetail(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">${escH(sl.name)}</div>
       <div style="display:flex;gap:8px;align-items:center">
+        ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px;background:var(--accent);color:white" onclick="playSetlist()">&#9654; Tocar</button>`:''}
         <button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="exportSetlistPDF()">&#8595; PDF</button>
         ${currentUser.role==='admin'?`<button class="song-del" onclick="confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')" style="font-size:12px;padding:4px 8px">Eliminar</button>`:''}
       </div>
@@ -1408,6 +1417,110 @@ async function removeFromSetlist(songId){
     if(idx>=0) setlists[idx]=JSON.parse(JSON.stringify(currentSetlist));
     renderSetlistDetail();
   } else toast('Error: '+r.error);
+}
+
+// ── Reproducir Setlist (todas las canciones en secuencia) ──
+function playSetlist(){
+  if(!currentSetlist) return;
+  const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
+  if(!slSongs.length){toast('El setlist no tiene canciones');return;}
+  
+  showView('setlist-play-view');
+  const el = document.getElementById('setlist-play-view');
+  
+  let html = `
+    <div class="setlist-play-header">
+      <button class="back-btn" onclick="showView('setlists-view');renderSetlistDetail()">&#8592; ${escH(currentSetlist.name)}</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="sv-action-btn" onclick="tpToggleBar()" title="Teleprompter">&#9654; TP</button>
+      </div>
+    </div>
+    <div class="setlist-play-songs">`;
+  
+  slSongs.forEach((s, idx) => {
+    const st = 0; // Sin transposición inicial
+    let secs = '';
+    
+    s.sections.forEach(sec => {
+      const isBold = sec.label ? ['coro','estribillo','chorus'].some(k => sec.label.toLowerCase().indexOf(k) >= 0) : false;
+      const isInstr = sec.label ? ['intro','instrumental'].some(k => sec.label.toLowerCase().indexOf(k) >= 0) : false;
+      
+      if(sec.label) secs += `<div class="sec-label${isBold?' bold':''}">${escH(sec.label)}</div>`;
+      
+      sec.lines.forEach(line => {
+        if(!line.lyric && !line.chords.length) return;
+        
+        const lyricsWithoutSymbols = (line.lyric || '').replace(/[\s\-–—|/\\_.·:]+/g, '');
+        const isChordOnlyLine = line.chords.length > 0 && lyricsWithoutSymbols === '';
+        
+        if(isInstr && isChordOnlyLine){
+          // Línea instrumental
+          const chords = [...line.chords].sort((a,b) => a.pos - b.pos);
+          const lyric = line.lyric || '';
+          let result = '';
+          let lastPos = 0;
+          chords.forEach((c, i) => {
+            if(c.pos > lastPos){
+              const textBefore = lyric.slice(lastPos, c.pos);
+              if(textBefore.trim()) result += `<span style="color:var(--text3);margin:0 2px">${escH(textBefore.trim())}</span> `;
+            }
+            const txd = txChord(c.ch, st);
+            result += `<span class="chord-cell">${escH(txd)}</span> `;
+            lastPos = c.pos;
+          });
+          if(lastPos < lyric.length){
+            const textAfter = lyric.slice(lastPos).trim();
+            if(textAfter) result += `<span style="color:var(--text3);margin:0 2px">${escH(textAfter)}</span>`;
+          }
+          secs += `<div class="instrumental-line" style="font-family:var(--font-mono);font-size:14px;padding:4px 0;display:flex;flex-wrap:wrap;align-items:center;gap:4px">${result}</div>`;
+        } else {
+          const lyric = line.lyric || '';
+          const positions = [...line.chords].sort((a,b) => a.pos - b.pos);
+          let segments = [];
+          positions.forEach((c, i) => {
+            const nextPos = positions[i+1] ? positions[i+1].pos : lyric.length;
+            const segLyric = lyric.slice(c.pos, nextPos);
+            segments.push({chord: txChord(c.ch, st), lyric: segLyric});
+          });
+          if(positions.length === 0){
+            segments.push({chord: '', lyric: lyric});
+          } else if(positions[0].pos > 0){
+            segments.unshift({chord: '', lyric: lyric.slice(0, positions[0].pos)});
+          }
+          let cells = '';
+          segments.forEach(seg => {
+            const chLen = seg.chord ? seg.chord.length + 1 : 0;
+            const lyLen = seg.lyric ? seg.lyric.length : 0;
+            const minW = chLen > lyLen ? `${chLen * 0.62}em` : 'auto';
+            cells += `<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minW}">`;
+            if(seg.chord) cells += `<div class="chord-cell">${escH(seg.chord)}</div>`;
+            else cells += `<div class="chord-cell">&nbsp;</div>`;
+            cells += `<div class="lyric-cell${isBold?' bold-lyric':''}">${escH(seg.lyric)||'&nbsp;'}</div>`;
+            cells += `</td>`;
+          });
+          secs += `<div class="line-block"><table class="chord-table"><tr>${cells}</tr></table></div>`;
+        }
+      });
+      secs += '<div style="height:2px"></div>';
+    });
+    
+    html += `
+      <div class="setlist-song-block" id="setlist-song-${idx}">
+        <div class="setlist-song-header">
+          <span class="setlist-song-num">${idx + 1}</span>
+          <div class="setlist-song-info">
+            <div class="setlist-song-title">${escH(s.title)}</div>
+            <div class="setlist-song-artist">${escH(s.artist)} · ${escH(s.key)}${s.bpm?' · '+s.bpm+' BPM':''}</div>
+          </div>
+        </div>
+        ${s.notes?`<div class="song-notes" style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text)"><span style="font-weight:600;color:var(--accent)">📝</span> ${escH(s.notes)}</div>`:''}
+        <div class="sv-content">${secs}</div>
+      </div>`;
+  });
+  
+  html += '</div>';
+  el.innerHTML = html;
+  window.scrollTo(0, 0);
 }
 
 // Drag & drop
@@ -3311,10 +3424,10 @@ async function addUserAction(){
   else toast('Error: '+r.error);
 }
 function showView(v){
-  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','calendar-view','profile-view','tuner-view','metronome-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['list-view','song-view','add-view','users-view','chords-view','setlists-view','setlist-play-view','calendar-view','profile-view','tuner-view','metronome-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const t=document.getElementById(v);if(t)t.style.display='block';
   // Actualizar nombre en el header
-  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','calendar-view':'Calendario','profile-view':'Mi perfil','tuner-view':'Afinador','metronome-view':'Metrónomo'};
+  const names={'list-view':'Cancionero','song-view':'','add-view':'','users-view':'Usuarios','chords-view':'Acordes','setlists-view':'Setlists','setlist-play-view':'Setlist','calendar-view':'Calendario','profile-view':'Mi perfil','tuner-view':'Afinador','metronome-view':'Metrónomo'};
   const hn=document.getElementById('header-section-name');
   if(hn) hn.textContent=names[v]||'Cancionero';
   // Mostrar botón Nueva solo en la vista de canciones
