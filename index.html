@@ -407,7 +407,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.0e</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1420,12 +1420,24 @@ async function removeFromSetlist(songId){
 }
 
 // ── Reproducir Setlist (todas las canciones en secuencia) ──
+var slPlayTranspose = {}; // Guarda transposición por índice de canción
+
 function playSetlist(){
   if(!currentSetlist) return;
   const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
   if(!slSongs.length){toast('El setlist no tiene canciones');return;}
   
+  // Resetear transposiciones
+  slPlayTranspose = {};
+  slSongs.forEach((s, idx) => { slPlayTranspose[idx] = 0; });
+  
   showView('setlist-play-view');
+  renderSetlistPlay();
+}
+
+function renderSetlistPlay(){
+  if(!currentSetlist) return;
+  const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
   const el = document.getElementById('setlist-play-view');
   
   let html = `
@@ -1438,7 +1450,10 @@ function playSetlist(){
     <div class="setlist-play-songs">`;
   
   slSongs.forEach((s, idx) => {
-    const st = 0; // Sin transposición inicial
+    const st = slPlayTranspose[idx] || 0;
+    const transKey = st !== 0 ? getTransposedKey(s.key, st) : null;
+    const keyBadge = st === 0 ? s.key : (transKey || s.key) + ' (' + (st>0?'+':'') + st + ')';
+    
     let secs = '';
     
     s.sections.forEach(sec => {
@@ -1454,7 +1469,6 @@ function playSetlist(){
         const isChordOnlyLine = line.chords.length > 0 && lyricsWithoutSymbols === '';
         
         if(isInstr && isChordOnlyLine){
-          // Línea instrumental
           const chords = [...line.chords].sort((a,b) => a.pos - b.pos);
           const lyric = line.lyric || '';
           let result = '';
@@ -1465,7 +1479,8 @@ function playSetlist(){
               if(textBefore.trim()) result += `<span style="color:var(--text3);margin:0 2px">${escH(textBefore.trim())}</span> `;
             }
             const txd = txChord(c.ch, st);
-            result += `<span class="chord-cell">${escH(txd)}</span> `;
+            const sc = txd.replace(/'/g, "\\'");
+            result += `<span class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(txd)}</span> `;
             lastPos = c.pos;
           });
           if(lastPos < lyric.length){
@@ -1493,8 +1508,12 @@ function playSetlist(){
             const lyLen = seg.lyric ? seg.lyric.length : 0;
             const minW = chLen > lyLen ? `${chLen * 0.62}em` : 'auto';
             cells += `<td style="vertical-align:bottom;padding:0;white-space:pre;min-width:${minW}">`;
-            if(seg.chord) cells += `<div class="chord-cell">${escH(seg.chord)}</div>`;
-            else cells += `<div class="chord-cell">&nbsp;</div>`;
+            if(seg.chord){
+              const sc = seg.chord.replace(/'/g, "\\'");
+              cells += `<div class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(seg.chord)}</div>`;
+            } else {
+              cells += `<div class="chord-cell">&nbsp;</div>`;
+            }
             cells += `<div class="lyric-cell${isBold?' bold-lyric':''}">${escH(seg.lyric)||'&nbsp;'}</div>`;
             cells += `</td>`;
           });
@@ -1508,9 +1527,14 @@ function playSetlist(){
       <div class="setlist-song-block" id="setlist-song-${idx}">
         <div class="setlist-song-header">
           <span class="setlist-song-num">${idx + 1}</span>
-          <div class="setlist-song-info">
+          <div class="setlist-song-info" style="flex:1">
             <div class="setlist-song-title">${escH(s.title)}</div>
-            <div class="setlist-song-artist">${escH(s.artist)} · ${escH(s.key)}${s.bpm?' · '+s.bpm+' BPM':''}</div>
+            <div class="setlist-song-artist">${escH(s.artist)}${s.bpm?' · '+s.bpm+' BPM':''}</div>
+          </div>
+          <div class="t-group" style="margin-left:auto">
+            <button class="t-btn" onclick="slPlayTranspose[${idx}]--;renderSetlistPlay()">&#8722;</button>
+            <span class="t-badge" onclick="slPlayTranspose[${idx}]=0;renderSetlistPlay()" style="cursor:pointer;min-width:50px" title="Click para resetear">${keyBadge}</span>
+            <button class="t-btn" onclick="slPlayTranspose[${idx}]++;renderSetlistPlay()">+</button>
           </div>
         </div>
         ${s.notes?`<div class="song-notes" style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text)"><span style="font-weight:600;color:var(--accent)">📝</span> ${escH(s.notes)}</div>`:''}
@@ -1520,7 +1544,6 @@ function playSetlist(){
   
   html += '</div>';
   el.innerHTML = html;
-  window.scrollTo(0, 0);
 }
 
 // Drag & drop
