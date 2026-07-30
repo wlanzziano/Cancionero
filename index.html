@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1545,7 +1545,7 @@ function renderSetlistPlay(){
         <div class="setlist-song-header">
           <span class="setlist-song-num">${idx + 1}</span>
           <div class="setlist-song-info" style="flex:1">
-            <div class="setlist-song-title">${escH(s.title)}</div>
+            <div class="setlist-song-title">${escH(s.title)}${s.version?` <span style="font-size:13px;font-weight:500;color:var(--accent)">(${escH(s.version)})</span>`:''}</div>
             <div class="setlist-song-artist">${escH(s.artist)}${s.bpm?' · '+s.bpm+' BPM':''}</div>
           </div>
           <div class="t-group" style="margin-left:auto">
