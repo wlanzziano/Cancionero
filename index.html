@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1b</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1355,11 +1355,8 @@ function renderSetlistDetail(){
   const el = document.getElementById('setlists-view');
 
   const songItems = slSongs.length ? slSongs.map((s,i)=>`
-    <div class="sl-card">
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-        <button class="sl-move-btn" onclick="slMoveUp(${i})" ${i===0?'disabled':''}>&#9650;</button>
-        <button class="sl-move-btn" onclick="slMoveDown(${i})" ${i===slSongs.length-1?'disabled':''}>&#9660;</button>
-      </div>
+    <div class="sl-card" draggable="true" data-idx="${i}" ondragstart="slDragStart(event,${i})" ondragover="slDragOver(event)" ondragenter="slDragEnter(event)" ondragleave="slDragLeave(event)" ondrop="slDrop(event,${i})" ondragend="slDragEnd(event)">
+      <div class="sl-drag-handle" style="cursor:grab;color:var(--text3);font-size:16px;padding:4px;touch-action:none">⋮⋮</div>
       <span class="sl-num">${i+1}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
@@ -2269,14 +2266,76 @@ function slDragStart(e, idx){
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
 }
-function slDragOver(e, idx){
+function slDragOver(e){
   e.preventDefault();
-  document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('drag-over'));
+  e.dataTransfer.dropEffect = 'move';
+}
+function slDragEnter(e){
+  e.preventDefault();
   e.currentTarget.classList.add('drag-over');
 }
+function slDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
 function slDragEnd(){
+  dragSrcIdx = null;
   document.querySelectorAll('.sl-card').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
+
+// Touch drag para móviles
+(function(){
+  let touchDragIdx = null;
+  let touchClone = null;
+  let touchStartY = 0;
+  
+  document.addEventListener('touchstart', function(e){
+    const handle = e.target.closest('.sl-drag-handle');
+    if(!handle) return;
+    const card = handle.closest('.sl-card');
+    if(!card) return;
+    touchDragIdx = parseInt(card.dataset.idx);
+    touchStartY = e.touches[0].clientY;
+    card.classList.add('dragging');
+  }, {passive: true});
+  
+  document.addEventListener('touchmove', function(e){
+    if(touchDragIdx === null) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const card = el ? el.closest('.sl-card') : null;
+    document.querySelectorAll('.sl-card').forEach(c => c.classList.remove('drag-over'));
+    if(card && parseInt(card.dataset.idx) !== touchDragIdx){
+      card.classList.add('drag-over');
+    }
+  }, {passive: true});
+  
+  document.addEventListener('touchend', async function(e){
+    if(touchDragIdx === null) return;
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const card = el ? el.closest('.sl-card') : null;
+    
+    document.querySelectorAll('.sl-card').forEach(c => c.classList.remove('dragging','drag-over'));
+    
+    if(card){
+      const toIdx = parseInt(card.dataset.idx);
+      if(!isNaN(toIdx) && toIdx !== touchDragIdx && currentSetlist){
+        const arr = [...(currentSetlist.songs||[])];
+        const [moved] = arr.splice(touchDragIdx, 1);
+        arr.splice(toIdx, 0, moved);
+        currentSetlist.songs = arr;
+        const r = await api({action:'edit_setlist', setlist:currentSetlist});
+        if(r.ok){
+          const idx = setlists.findIndex(sl => sl.id === currentSetlist.id);
+          if(idx >= 0) setlists[idx] = JSON.parse(JSON.stringify(currentSetlist));
+          renderSetlistDetail();
+        } else toast('Error al guardar orden');
+      }
+    }
+    touchDragIdx = null;
+  }, {passive: true});
+})();
+
 // ── Buscador setlist ──────────────────────────────────────
 function slInitSearch(available){
   var wrap=document.getElementById('sl-search-wrap');
