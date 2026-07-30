@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0b</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2392,10 +2392,11 @@ function slBuildAvail(list){
   var paged=filtered.slice(slAvailPage*PAGE_SIZE,(slAvailPage+1)*PAGE_SIZE);
   var pgControls=buildPagination(slAvailPage,totalPg,'goToSlPage');
   return paged.map(function(s){
+    var versionInfo = s.version ? ' <span style="color:var(--accent);font-size:11px">('+escH(s.version)+')</span>' : '';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(s.title)+'</div>'
-      +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+'</div>'
+      +'<div style="font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(s.title)+versionInfo+'</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+escH(s.artist)+' · '+escH(s.key)+'</div>'
       +'</div>'
       +'<button class="sv-action-btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" data-sid="'+String(s.id)+'" onclick="slAddBtn(this)">+ Agregar</button>'
       +'</div>';
