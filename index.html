@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div id="app" style="display:none">
   <div class="header">
     <button class="hamburger" onclick="openSideMenu()" title="Menú">&#9776;</button>
-    <div class="header-title" style="display:flex;align-items:center;gap:6px"><img src="icon-192.png" class="app-icon-sm" alt=""><span id="header-section-name">Cancionero</span></div>
+    <div class="header-title" style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="goHome()"><img src="icon-192.png" class="app-icon-sm" alt=""><span id="header-section-name">Cancionero</span></div>
     <div class="search-wrap">
       <span class="search-icon">&#128269;</span>
       <input type="text" id="search" placeholder="Buscar..." oninput="activeAlpha=null;renderList()">
@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1e</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3139,6 +3139,11 @@ function drawSong(){
 }
 function doTranspose(d){semitones+=d;drawSong();}
 function resetTranspose(){if(semitones!==0){semitones=0;drawSong();toast('↺ Tonalidad original');}}
+
+function goHome(){
+  showList();
+  window.scrollTo(0, 0);
+}
 
 // ── Sticky controls en song-view ──
 (function(){
