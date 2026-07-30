@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1c</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1d</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -613,6 +613,18 @@ let userGroups=[]; // Grupos de usuarios para visibilidad de canciones
 function normalizeText(str){
   if(!str) return '';
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
+// Extraer texto de la letra de una canción (sin acordes)
+function getSongLyrics(s){
+  if(!s||!s.sections)return '';
+  let txt='';
+  s.sections.forEach(sec=>{
+    sec.lines.forEach(line=>{
+      if(line.lyric)txt+=line.lyric+' ';
+    });
+  });
+  return txt;
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -2349,9 +2361,9 @@ function slInitSearch(available){
   if(!wrap) return;
   wrap.innerHTML='';
   var inp=document.createElement('input');
-  inp.type='text'; inp.id='sl-q'; inp.placeholder='Buscar...';
+  inp.type='text'; inp.id='sl-q'; inp.placeholder='Buscar por título, artista o letra...';
   inp.oninput=slFilter;
-  inp.style.cssText='width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:8px;box-sizing:border-box';
+  inp.style.cssText='width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;margin-bottom:10px;box-sizing:border-box';
   wrap.appendChild(inp);
   var row=document.createElement('div');
   row.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px';
@@ -2369,7 +2381,8 @@ function slBuildAvail(list){
   var q=normalizeText(slQ||'');
   var l=slLetter||'#';
   var filtered=list.filter(function(s){
-    var okQ=!q||normalizeText(s.title+' '+s.artist).indexOf(q)>=0;
+    // Buscar también en la letra de la canción
+    var okQ=!q||normalizeText(s.title+' '+s.artist+' '+getSongLyrics(s)).indexOf(q)>=0;
     var okL=l==='#'||(s.title.charAt(0).toUpperCase()===l);
     return okQ&&okL;
   });
@@ -2897,7 +2910,8 @@ function renderList(){
   var filtered=songs.filter(function(s){
     // Filtro de visibilidad: solo mostrar canciones que el usuario puede ver
     if(!canUserSeeSong(s,currentUser))return false;
-    var mq=!q||normalizeText(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).indexOf(q)>=0;
+    // Buscar en título, artista, tags Y letra
+    var mq=!q||normalizeText(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')+' '+getSongLyrics(s)).indexOf(q)>=0;
     var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
     var ma=!activeArtist||s.artist===activeArtist;
     var mal=!activeAlpha||(s[alphaField]||'').trim().toUpperCase().replace(/^(EL |LA |LOS |LAS |UN |UNA )/,'')[0]===activeAlpha;
@@ -3636,12 +3650,17 @@ function parseBody(text){
 }
 function parseLine(line){
   const chords=[],re=/\[([A-G][b#]?(?:m|maj7?|min|dim|aug|sus[24]?|add\d+|[Mm]?[0-9]+(?:[b#][0-9]+)?)*(?:\/[A-G][b#]?)?)\]/g;
-  let clean='',last=0,m;
-  while((m=re.exec(line))!==null){clean+=line.slice(last,m.index);chords.push({ch:m[1],pos:clean.length});last=m.index+m[0].length;}
+  let clean='',last=0,m,orderIdx=0;
+  while((m=re.exec(line))!==null){
+    clean+=line.slice(last,m.index);
+    // Agregar un micro-offset para mantener orden de acordes en la misma posición
+    chords.push({ch:m[1],pos:clean.length,order:orderIdx++});
+    last=m.index+m[0].length;
+  }
   clean+=line.slice(last);return{chords,lyric:clean};
 }
 function songToText(s){
-  let out='';s.sections.forEach(sec=>{if(sec.label)out+='# '+sec.label+'\n';sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length){out+='\n';return;}let row=line.lyric;[...line.chords].sort((a,b)=>b.pos-a.pos).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});out+=row+'\n';});});return out.trim();
+  let out='';s.sections.forEach(sec=>{if(sec.label)out+='# '+sec.label+'\n';sec.lines.forEach(line=>{if(!line.lyric&&!line.chords.length){out+='\n';return;}let row=line.lyric;[...line.chords].sort((a,b)=>{if(b.pos!==a.pos)return b.pos-a.pos;return(b.order||0)-(a.order||0);}).forEach(c=>{row=row.slice(0,c.pos)+'['+c.ch+']'+row.slice(c.pos);});out+=row+'\n';});});return out.trim();
 }
 function exportPDF(){
   const s=currentSong,st=semitones;
