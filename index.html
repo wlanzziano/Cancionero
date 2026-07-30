@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1b</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v3.1c</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -608,6 +608,13 @@ function txChord(ch,st){
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let currentUser=null,songs=[],currentSong=null,semitones=0,pendingDeleteId=null,pendingDeleteType='song',pendingDeleteCb=null;
 let userGroups=[]; // Grupos de usuarios para visibilidad de canciones
+
+// Normalizar texto: quitar tildes y caracteres especiales para búsqueda
+function normalizeText(str){
+  if(!str) return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
   try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
@@ -1120,9 +1127,9 @@ function chordDelClick(btn){
   confirmDelete('chord',n,n,function(){deleteCustomChord(n);});
 }
 function filterChordsList(){
-  var q = (document.getElementById('chord-search').value||'').trim().toLowerCase();
+  var q = normalizeText(document.getElementById('chord-search').value||'');
   var canEdit = currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
-  var filtered = q ? (window._allChordsCache||[]).filter(function(ch){return ch.name.toLowerCase().indexOf(q)>=0;}) : (window._allChordsCache||[]);
+  var filtered = q ? (window._allChordsCache||[]).filter(function(ch){return normalizeText(ch.name).indexOf(q)>=0;}) : (window._allChordsCache||[]);
   renderChordsList(filtered, canEdit);
 }
 
@@ -2359,10 +2366,10 @@ function slInitSearch(available){
   slFilter();
 }
 function slBuildAvail(list){
-  var q=(slQ||'').toLowerCase();
+  var q=normalizeText(slQ||'');
   var l=slLetter||'#';
   var filtered=list.filter(function(s){
-    var okQ=!q||s.title.toLowerCase().indexOf(q)>=0||s.artist.toLowerCase().indexOf(q)>=0;
+    var okQ=!q||normalizeText(s.title+' '+s.artist).indexOf(q)>=0;
     var okL=l==='#'||(s.title.charAt(0).toUpperCase()===l);
     return okQ&&okL;
   });
@@ -2883,14 +2890,14 @@ function loadSongsFromCache(banner){
 function renderList(){
   renderTagBar();
   renderAlphaBar();
-  const q=(document.getElementById('search').value||'').toLowerCase().trim();
+  const q=normalizeText(document.getElementById('search').value||'');
   var sortEl=document.getElementById('sort-select');
   var sortBy=sortEl?sortEl.value:'title';
   var alphaField=sortBy==='artist'?'artist':'title';
   var filtered=songs.filter(function(s){
     // Filtro de visibilidad: solo mostrar canciones que el usuario puede ver
     if(!canUserSeeSong(s,currentUser))return false;
-    var mq=!q||(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).toLowerCase().indexOf(q)>=0;
+    var mq=!q||normalizeText(s.title+' '+s.artist+' '+(s.tags||[]).join(' ')).indexOf(q)>=0;
     var mt=!activeTag||(s.tags||[]).indexOf(activeTag)>=0;
     var ma=!activeArtist||s.artist===activeArtist;
     var mal=!activeAlpha||(s[alphaField]||'').trim().toUpperCase().replace(/^(EL |LA |LOS |LAS |UN |UNA )/,'')[0]===activeAlpha;
