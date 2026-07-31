@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.1</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1404,7 +1404,10 @@ function renderSetlistDetail(){
   el.innerHTML = `
     <button class="back-btn" onclick="openSetlists()">&#8592; Setlists</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">${escH(sl.name)}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">${escH(sl.name)}</div>
+        ${canEditSl?`<button class="sv-action-btn" style="font-size:11px;padding:3px 8px" onclick="editSetlistName()" title="Editar nombre">✏️</button>`:''}
+      </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px;background:var(--accent);color:white" onclick="playSetlist()">&#9654; Tocar</button>`:''}
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="openPlaylistMenu()">🎵 Playlist</button>`:''}
@@ -1430,6 +1433,44 @@ async function addToSetlist(songId){
     toast('✓ Canción agregada');
   } else {
     currentSetlist.songs.pop();
+    toast('Error: '+r.error);
+  }
+}
+
+function editSetlistName(){
+  if(!currentSetlist) return;
+  
+  let html = '<div style="padding:20px">';
+  html += '<div style="font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text)">✏️ Editar nombre del setlist</div>';
+  html += `<input type="text" id="edit-sl-name" value="${escH(currentSetlist.name)}" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none;box-sizing:border-box;margin-bottom:16px">`;
+  html += '<div style="display:flex;gap:10px">';
+  html += '<button onclick="closeGenericModal()" class="btn-cancel" style="flex:1">Cancelar</button>';
+  html += '<button onclick="saveSetlistName()" class="btn-save" style="flex:1">Guardar</button>';
+  html += '</div></div>';
+  
+  document.getElementById('generic-modal-content').innerHTML = html;
+  document.getElementById('generic-modal').classList.add('open');
+  document.getElementById('edit-sl-name').focus();
+  document.getElementById('edit-sl-name').select();
+}
+
+async function saveSetlistName(){
+  const newName = document.getElementById('edit-sl-name').value.trim();
+  if(!newName){
+    toast('El nombre no puede estar vacío');
+    return;
+  }
+  
+  currentSetlist.name = newName;
+  const r = await api({action:'edit_setlist', setlist:currentSetlist});
+  
+  if(r.ok){
+    const idx = setlists.findIndex(sl=>sl.id===currentSetlist.id);
+    if(idx>=0) setlists[idx] = JSON.parse(JSON.stringify(currentSetlist));
+    closeGenericModal();
+    renderSetlistDetail();
+    toast('✓ Nombre actualizado');
+  } else {
     toast('Error: '+r.error);
   }
 }
