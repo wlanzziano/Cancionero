@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0g</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1522,6 +1522,7 @@ function openSpotifyPlaylist(){
     </div>`;
   });
   
+  html += '<button onclick="closeGenericModal()" class="btn-cancel" style="width:100%;margin-top:16px">Cerrar</button>';
   html += '</div>';
   
   document.getElementById('generic-modal-content').innerHTML = html;
