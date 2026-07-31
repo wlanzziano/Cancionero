@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0d</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0f</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -531,6 +531,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <button class="modal-confirm" id="confirm-ok-btn">Sí, eliminar</button>
     </div>
   </div>
+</div>
+<div class="modal-overlay" id="generic-modal">
+  <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZIqdr5JFX3Xw0lr7b1KjdEGZYEjvd2gvV8bsF2XyJGlQ5LBXBw6YLTUXtbDVmEZfRRw/exec';
@@ -1482,11 +1485,15 @@ function openPlaylistMenu(){
     html += '<div style="color:var(--text3);font-size:13px">No hay canciones con link de YouTube</div>';
   }
   
-  html += '<button onclick="closeModal()" class="btn-cancel" style="width:100%;margin-top:16px">Cerrar</button>';
+  html += '<button onclick="closeGenericModal()" class="btn-cancel" style="width:100%;margin-top:16px">Cerrar</button>';
   html += '</div>';
   
-  document.getElementById('modal-content').innerHTML = html;
-  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('generic-modal-content').innerHTML = html;
+  document.getElementById('generic-modal').classList.add('open');
+}
+
+function closeGenericModal(){
+  document.getElementById('generic-modal').classList.remove('open');
 }
 
 function openSpotifyPlaylist(){
@@ -1504,7 +1511,7 @@ function openSpotifyPlaylist(){
   const firstTrack = tracks[0];
   window.open('https://open.spotify.com/track/' + firstTrack, '_blank');
   
-  closeModal();
+  closeGenericModal();
   toast('Abriendo en Spotify... Agrega las demás manualmente a la cola');
 }
 
@@ -1523,7 +1530,7 @@ function openYoutubePlaylist(){
   const videoIds = tracks.join(',');
   window.open('https://www.youtube.com/watch_videos?video_ids=' + videoIds, '_blank');
   
-  closeModal();
+  closeGenericModal();
   toast('Abriendo playlist en YouTube');
 }
 
@@ -3461,6 +3468,7 @@ function formHTML(s){
         </div>
         <div class="hint">Pega los enlaces de las plataformas donde esté la canción</div>
       </div>
+      <div class="field"><label>Notas <span style="font-size:11px;color:var(--text3)">(capo, intro especial, indicaciones...)</span></label><textarea id="f-notes" style="min-height:60px" placeholder="Ej: Capo 2, intro con arpegio, rasgueo lento...">${escH(s&&s.notes?s.notes:'')}</textarea></div>
       <div class="field"><label>Etiquetas</label>
         <div id="tag-chips-wrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">
@@ -3503,6 +3511,7 @@ function getFormValues(){
   const bpmEl=document.getElementById('f-bpm');
   const bpm=bpmEl&&bpmEl.value?parseInt(bpmEl.value)||'':'';
   const version=(document.getElementById('f-version')||{}).value||'';
+  const notes=(document.getElementById('f-notes')||{}).value||'';
   if(!title){alert('El título es obligatorio');return null;}
   if(!body){alert('La letra es obligatoria');return null;}
   var spInput=document.getElementById('f-spotify');
@@ -3521,13 +3530,13 @@ function getFormValues(){
   var meter=meterEl?meterEl.value:'';
   // Obtener visibilidad
   const visVals=getVisibilityValues();
-  return{title,artist,key,bpm,version,meter,tags,spotify,youtube,body,...visVals};
+  return{title,artist,key,bpm,version,notes,meter,tags,spotify,youtube,body,...visVals};
 }
 async function saveSongNew(){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body,visibility,allowedUsers,allowedGroups}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'add',song:{title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),youtube:(vals.youtube||''),sections:parseBody(body),createdBy:currentUser.name,visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
+  const r=await api({action:'add',song:{title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),youtube:(vals.youtube||''),notes:(vals.notes||''),sections:parseBody(body),createdBy:currentUser.name,visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
   if(r.ok){await loadSongs();showList();toast('✓ Canción guardada');}
   else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar canción';}
 }
@@ -3535,7 +3544,7 @@ async function saveSongEdit(id){
   const vals=getFormValues();if(!vals)return;
   const {title,artist,key,bpm,body,visibility,allowedUsers,allowedGroups}=vals;
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Guardando...';
-  const r=await api({action:'edit',song:{id,title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),youtube:(vals.youtube||''),sections:parseBody(body),visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
+  const r=await api({action:'edit',song:{id,title,artist,key,bpm,version:(vals.version||''),meter:(vals.meter||''),tags:(vals.tags||[]),spotify:(vals.spotify||''),youtube:(vals.youtube||''),notes:(vals.notes||''),sections:parseBody(body),visibility:visibility||'public',allowedUsers:allowedUsers||[],allowedGroups:allowedGroups||[]}});
   if(r.ok){
     // Recargar canciones del servidor para tener datos frescos (incluyendo meter, tpSpeed)
     await loadSongs();
