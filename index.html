@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0f</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v4.0g</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1499,20 +1499,32 @@ function closeGenericModal(){
 function openSpotifyPlaylist(){
   if(!currentSetlist) return;
   const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
-  const tracks = slSongs.filter(s=>s.spotify).map(s=>s.spotify);
+  const spotifySongs = slSongs.filter(s=>s.spotify);
   
-  if(tracks.length === 0){
+  if(spotifySongs.length === 0){
     toast('No hay canciones con Spotify');
     return;
   }
   
-  // Abrir la primera canción en Spotify con contexto de queue
-  // Spotify no permite crear playlists dinámicas, así que abrimos la primera y mostramos la lista
-  const firstTrack = tracks[0];
-  window.open('https://open.spotify.com/track/' + firstTrack, '_blank');
+  // Mostrar lista de canciones para copiar manualmente o abrir una por una
+  let html = '<div style="padding:20px;max-height:70vh;overflow-y:auto">';
+  html += '<div style="font-size:16px;font-weight:600;margin-bottom:12px;color:var(--text)">🟢 Canciones en Spotify</div>';
+  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Spotify no permite crear playlists sin cuenta. Abre cada canción o crea una playlist manualmente:</div>';
   
-  closeGenericModal();
-  toast('Abriendo en Spotify... Agrega las demás manualmente a la cola');
+  spotifySongs.forEach((s, i) => {
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--text3);font-size:12px;min-width:20px">${i+1}.</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(s.title)}</div>
+        <div style="font-size:11px;color:var(--text2)">${escH(s.artist)}</div>
+      </div>
+      <a href="https://open.spotify.com/track/${s.spotify}" target="_blank" class="sv-action-btn" style="font-size:11px;padding:4px 8px;text-decoration:none">Abrir</a>
+    </div>`;
+  });
+  
+  html += '</div>';
+  
+  document.getElementById('generic-modal-content').innerHTML = html;
 }
 
 function openYoutubePlaylist(){
@@ -1525,13 +1537,22 @@ function openYoutubePlaylist(){
     return;
   }
   
-  // YouTube permite crear una playlist temporal con múltiples videos
-  // Formato: https://www.youtube.com/watch_videos?video_ids=ID1,ID2,ID3
-  const videoIds = tracks.join(',');
-  window.open('https://www.youtube.com/watch_videos?video_ids=' + videoIds, '_blank');
+  // YouTube Music playlist o YouTube normal
+  // Opción 1: watch_videos funciona para reproducir en secuencia
+  // Opción 2: Crear URL con playlist parameter
+  
+  if(tracks.length === 1){
+    window.open('https://www.youtube.com/watch?v=' + tracks[0], '_blank');
+  } else {
+    // Método que funciona: primer video + lista de reproducción
+    const firstVideo = tracks[0];
+    const playlistParam = tracks.join(',');
+    // Este formato reproduce el primer video y pone los demás en cola
+    window.open('https://www.youtube.com/watch_videos?video_ids=' + playlistParam, '_blank');
+  }
   
   closeGenericModal();
-  toast('Abriendo playlist en YouTube');
+  toast('Abriendo ' + tracks.length + ' canciones en YouTube');
 }
 
 function renderSetlistPlay(){
