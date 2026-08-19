@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.3</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.4</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2531,8 +2531,9 @@ function slBuildAvail(list){
   var q=normalizeText(slQ||'');
   var l=slLetter||'#';
   var filtered=list.filter(function(s){
-    // Buscar también en la letra de la canción
-    var okQ=!q||normalizeText(s.title+' '+s.artist+' '+getSongLyrics(s)).indexOf(q)>=0;
+    // Buscar en título, artista, letra y tags
+    var tagsStr=(s.tags||[]).join(' ');
+    var okQ=!q||normalizeText(s.title+' '+s.artist+' '+getSongLyrics(s)+' '+tagsStr).indexOf(q)>=0;
     var okL=l==='#'||(s.title.charAt(0).toUpperCase()===l);
     return okQ&&okL;
   });
