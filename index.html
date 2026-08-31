@@ -408,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.4</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v5.0.5</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3345,6 +3345,11 @@ function goHome(){
     if(controls) controls.classList.remove('stuck');
     if(placeholder){ placeholder.remove(); placeholder = null; }
     controlsTop = 0;
+    // Ocultar teleprompter si salimos de song-view
+    if(v !== 'song-view' && v !== 'setlist-play-view'){
+      tpHideBar();
+      tpPause();
+    }
     origShowView(v);
     if(v === 'song-view'){
       setTimeout(()=>{
