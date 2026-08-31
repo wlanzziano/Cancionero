@@ -1,12 +1,19 @@
-// ── Cancionero Católico — Service Worker ──────────────────
-const CACHE_NAME = 'cancionero-v4';
+// ── Cancionero Católico — Service Worker v6 ──────────────────
+const CACHE_NAME = 'cancionero-v6';
 const STATIC_FILES = [
   '/Cancionero/',
   '/Cancionero/index.html',
   '/Cancionero/guitar.json',
   '/Cancionero/manifest.json',
+  '/Cancionero/icon-72.png',
+  '/Cancionero/icon-96.png',
+  '/Cancionero/icon-128.png',
+  '/Cancionero/icon-144.png',
+  '/Cancionero/icon-152.png',
   '/Cancionero/icon-192.png',
+  '/Cancionero/icon-384.png',
   '/Cancionero/icon-512.png',
+  '/Cancionero/offline.html'
 ];
 
 // Instalar — cachear archivos estáticos
@@ -35,14 +42,13 @@ self.addEventListener('activate', function(event) {
 });
 
 // Fetch — estrategia: Network first, caché como fallback
-// Para Google Fonts y APIs externas: solo network (no cachear)
-// Para archivos locales: network first, si falla usa caché
 self.addEventListener('fetch', function(event) {
   const url = event.request.url;
 
   // No interceptar llamadas al Apps Script ni a APIs externas
   if (url.includes('script.google.com') ||
       url.includes('open.spotify.com') ||
+      url.includes('youtube.com') ||
       url.includes('fonts.googleapis.com') ||
       url.includes('fonts.gstatic.com')) {
     return; // dejar pasar sin interceptar
@@ -64,12 +70,25 @@ self.addEventListener('fetch', function(event) {
         // Sin red — intentar desde caché
         return caches.match(event.request).then(function(cached) {
           if (cached) return cached;
-          // Si piden index.html y no está en caché, devolver página de error mínima
+          // Si piden navegación y no está en caché, página offline
           if (event.request.mode === 'navigate') {
-            return caches.match('/Cancionero/index.html');
+            return caches.match('/Cancionero/offline.html')
+              .then(function(offlinePage) {
+                return offlinePage || caches.match('/Cancionero/index.html');
+              });
           }
-          return new Response('Sin conexión', { status: 503 });
+          return new Response('Sin conexión', { 
+            status: 503,
+            statusText: 'Sin conexión'
+          });
         });
       })
   );
+});
+
+// Mensaje desde la app para forzar actualización
+self.addEventListener('message', function(event) {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
