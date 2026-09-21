@@ -84,7 +84,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .alpha-btn.disabled{opacity:.25;cursor:default;pointer-events:none}
 .song-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:border-color .2s,background .2s}
 .song-card:hover{border-color:var(--accent);background:var(--surface2)}
-.setlist-play-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:50}
+.setlist-play-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding:12px 0;z-index:100;border-bottom:1px solid var(--border)}
 .setlist-play-songs{display:flex;flex-direction:column;gap:24px}
 .setlist-song-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;scroll-margin-top:60px}
 .setlist-song-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--accent)}
@@ -409,7 +409,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.2</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.3</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2731,6 +2731,8 @@ function slRenderAvail(){
   // Filtrar canciones por visibilidad
   var visibleSongs=songs.filter(function(s){return canUserSeeSong(s,currentUser);});
   var avail=visibleSongs.filter(function(s){return !(currentSetlist.songs||[]).map(String).includes(String(s.id));});
+  // Ordenar alfabéticamente por título
+  avail.sort(function(a,b){return (a.title||'').localeCompare(b.title||'','es',{sensitivity:'base'});});
   var w=document.getElementById('sl-avail-wrap');
   if(w) w.innerHTML=slBuildAvail(avail);
 }
