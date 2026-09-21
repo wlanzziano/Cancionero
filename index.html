@@ -382,6 +382,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <input type="text" id="search" placeholder="Buscar..." oninput="activeAlpha=null;renderList()">
     </div>
     <div class="header-actions">
+      <button class="btn-icon" id="sync-btn-header" onclick="syncAll()" title="Sincronizar" style="font-size:16px;cursor:pointer;background:none;border:none;color:var(--text2);padding:4px"><span id="sync-icon-header">&#8635;</span></button>
       <div class="btn-icon" id="admin-btn" onclick="openUsers()" title="Gestionar usuarios" style="display:none">&#128101;</div>
       <button class="btn-add" id="add-song-btn" onclick="openAdd()" style="display:none">+ Nueva</button>
     </div>
@@ -392,7 +393,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
         <div><span class="role-badge" id="role-badge"></span><span class="user-name-lbl" id="user-name-display" style="margin-left:8px"></span></div>
         <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
       </div>
-      <button class="sync-btn" onclick="loadSongs()"><span id="sync-icon">&#8635;</span> Sincronizar</button>
       <div class="offline-banner" id="offline-banner">&#9888;&#65039; Modo sin conexión — mostrando canciones guardadas localmente</div>
       <div class="list-toolbar">
         <div class="list-count" id="list-count"></div>
@@ -409,7 +409,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -697,6 +697,31 @@ function updateOnlineStatus(){
   if(indicator){
     indicator.style.display = isOnline ? 'none' : 'flex';
   }
+}
+
+// Sincronizar todo (canciones, setlists, eventos)
+async function syncAll(){
+  const icon = document.getElementById('sync-icon-header');
+  if(icon) icon.classList.add('spin');
+  
+  if(!isOnline){
+    toast('⚠ Sin conexión - No se puede sincronizar');
+    if(icon) icon.classList.remove('spin');
+    return;
+  }
+  
+  try {
+    await Promise.all([
+      loadSongs(),
+      loadSetlists(),
+      loadEvents()
+    ]);
+    toast('✓ Sincronizado');
+  } catch(e) {
+    toast('Error al sincronizar');
+  }
+  
+  if(icon) icon.classList.remove('spin');
 }
 
 window.addEventListener('online', () => {
