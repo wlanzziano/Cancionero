@@ -409,7 +409,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.1</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.2</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -589,13 +589,13 @@ function calcCH(){
   document.body.removeChild(el);
 }
 window.addEventListener('resize',()=>{calcCH();if(currentSong)drawSong();});
-function txChord(ch,st){
+function txChord(ch, st, origKeyOverride){
   const m=ch.match(/^([A-G][b#]?)(.*)/);if(!m)return ch;
   let i=NS.indexOf(m[1]);if(i===-1)i=NF.indexOf(m[1]);if(i===-1)return ch;
   
   // Usar círculo de quintas: decidir si usar bemoles o sostenidos
   // basado en la tonalidad original de la canción
-  const origKey = currentSong ? currentSong.key : null;
+  const origKey = origKeyOverride || (currentSong ? currentSong.key : null);
   const transposedKey = getTransposedKey(origKey, st);
   const flats = transposedKey ? useFlats(transposedKey) : useFlats(origKey);
   const noteArr = flats ? NF : NS;
@@ -1781,6 +1781,7 @@ function renderSetlistPlay(){
     <div class="setlist-play-header">
       <button class="back-btn" onclick="showView('setlists-view');renderSetlistDetail()">&#8592; ${escH(currentSetlist.name)}</button>
       <div style="display:flex;gap:8px;align-items:center">
+        <button class="sv-action-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Ir al inicio">&#8593;</button>
         <button class="sv-action-btn" onclick="tpToggleBar()" title="Teleprompter">&#9654; TP</button>
       </div>
     </div>
@@ -1815,7 +1816,7 @@ function renderSetlistPlay(){
               const textBefore = lyric.slice(lastPos, c.pos);
               if(textBefore.trim()) result += `<span style="color:var(--text3);margin:0 2px">${escH(textBefore.trim())}</span> `;
             }
-            const txd = txChord(c.ch, st);
+            const txd = txChord(c.ch, st, s.key);
             const sc = txd.replace(/'/g, "\\'");
             result += `<span class="chord-cell" style="cursor:pointer" onclick="showChordDiagram('${sc}')">${escH(txd)}</span> `;
             lastPos = c.pos;
@@ -1832,7 +1833,7 @@ function renderSetlistPlay(){
           positions.forEach((c, i) => {
             const nextPos = positions[i+1] ? positions[i+1].pos : lyric.length;
             const segLyric = lyric.slice(c.pos, nextPos);
-            segments.push({chord: txChord(c.ch, st), lyric: segLyric});
+            segments.push({chord: txChord(c.ch, st, s.key), lyric: segLyric});
           });
           if(positions.length === 0){
             segments.push({chord: '', lyric: lyric});
