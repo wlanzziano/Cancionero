@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.6</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.7</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1778,6 +1778,7 @@ function openYoutubePlaylist(){
 
 function renderSetlistPlay(){
   if(!currentSetlist) return;
+  const scrollY = window.scrollY; // Guardar posición
   const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
   const el = document.getElementById('setlist-play-view');
   
@@ -1887,6 +1888,9 @@ function renderSetlistPlay(){
   
   html += '</div>';
   el.innerHTML = html;
+  
+  // Restaurar posición del scroll
+  requestAnimationFrame(() => { window.scrollTo(0, scrollY); });
 }
 
 // Drag & drop
