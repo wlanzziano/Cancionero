@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.4</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.5</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -803,12 +803,15 @@ function tpShowBar(){document.getElementById('tp-bar').style.display='flex';}
 function tpHideBar(){tpPause();document.getElementById('tp-bar').style.display='none';}
 function tpToggleBar(){
   const bar = document.getElementById('tp-bar');
+  const scrollY = window.scrollY; // Guardar posición actual
   if(bar.style.display === 'flex'){
     tpHideBar();
   } else {
     tpLoadSpeed();
     tpShowBar();
   }
+  // Restaurar posición después de un frame
+  requestAnimationFrame(() => { window.scrollTo(0, scrollY); });
 }
 
 // Hacer tp-bar arrastrable
