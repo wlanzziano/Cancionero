@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.7</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -2663,14 +2663,15 @@ function slDragEnd(){
     const touch = e.changedTouches[0];
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const card = el ? el.closest('.sl-card') : null;
-    
+
     document.querySelectorAll('.sl-card').forEach(c => c.classList.remove('dragging','drag-over'));
-    
+
     if(card){
       const toIdx = parseInt(card.dataset.idx);
-      if(!isNaN(toIdx) && toIdx !== touchDragIdx && currentSetlist){
+      const fromIdx = touchDragIdx;
+      if(!isNaN(toIdx) && toIdx !== fromIdx && currentSetlist){
         const arr = [...(currentSetlist.songs||[])];
-        const [moved] = arr.splice(touchDragIdx, 1);
+        const moved = arr.splice(fromIdx, 1)[0];
         arr.splice(toIdx, 0, moved);
         currentSetlist.songs = arr;
         const r = await api({action:'edit_setlist', setlist:currentSetlist});
@@ -2786,11 +2787,15 @@ async function slSaveOrder(){
 async function slDrop(e, toIdx){
   e.preventDefault();
   if(dragSrcIdx===null || dragSrcIdx===toIdx) return;
-  const arr = [...(currentSetlist.songs||[])];
-  const [moved] = arr.splice(dragSrcIdx,1);
-  arr.splice(toIdx,0,moved);
-  currentSetlist.songs = arr;
+  const fromIdx = dragSrcIdx;
   dragSrcIdx = null;
+
+  // Reordenar: remover de fromIdx e insertar en toIdx
+  const arr = [...(currentSetlist.songs||[])];
+  const moved = arr.splice(fromIdx, 1)[0];
+  arr.splice(toIdx, 0, moved);
+  currentSetlist.songs = arr;
+
   const r = await api({action:'edit_setlist', setlist:currentSetlist});
   if(r.ok){
     const idx=setlists.findIndex(sl=>sl.id===currentSetlist.id);
