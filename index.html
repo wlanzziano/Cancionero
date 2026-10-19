@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.8</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1070,8 +1070,11 @@ async function loadCustomChords(){
     customChords = {};
     (r.chords||[]).forEach(ch=>{
       // El script devuelve {name, positions:[{frets,fingers,baseFret,rowIndex}]}
-      customChords[ch.name] = ch.positions || [];
+      // Guardar también versión normalizada (sin espacios, lowercase para comparar)
+      const name = (ch.name||'').trim();
+      customChords[name] = ch.positions || [];
     });
+    console.log('Acordes custom cargados:', Object.keys(customChords));
   }
 }
 
@@ -1166,12 +1169,28 @@ async function showChordDiagram(chordName){
   document.getElementById('chord-modal-svg').innerHTML = '<div class="chord-not-found">Buscando...</div>';
   document.getElementById('chord-modal-nav').innerHTML = '';
 
-  // 1. Buscar en acordes custom del Sheet
-  if(customChords[chordName]){
-    chordModalPositions = customChords[chordName];
+  // Normalizar nombre del acorde para búsqueda
+  const searchName = chordName.trim();
+
+  // 1. Buscar en acordes custom del Sheet (coincidencia exacta)
+  if(customChords[searchName] && customChords[searchName].length){
+    chordModalPositions = [...customChords[searchName]];
+    console.log('Encontrado en custom:', searchName, chordModalPositions.length, 'posiciones');
   }
 
-  // 2. Buscar en guitar.json
+  // 2. Si no encontró exacto, buscar ignorando mayúsculas/espacios
+  if(!chordModalPositions.length){
+    const normalizedSearch = searchName.toLowerCase().replace(/\s+/g,'');
+    for(const key in customChords){
+      if(key.toLowerCase().replace(/\s+/g,'') === normalizedSearch){
+        chordModalPositions = [...customChords[key]];
+        console.log('Encontrado en custom (normalizado):', key);
+        break;
+      }
+    }
+  }
+
+  // 3. Buscar en guitar.json
   const db = await loadGuitarDB();
   if(db){
     const parsed = parseChordKey(chordName);
