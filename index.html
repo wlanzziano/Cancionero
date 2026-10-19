@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.0.9</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.1.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -538,7 +538,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZIqdr5JFX3Xw0lr7b1KjdEGZYEjvd2gvV8bsF2XyJGlQ5LBXBw6YLTUXtbDVmEZfRRw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz34MkbdshfHidKyZrB-_BOAAte2vf3H6aK1RtD3wNmqSizwtWGhNP0u_a39_0AGip1Fw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -965,7 +965,7 @@ const THEME_COLOR_KEYS=[
 ];
 let currentThemeId='oscuro';
 
-function applyTheme(theme){
+function applyTheme(theme, saveToServer = true){
   const r=document.documentElement;
   r.style.setProperty('--bg',theme.bg);
   r.style.setProperty('--surface',theme.surface);
@@ -993,7 +993,10 @@ function applyTheme(theme){
   r.style.setProperty('--accent-border','color-mix(in srgb,'+theme.accent+' 25%,transparent)');
   r.style.setProperty('--accent-hover','color-mix(in srgb,'+theme.accent+' 20%,transparent)');
   currentThemeId=theme.id;
+  // Guardar local
   localStorage.setItem('cancionero_theme',JSON.stringify({id:theme.id,...theme}));
+  // Guardar en servidor (si está logueado)
+  if(saveToServer && currentUser) saveUserPrefs({theme:{id:theme.id,...theme}});
 }
 function applyCustomColor(key,value){
   const r=document.documentElement;
@@ -1004,10 +1007,31 @@ function applyCustomColor(key,value){
   if(key==='--amber'){r.style.setProperty('--amber-bg','color-mix(in srgb,'+value+' 10%,transparent)');r.style.setProperty('--amber-border','color-mix(in srgb,'+value+' 25%,transparent)');}
   const s={id:'custom'};THEME_COLOR_KEYS.forEach(function(x){s[x.key.replace('--','')]=getComputedStyle(r).getPropertyValue(x.key).trim();});
   localStorage.setItem('cancionero_theme',JSON.stringify(s));
+  // Guardar en servidor
+  if(currentUser) saveUserPrefs({theme:s});
 }
-function loadSavedTheme(){
+async function loadSavedTheme(){
+  // Primero cargar desde localStorage (rápido)
   const saved=localStorage.getItem('cancionero_theme');
-  if(saved){try{const t=JSON.parse(saved);applyTheme(t);}catch(e){}}
+  if(saved){try{const t=JSON.parse(saved);applyTheme(t, false);}catch(e){}}
+}
+async function loadUserPrefs(){
+  if(!currentUser) return;
+  try{
+    const r = await apiGet({action:'get_prefs', user: currentUser.name});
+    if(r.ok && r.prefs){
+      if(r.prefs.theme){
+        applyTheme(r.prefs.theme, false);
+        renderThemePanel();
+      }
+    }
+  }catch(e){}
+}
+async function saveUserPrefs(prefs){
+  if(!currentUser) return;
+  try{
+    await api({action:'save_prefs', user: currentUser.name, prefs: prefs});
+  }catch(e){}
 }
 function resetTheme(){
   const base=THEMES.find(t=>t.id==='oscuro');
@@ -3187,7 +3211,7 @@ function init(){calcCH();loadSavedTheme();
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
       document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();return;
+      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();loadUserPrefs();return;
     }catch(e){}
   }
   document.getElementById('loading').classList.remove('show');
@@ -3204,7 +3228,7 @@ async function doLogin(){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
-    showApp();loadSongs();loadEvents();loadGroups();
+    showApp();loadSongs();loadEvents();loadGroups();loadUserPrefs();
   }else{err.textContent=r.error||'Código incorrecto';}
 }
 function doLogout(){
