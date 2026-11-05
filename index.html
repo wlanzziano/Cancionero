@@ -414,7 +414,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.4.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.4.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -812,12 +812,30 @@ function getSongLyrics(s){
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 async function api(params){
-  try{const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});return await res.json();}
-  catch(e){return{ok:false,error:'Error de red'};}
+  try{
+    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});
+    const r=await res.json();
+    if(r.error==='No autorizado'){handleSessionExpired();return r;}
+    return r;
+  }catch(e){return{ok:false,error:'Error de red'};}
 }
 async function apiGet(params){
-  try{const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();const res=await fetch(SCRIPT_URL+'?'+qs);return await res.json();}
-  catch(e){return{ok:false,error:'Error de red'};}
+  try{
+    const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();
+    const res=await fetch(SCRIPT_URL+'?'+qs);
+    const r=await res.json();
+    if(r.error==='No autorizado'){handleSessionExpired();return r;}
+    return r;
+  }catch(e){return{ok:false,error:'Error de red'};}
+}
+function handleSessionExpired(){
+  localStorage.removeItem('cancionero_session');
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='Tu sesión ha expirado. Ingresa nuevamente.';
+  document.getElementById('login-view').style.display='flex';
 }
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null,tpActive=false,tpSpeed=2.0;
