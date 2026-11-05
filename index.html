@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.7.3</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.8.0</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.7.3</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.8.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -853,6 +853,29 @@ function handleSessionExpired(){
   // Forzar recarga para limpiar estado
   setTimeout(()=>location.reload(),100);
 }
+
+// Verificar sesión periódicamente y en cada acción importante
+let sessionCheckInterval=null;
+async function checkSession(){
+  if(!currentUser||!currentUser.token)return;
+  try{
+    const r=await fetch(SCRIPT_URL+'?action=validate_session&token='+encodeURIComponent(currentUser.token));
+    const d=await r.json();
+    if(!d.valid){handleSessionExpired();}
+  }catch(e){}
+}
+function startSessionCheck(){
+  if(sessionCheckInterval)clearInterval(sessionCheckInterval);
+  sessionCheckInterval=setInterval(checkSession,30000); // cada 30 segundos
+}
+function requireSession(fn){
+  return async function(...args){
+    await checkSession();
+    if(!currentUser)return;
+    return fn.apply(this,args);
+  };
+}
+
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null,tpActive=false,tpSpeed=2.0;
 
@@ -3363,6 +3386,7 @@ async function init(){calcCH();loadSavedTheme();
       const r=await apiGet({action:'validate_session',token:currentUser.token});
       if(r.ok && r.valid){
         document.getElementById('loading').classList.remove('show');
+        startSessionCheck();
         showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();loadUserPrefs();loadUsersList();return;
       }else{
         // Sesión inválida, limpiar y mostrar login
@@ -3391,6 +3415,7 @@ async function doLogin(){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
+    startSessionCheck();
     showApp();loadSongs();loadEvents();loadGroups();loadUserPrefs();loadUsersList();
   }else{err.textContent=r.error||'Usuario o contraseña incorrectos';}
 }
