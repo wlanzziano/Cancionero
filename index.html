@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.8.2</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.8.3</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.8.2</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.8.3</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -854,27 +854,20 @@ function handleSessionExpired(){
   setTimeout(()=>location.reload(),100);
 }
 
-// Verificar sesión periódicamente y en cada acción importante
+// Verificar sesión periódicamente (no bloquea UI)
 let sessionCheckInterval=null;
 let sessionValid=true;
-async function checkSession(){
-  if(!currentUser||!currentUser.token)return false;
-  try{
-    const r=await fetch(SCRIPT_URL+'?action=validate_session&token='+encodeURIComponent(currentUser.token));
-    const d=await r.json();
-    if(!d.valid){sessionValid=false;handleSessionExpired();return false;}
-    return true;
-  }catch(e){return true;}
+function checkSessionBackground(){
+  if(!currentUser||!currentUser.token)return;
+  fetch(SCRIPT_URL+'?action=validate_session&token='+encodeURIComponent(currentUser.token))
+    .then(r=>r.json())
+    .then(d=>{if(!d.valid){sessionValid=false;handleSessionExpired();}})
+    .catch(()=>{});
 }
 function startSessionCheck(){
   if(sessionCheckInterval)clearInterval(sessionCheckInterval);
-  sessionCheckInterval=setInterval(checkSession,10000); // cada 10 segundos
-}
-async function guardedAction(fn){
-  if(!sessionValid||!currentUser){handleSessionExpired();return;}
-  const valid=await checkSession();
-  if(!valid)return;
-  return fn();
+  checkSessionBackground();
+  sessionCheckInterval=setInterval(checkSessionBackground,5000); // cada 5 segundos
 }
 
 // ── Teleprompter ─────────────────────────────────────────
@@ -1011,8 +1004,7 @@ function tpLoadSpeed(){
 
 
 // ── Menú lateral ─────────────────────────────────────────
-async function openSideMenu(){
-  if(!await checkSession())return;
+function openSideMenu(){
   const m=document.getElementById('side-menu');
   m.classList.add('open');
   const isAdmin=currentUser&&currentUser.role==='admin';
@@ -1613,7 +1605,6 @@ async function loadSetlists(){
 }
 
 async function openSetlists(){
-  if(!await checkSession())return;
   selectedSlIdx=null;
   slQ="";
   slLetter="#";
@@ -1665,8 +1656,7 @@ async function deleteSetlistAction(id){
   else toast('Error: '+r.error);
 }
 
-async function openSetlistDetail(id){
-  if(!await checkSession())return;
+function openSetlistDetail(id){
   currentSetlist = setlists.find(s=>s.id===id);
   if(!currentSetlist) return;
   renderSetlistDetail();
@@ -3607,8 +3597,7 @@ function goBack(){
     showView('setlists-view'); renderSetlistDetail();
   } else { showList(); }
 }
-async function openSong(id){
-  if(!await checkSession())return;
+function openSong(id){
   var target=songs.find(function(s){return String(s.id)===String(id);});
   if(!target)return;
   ['list-view','setlists-view','chords-view','users-view'].forEach(function(vid){
@@ -4412,8 +4401,7 @@ function exportPDF(){
 }
 init();
 function closeVModal(){var el=document.getElementById('v-modal');if(el)el.style.display='none';}
-async function openSongDirect(id){
-  if(!await checkSession())return;
+function openSongDirect(id){
   currentSong=songs.find(function(s){return String(s.id)===String(id);});
   if(!currentSong)return;
   semitones=0;tpPause();showView('song-view');drawSong();tpLoadSpeed();tpShowBar();window.scrollTo(0,0);
