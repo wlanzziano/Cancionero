@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.0</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.1</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1798,34 +1798,58 @@ function askClaudeSetlist(){
 }
 
 function openClaudeAssistant(){
-  // Construir catálogo completo de canciones
   const visibleSongs = songs.filter(s => canUserSeeSong(s, currentUser));
   if(!visibleSongs.length){ toast('No hay canciones en el cancionero'); return; }
 
-  // Construir lista compacta del cancionero
-  let catalog = visibleSongs.map(s => {
-    const tags = (s.tags||[]).join(', ');
-    // Extraer primeras palabras de la letra para contexto
-    const firstLyrics = (s.sections||[]).slice(0,2).flatMap(sec =>
-      (sec.lines||[]).slice(0,2).map(l => l.lyric||'').filter(Boolean)
-    ).join(' ').substring(0,80);
-    return `• "${s.title}" - ${s.artist} | Tono: ${s.key} | Tags: ${tags||'sin tags'} | Letra: "${firstLyrics}..."`;
-  }).join('\n');
+  // 1. Generar y descargar archivo con cancionero completo
+  let content = `# CANCIONERO CATÓLICO - Base de Canciones\n`;
+  content += `Exportado: ${new Date().toLocaleString('es-CO')}\n`;
+  content += `Total canciones: ${visibleSongs.length}\n\n`;
+  content += `## INSTRUCCIONES\n`;
+  content += `Este archivo contiene el cancionero completo de un ministerio de música católico.\n`;
+  content += `Úsalo para:\n`;
+  content += `- Sugerir canciones según la temática de una misa o celebración\n`;
+  content += `- Armar setlists coherentes según el tiempo litúrgico\n`;
+  content += `- Encontrar canciones por palabras clave en las letras\n`;
+  content += `- Sugerir alternativas similares a una canción\n\n`;
+  content += `---\n\n`;
 
-  const prompt = `Soy músico de un ministerio católico. Tengo este cancionero con ${visibleSongs.length} canciones:
+  visibleSongs.forEach((s,i)=>{
+    content += `## ${i+1}. ${s.title}\n`;
+    content += `**Artista:** ${s.artist||'Desconocido'}\n`;
+    if(s.key) content += `**Tonalidad:** ${s.key}\n`;
+    if(s.bpm) content += `**BPM:** ${s.bpm}\n`;
+    if(s.tags&&s.tags.length) content += `**Tags:** ${s.tags.join(', ')}\n`;
+    if(s.version) content += `**Versión:** ${s.version}\n`;
+    content += `\n**LETRA:**\n`;
+    if(s.sections&&s.sections.length){
+      s.sections.forEach(sec=>{
+        content += `[${sec.label||'Sección'}]\n${sec.content||''}\n\n`;
+      });
+    }
+    content += `---\n\n`;
+  });
 
-${catalog}
+  const blob = new Blob([content], {type:'text/markdown'});
+  const fileUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = fileUrl;
+  a.download = 'cancionero_completo.md';
+  a.click();
+  URL.revokeObjectURL(fileUrl);
 
-Basándote en los títulos, artistas, tags y fragmentos de letra, ayúdame a armar setlists o sugerir canciones según la temática que te pida (sanación, adoración, reparación, Navidad, Semana Santa, etc).
+  // 2. Abrir Claude.ai con instrucción de adjuntar
+  const prompt = `Soy músico de un ministerio católico. Acabo de descargar un archivo "cancionero_completo.md" con ${visibleSongs.length} canciones y letras completas.
 
-¿Qué tipo de celebración o temática necesitas?`;
+Adjunta ese archivo (📎) para analizar las letras y ayudarme a armar setlists según la temática que necesite.`;
 
-  // Abrir Claude.ai en popup pequeño tipo chat
-  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
-  const w = 420, h = 650;
+  const claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  const w = 500, h = 700;
   const left = (screen.width - w) / 2;
   const top = (screen.height - h) / 2;
-  window.open(url, 'ClaudeAssistant', `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+  window.open(claudeUrl, 'ClaudeAssistant', `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+
+  toast('✓ Archivo descargado - Adjúntalo en Claude');
 }
 
 // ── Auditoría ──
