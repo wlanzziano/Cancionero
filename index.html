@@ -363,14 +363,18 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 <div class="login-wrap" id="login-view" style="display:none">
   <div class="login-card">
     <div class="login-logo"><img src="icon-192.png" class="app-icon" alt=""><span>Cancionero</span> Católico</div>
-    <div class="login-sub">Ingresa tu código de acceso</div>
+    <div class="login-sub">Ingresa tus credenciales</div>
     <div class="login-field">
-      <label>Código de acceso</label>
-      <input type="text" id="login-code" placeholder="Ej: admin123" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="Tu nombre de usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
-    <div class="login-info">¿No tienes código? Pide al administrador que te agregue.</div>
+    <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -410,7 +414,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.3.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.4.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -557,7 +561,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwuy6MQ4jgPUrXLLYf50lRfBn03dcWSurVCjRaHWQ3__G62sKdGugjJKGmVtQsoTZ2kjw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzUJNl0DD1_JmxrITIzXcfGv7oAIKi21C-jYwmLGMLg5eOUTE0bqP5R2TB0tWLYI8n_qg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -3315,38 +3319,52 @@ function fillForm(title,artist,body){
 }
 
 
-function init(){calcCH();loadSavedTheme();
+async function init(){calcCH();loadSavedTheme();
   const saved=localStorage.getItem('cancionero_session');
   if(saved){
     try{
       currentUser=JSON.parse(saved);
       currentUser.role=String(currentUser.role||'').trim().toLowerCase();
-      document.getElementById('loading').classList.remove('show');
-      showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();loadUserPrefs();loadUsersList();return;
-    }catch(e){}
+      // Validar sesión con el servidor
+      const r=await apiGet({action:'validate_session',token:currentUser.token});
+      if(r.ok && r.valid){
+        document.getElementById('loading').classList.remove('show');
+        showApp();loadSongs();loadEvents();loadCustomChords();loadSetlists();loadGroups();loadUserPrefs();loadUsersList();return;
+      }else{
+        // Sesión inválida, limpiar y mostrar login
+        localStorage.removeItem('cancionero_session');
+        currentUser=null;
+      }
+    }catch(e){
+      localStorage.removeItem('cancionero_session');
+      currentUser=null;
+    }
   }
   document.getElementById('loading').classList.remove('show');
   document.getElementById('login-view').style.display='flex';
 }
 async function doLogin(){
-  const code=document.getElementById('login-code').value.trim();
+  const user=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value;
   const err=document.getElementById('login-err');const btn=document.getElementById('login-btn');
-  if(!code){err.textContent='Ingresa tu código';return;}
+  if(!user){err.textContent='Ingresa tu usuario';return;}
+  if(!pass){err.textContent='Ingresa tu contraseña';return;}
   btn.disabled=true;btn.textContent='Verificando...';err.textContent='';
   const ua=navigator.userAgent||'';
-  const r=await apiGet({action:'login',code,ua});
+  const r=await apiGet({action:'login',user,pass,ua});
   btn.disabled=false;btn.textContent='Entrar';
   if(r.ok){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
     showApp();loadSongs();loadEvents();loadGroups();loadUserPrefs();loadUsersList();
-  }else{err.textContent=r.error||'Código incorrecto';}
+  }else{err.textContent=r.error||'Usuario o contraseña incorrectos';}
 }
 function doLogout(){
   currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
   document.getElementById('app').style.display='none';
-  document.getElementById('login-code').value='';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
   document.getElementById('login-err').textContent='';
   document.getElementById('login-view').style.display='flex';
 }
