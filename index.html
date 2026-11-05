@@ -4249,49 +4249,21 @@ function renderGroupsList(){
 }
 
 async function addGroupAction(){
-  const input = document.getElementById('g-name');
-  const name = input.value.trim();
-
-  if(!name){
-    toast('El nombre del grupo es obligatorio');
-    return;
+  const name=document.getElementById('g-name').value.trim();
+  if(!name){toast('El nombre del grupo es obligatorio');return;}
+  if(userGroups.some(g=>g.name.toLowerCase()===name.toLowerCase())){
+    toast('Ya existe un grupo con ese nombre');return;
   }
 
-  if(userGroups.some(g => g.name.toLowerCase() === name.toLowerCase())){
-    toast('Ya existe un grupo con ese nombre');
-    return;
-  }
+  const newGroup={name,members:[]};
+  userGroups.push(newGroup);
+  localStorage.setItem('userGroups',JSON.stringify(userGroups));
 
-  const btn = document.querySelector('#groups-list')
-    ?.parentElement?.querySelector('.btn-save');
+  await api({action:'save_groups',groups:userGroups});
 
-  const newGroups = [...userGroups, {name, members:[]}];
-
-  try {
-    if(btn) btn.disabled = true;
-
-    const r = await api({
-      action: 'save_groups',
-      groups: newGroups
-    });
-
-    if(!r || !r.ok){
-      toast('Error guardando grupo: ' + (r?.error || 'Respuesta inválida'));
-      return;
-    }
-
-    userGroups = newGroups;
-    localStorage.setItem('userGroups', JSON.stringify(userGroups));
-
-    input.value = '';
-    renderGroupsList();
-    toast('✓ Grupo guardado correctamente');
-
-  } catch(e) {
-    toast('Error guardando grupo: ' + e.message);
-  } finally {
-    if(btn) btn.disabled = false;
-  }
+  document.getElementById('g-name').value='';
+  renderGroupsList();
+  toast('✓ Grupo creado');
 }
 async function deleteGroup(name){
   if(!confirm('¿Eliminar el grupo "'+name+'"?'))return;
