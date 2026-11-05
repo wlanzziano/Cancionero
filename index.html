@@ -1794,15 +1794,15 @@ async function loadLoginStats(){
     const users = d.stats.users || [];
     if(!users.length){ container.innerHTML='<div style="color:var(--text3)">No hay registros de login</div>'; return; }
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<tr style="background:var(--surface2);text-align:left"><th style="padding:8px">Usuario</th><th style="padding:8px">Logins</th><th style="padding:8px">Último</th><th style="padding:8px">IPs</th><th style="padding:8px">Dispositivos</th><th style="padding:8px"></th></tr>';
+    html += '<tr style="background:var(--surface2);text-align:left"><th style="padding:8px">Usuario</th><th style="padding:8px">Logins</th><th style="padding:8px">Último</th><th style="padding:8px">Dispositivos</th><th style="padding:8px"></th></tr>';
     for(const u of users){
       const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}) : '-';
+      const devices = (u.devices||[]).join(', ') || '-';
       html += `<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px;font-weight:500">${escH(u.name)}</td>
-        <td style="padding:8px;text-align:center">${u.logins}</td>
+        <td style="padding:8px;text-align:center">${u.logins||0}</td>
         <td style="padding:8px;font-size:11px;color:var(--text3)">${lastLogin}</td>
-        <td style="padding:8px;font-size:11px">${u.ips.length}</td>
-        <td style="padding:8px;font-size:11px">${u.devices.join(', ')}</td>
+        <td style="padding:8px;font-size:11px">${devices}</td>
         <td style="padding:8px"><button onclick="forceLogoutUser('${escH(u.name)}')" style="background:var(--red);color:white;border:none;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">Desconectar</button></td>
       </tr>`;
     }
