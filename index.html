@@ -435,6 +435,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div class="side-menu-item" onclick="closeSideMenu();openCalendar()">&#128197; Calendario</div>
       <div class="side-menu-item" id="smenu-chords" onclick="closeSideMenu();openChordsManager()">&#127928; Acordes</div>
       <div class="side-menu-sep"></div>
+      <div class="side-menu-item" onclick="closeSideMenu();openClaudeAssistant()" style="color:var(--accent)">&#129302; Asistente IA</div>
+      <div class="side-menu-sep"></div>
       <!-- Herramientas -->
       <div class="side-menu-item" onclick="toggleToolsMenu(this)">&#128295; Herramientas <span id="tools-arrow" style="margin-left:auto;font-size:11px">&#9662;</span></div>
       <div id="tools-submenu" style="display:none">
@@ -1625,7 +1627,6 @@ function renderSetlistDetail(){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px;background:var(--accent);color:white" onclick="playSetlist()">&#9654; Tocar</button>`:''}
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="openPlaylistMenu()">🎵 Playlist</button>`:''}
-        ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="askClaudeSetlist()">🤖 Consultar IA</button>`:''}
         <button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="exportSetlistPDF()">&#8595; PDF</button>
         ${canEditSl?`<button class="song-del" onclick="confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')" style="font-size:12px;padding:4px 8px">Eliminar</button>`:''}
       </div>
@@ -1717,38 +1718,33 @@ function playSetlist(){
   renderSetlistPlay();
 }
 
-// ── Consultar IA (Claude) ──
+// ── Consultar IA (Claude) - Sugerir canciones del cancionero completo ──
 function askClaudeSetlist(){
-  if(!currentSetlist) return;
-  const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
-  if(!slSongs.length){ toast('No hay canciones en el setlist'); return; }
+  openClaudeAssistant();
+}
 
-  // Construir resumen de canciones
-  let songList = slSongs.map((s,i) => {
+function openClaudeAssistant(){
+  // Construir catálogo completo de canciones
+  const visibleSongs = songs.filter(s => canUserSeeSong(s, currentUser));
+  if(!visibleSongs.length){ toast('No hay canciones en el cancionero'); return; }
+
+  // Construir lista compacta del cancionero
+  let catalog = visibleSongs.map(s => {
     const tags = (s.tags||[]).join(', ');
-    return `${i+1}. "${s.title}" - ${s.artist} (${s.key})${tags?' ['+tags+']':''}`;
+    // Extraer primeras palabras de la letra para contexto
+    const firstLyrics = (s.sections||[]).slice(0,2).flatMap(sec =>
+      (sec.lines||[]).slice(0,2).map(l => l.lyric||'').filter(Boolean)
+    ).join(' ').substring(0,80);
+    return `• "${s.title}" - ${s.artist} | Tono: ${s.key} | Tags: ${tags||'sin tags'} | Letra: "${firstLyrics}..."`;
   }).join('\n');
 
-  // Obtener letras resumidas (primeras líneas de cada canción)
-  let lyrics = slSongs.map(s => {
-    const firstLines = (s.sections||[]).slice(0,2).map(sec => {
-      const lines = (sec.lines||[]).slice(0,3).map(l => l.lyric||'').filter(Boolean).join(' / ');
-      return sec.label ? `[${sec.label}] ${lines}` : lines;
-    }).join(' | ');
-    return `"${s.title}": ${firstLines}`;
-  }).join('\n');
+  const prompt = `Soy músico de un ministerio católico. Tengo este cancionero con ${visibleSongs.length} canciones:
 
-  const prompt = `Tengo un setlist llamado "${currentSetlist.name}" con estas canciones católicas:
+${catalog}
 
-${songList}
+Basándote en los títulos, artistas, tags y fragmentos de letra, ayúdame a armar setlists o sugerir canciones según la temática que te pida (sanación, adoración, reparación, Navidad, Semana Santa, etc).
 
-Fragmentos de letras:
-${lyrics}
-
-¿Puedes ayudarme a:
-1. Sugerir el mejor orden para una celebración
-2. Identificar canciones que podrían faltar según la temática
-3. Verificar si hay variedad de momentos (entrada, ofertorio, comunión, salida)`;
+¿Qué tipo de celebración o temática necesitas?`;
 
   // Abrir Claude.ai con el prompt
   const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
