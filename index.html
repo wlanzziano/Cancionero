@@ -414,7 +414,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.5.0</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v9.0.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -561,7 +561,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx3aRhajh_FhvNWiLzKzWgIUpUwUuMoCyEQxE9xOjLJAKN2v8yizuMYrjoKWhucKf64bQ/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwtBbbqF3bqevOZc-l_E8de3JYFRjHnxQ7AUwglgCpsk9eLvc3VNo_blGc9NGrQ7OhOfA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -815,27 +815,42 @@ async function api(params){
   try{
     const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({...params,token:currentUser?currentUser.token:''})});
     const r=await res.json();
-    if(r.error==='No autorizado'){handleSessionExpired();return r;}
+    if(r.error==='No autorizado'){handleSessionExpired();throw new Error('SESSION_EXPIRED');}
     return r;
-  }catch(e){return{ok:false,error:'Error de red'};}
+  }catch(e){
+    if(e.message==='SESSION_EXPIRED')throw e;
+    return{ok:false,error:'Error de red'};
+  }
 }
 async function apiGet(params){
   try{
     const qs=new URLSearchParams({...params,token:currentUser?currentUser.token:''}).toString();
     const res=await fetch(SCRIPT_URL+'?'+qs);
     const r=await res.json();
-    if(r.error==='No autorizado'){handleSessionExpired();return r;}
+    if(r.error==='No autorizado'){handleSessionExpired();throw new Error('SESSION_EXPIRED');}
     return r;
-  }catch(e){return{ok:false,error:'Error de red'};}
+  }catch(e){
+    if(e.message==='SESSION_EXPIRED')throw e;
+    return{ok:false,error:'Error de red'};
+  }
 }
 function handleSessionExpired(){
   localStorage.removeItem('cancionero_session');
   currentUser=null;
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-user').value='';
-  document.getElementById('login-pass').value='';
-  document.getElementById('login-err').textContent='Tu sesión ha expirado. Ingresa nuevamente.';
-  document.getElementById('login-view').style.display='flex';
+  // Ocultar app inmediatamente
+  const app=document.getElementById('app');
+  if(app)app.style.display='none';
+  // Limpiar campos de login
+  const userField=document.getElementById('login-user');
+  const passField=document.getElementById('login-pass');
+  const errField=document.getElementById('login-err');
+  const loginView=document.getElementById('login-view');
+  if(userField)userField.value='';
+  if(passField)passField.value='';
+  if(errField)errField.textContent='Tu sesión ha sido cerrada. Ingresa nuevamente.';
+  if(loginView)loginView.style.display='flex';
+  // Forzar recarga para limpiar estado
+  setTimeout(()=>location.reload(),100);
 }
 // ── Teleprompter ─────────────────────────────────────────
 let tpInterval=null,tpActive=false,tpSpeed=2.0;
