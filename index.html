@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.2</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.1</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.2</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxkLgjL1JY2k-kP0vpK4g0X13PZPU4pHhDE4oeTR1II1j6MAOAysgcuWQj17O5TnCi1Gw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx4qCrb1m3UDsZOCAfs3m0P27YIVpO_kayMZJX5ac2UcPcwDT59NJ5IUZjzRamJqPYhuQ/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -4251,20 +4251,16 @@ function renderGroupsList(){
 async function addGroupAction(){
   const name=document.getElementById('g-name').value.trim();
   if(!name){toast('El nombre del grupo es obligatorio');return;}
-  if(userGroups.some(g=>g.name.toLowerCase()===name.toLowerCase())){
-    toast('Ya existe un grupo con ese nombre');return;
-  }
-
+  if(userGroups.some(g=>g.name.toLowerCase()===name.toLowerCase())){toast('Ya existe un grupo con ese nombre');return;}
   const newGroup={name,members:[]};
   userGroups.push(newGroup);
   localStorage.setItem('userGroups',JSON.stringify(userGroups));
-
   await api({action:'save_groups',groups:userGroups});
-
   document.getElementById('g-name').value='';
   renderGroupsList();
   toast('✓ Grupo creado');
 }
+
 async function deleteGroup(name){
   if(!confirm('¿Eliminar el grupo "'+name+'"?'))return;
   userGroups=userGroups.filter(g=>g.name!==name);
