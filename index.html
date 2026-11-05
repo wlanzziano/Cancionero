@@ -410,7 +410,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.1.1</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.2.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1625,6 +1625,7 @@ function renderSetlistDetail(){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px;background:var(--accent);color:white" onclick="playSetlist()">&#9654; Tocar</button>`:''}
         ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="openPlaylistMenu()">🎵 Playlist</button>`:''}
+        ${slSongs.length?`<button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="askClaudeSetlist()">🤖 Consultar IA</button>`:''}
         <button class="sv-action-btn" style="font-size:12px;padding:5px 12px" onclick="exportSetlistPDF()">&#8595; PDF</button>
         ${canEditSl?`<button class="song-del" onclick="confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')" style="font-size:12px;padding:4px 8px">Eliminar</button>`:''}
       </div>
@@ -1714,6 +1715,44 @@ function playSetlist(){
   
   showView('setlist-play-view');
   renderSetlistPlay();
+}
+
+// ── Consultar IA (Claude) ──
+function askClaudeSetlist(){
+  if(!currentSetlist) return;
+  const slSongs = (currentSetlist.songs||[]).map(sid=>songs.find(s=>String(s.id)===String(sid))).filter(Boolean);
+  if(!slSongs.length){ toast('No hay canciones en el setlist'); return; }
+
+  // Construir resumen de canciones
+  let songList = slSongs.map((s,i) => {
+    const tags = (s.tags||[]).join(', ');
+    return `${i+1}. "${s.title}" - ${s.artist} (${s.key})${tags?' ['+tags+']':''}`;
+  }).join('\n');
+
+  // Obtener letras resumidas (primeras líneas de cada canción)
+  let lyrics = slSongs.map(s => {
+    const firstLines = (s.sections||[]).slice(0,2).map(sec => {
+      const lines = (sec.lines||[]).slice(0,3).map(l => l.lyric||'').filter(Boolean).join(' / ');
+      return sec.label ? `[${sec.label}] ${lines}` : lines;
+    }).join(' | ');
+    return `"${s.title}": ${firstLines}`;
+  }).join('\n');
+
+  const prompt = `Tengo un setlist llamado "${currentSetlist.name}" con estas canciones católicas:
+
+${songList}
+
+Fragmentos de letras:
+${lyrics}
+
+¿Puedes ayudarme a:
+1. Sugerir el mejor orden para una celebración
+2. Identificar canciones que podrían faltar según la temática
+3. Verificar si hay variedad de momentos (entrada, ofertorio, comunión, salida)`;
+
+  // Abrir Claude.ai con el prompt
+  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  window.open(url, '_blank');
 }
 
 // ── Playlist desde Setlist ──
