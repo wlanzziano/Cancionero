@@ -1784,7 +1784,7 @@ async function loadLoginStats(){
   const container = document.getElementById('audit-stats');
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">Cargando...</div>';
   try{
-    const r = await fetch(API+'?action=get_login_stats&token='+encodeURIComponent(authToken));
+    const r = await fetch(SCRIPT_URL+'?action=get_login_stats&token='+encodeURIComponent(currentUser.token));
     const d = await r.json();
     if(!d.ok){ container.innerHTML='<div style="color:var(--red)">'+d.error+'</div>'; return; }
     const users = d.stats.users || [];
@@ -1811,7 +1811,7 @@ async function loadLoginStats(){
 async function forceLogoutAll(){
   if(!confirm('¿Desconectar a TODOS los usuarios? Tendrán que volver a iniciar sesión.')) return;
   try{
-    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_all',token:authToken})});
+    const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_all',token:currentUser.token})});
     const d = await r.json();
     if(d.ok){ toast('✓ Todos los usuarios desconectados'); loadLoginStats(); }
     else toast(d.error||'Error');
@@ -1820,7 +1820,7 @@ async function forceLogoutAll(){
 async function forceLogoutUser(userName){
   if(!confirm('¿Desconectar a '+userName+'?')) return;
   try{
-    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_user',token:authToken,userName})});
+    const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_user',token:currentUser.token,userName})});
     const d = await r.json();
     if(d.ok){ toast('✓ '+userName+' desconectado'); loadLoginStats(); }
     else toast(d.error||'Error');
