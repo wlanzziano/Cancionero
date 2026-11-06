@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.1.5</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.1.7</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v7.1.5</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.1.7</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzlsALYThkrJEAufpwlSmD7yx46L1qhgT6wiNwZKutPonfB1OFWQDV7pI3LXjQ1qX_sKw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxtfCDoMaxxTmu-3n2AUXTdUSsargA9mRj-tjq01QHc0dDUxRDj0ZPtmD4eiXnAFU3mFw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -1094,11 +1094,11 @@ async function loadSavedTheme(){
 async function loadUserPrefs(){
   if(!currentUser) return;
   try{
-    const r = await apiGet({action:'get_prefs', user: currentUser.name});
+    const r = await api({action:'get_prefs', user: currentUser.name});
     if(r.ok && r.prefs && r.prefs.theme){
       applyTheme(r.prefs.theme, false);
     }
-  }catch(e){}
+  }catch(e){console.log('loadUserPrefs error:',e);}
 }
 async function saveUserPrefs(prefs){
   if(!currentUser) return;
