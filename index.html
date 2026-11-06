@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.7</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.8</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.7</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.8</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyEggNFd1xJhkOGmDTiZ8n-Q8MBlGxQaVUspmA92bn9cOJO4Npv50Y_pgo7TuOs78-Z9w/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxO4lQuJNeURzvwkPo72ywo6xx7Meogk4AF_yz43bmFPFloKNF3RTRvSc9PYGoTRdRELQ/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -1860,6 +1860,7 @@ function openAuditPanel(){
 function closeAuditPanel(){
   document.getElementById('audit-panel').classList.remove('open');
 }
+var _auditSessions = [];
 async function loadLoginStats(){
   const container = document.getElementById('audit-stats');
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">Cargando...</div>';
@@ -1871,10 +1872,14 @@ async function loadLoginStats(){
     // Filtrar solo usuarios con sesiones activas
     const activeUsers = users.filter(u => u.sessions && u.sessions.length > 0);
     if(!activeUsers.length){ container.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">✓ No hay sesiones activas</div>'; return; }
-    const totalSessions = activeUsers.reduce((sum,u) => sum + u.sessions.length, 0);
+    // Guardar sesiones para referencia
+    _auditSessions = [];
+    activeUsers.forEach(u => u.sessions.forEach(s => _auditSessions.push({...s, userName: u.name})));
+    const totalSessions = _auditSessions.length;
     let html = '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">'+totalSessions+' sesión(es) activa(s)</div>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
     html += '<tr style="background:var(--surface2);text-align:left"><th style="padding:8px">Usuario</th><th style="padding:8px">Dispositivo</th><th style="padding:8px">Inicio sesión</th><th style="padding:8px"></th></tr>';
+    let sidx = 0;
     for(const u of activeUsers){
       const sessions = u.sessions || [];
       sessions.forEach((s,idx) => {
@@ -1883,8 +1888,9 @@ async function loadLoginStats(){
           <td style="padding:8px;font-weight:500">${idx===0?escH(u.name):''}</td>
           <td style="padding:8px;font-size:12px">${escH(s.device||'Desconocido')}</td>
           <td style="padding:8px;font-size:11px;color:var(--text3)">${loginDate}</td>
-          <td style="padding:8px"><button onclick="forceLogoutSession('${s.token}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">Expulsar</button></td>
+          <td style="padding:8px"><button onclick="expulsarSesion(${sidx})" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">Expulsar</button></td>
         </tr>`;
+        sidx++;
       });
     }
     html += '</table>';
@@ -1892,6 +1898,11 @@ async function loadLoginStats(){
   }catch(e){
     container.innerHTML='<div style="color:var(--red)">Error: '+e.message+'</div>';
   }
+}
+function expulsarSesion(idx){
+  const s = _auditSessions[idx];
+  if(!s) return;
+  forceLogoutSession(s.token);
 }
 async function forceLogoutAll(){
   if(!confirm('¿Desconectar a TODOS los usuarios? Tendrán que volver a iniciar sesión.')) return;
