@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.4</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.5</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.4</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.5</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzuJZQ6MJqCdwt3j-jVlUl7Ck4WBgHPC-jNs1la1Je_1qa6hazQ0xmq9axna0ALUEO5wg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyCYPFXtA_J5EdQ4Aw-6SqlX6NHnP885y8nrSMwmWfJJREgQEJP7agMJn7trBFFf6fjOA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -3471,7 +3471,7 @@ async function init(){calcCH();loadSavedTheme();
   document.getElementById('loading').classList.remove('show');
   document.getElementById('login-view').style.display='flex';
 }
-async function doLogin(forceClose=false){
+async function doLogin(forceCloseToken=false){
   const user=document.getElementById('login-user').value.trim();
   const pass=document.getElementById('login-pass').value;
   const err=document.getElementById('login-err');const btn=document.getElementById('login-btn');
@@ -3479,7 +3479,8 @@ async function doLogin(forceClose=false){
   if(!pass){err.textContent='Ingresa tu contraseña';return;}
   btn.disabled=true;btn.textContent='Verificando...';err.textContent='';
   const ua=navigator.userAgent||'';
-  const r=await apiGet({action:'login',user,pass,ua,forceClose:forceClose?'true':'false'});
+  const forceParam=forceCloseToken===true?'true':(forceCloseToken||'false');
+  const r=await apiGet({action:'login',user,pass,ua,forceClose:forceParam});
   btn.disabled=false;btn.textContent='Entrar';
   if(r.ok){
     currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
@@ -3487,9 +3488,33 @@ async function doLogin(forceClose=false){
     document.getElementById('login-view').style.display='none';
     startSessionCheck();
     showApp();loadSongs();loadEvents();loadGroups();loadUserPrefs();loadUsersList();
+  }else if(r.error==='session_limit'){
+    showSessionLimitModal(r.sessions||[],r.maxSessions||1);
   }else if(r.error==='session_active'){
     showSessionActiveModal(r.device||'otro dispositivo');
   }else{err.textContent=r.error||'Usuario o contraseña incorrectos';}
+}
+function showSessionLimitModal(sessions,max){
+  let sessionsList=sessions.map((s,i)=>{
+    const date=s.loginDate?new Date(s.loginDate).toLocaleString('es-CO',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-weight:500;color:var(--text);font-size:14px">${escH(s.device)}</div><div style="font-size:12px;color:var(--text3)">${date}</div></div>
+      <button onclick="closeModal();doLogin('${s.token}')" style="padding:6px 12px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--r-sm);color:var(--red);cursor:pointer;font-size:12px">Cerrar</button>
+    </div>`;
+  }).join('');
+  const html=`
+    <div style="padding:10px 0">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:40px;margin-bottom:12px">📱</div>
+        <h3 style="margin-bottom:8px;color:var(--text)">Límite de sesiones alcanzado</h3>
+        <p style="color:var(--text2);font-size:13px">Tienes ${sessions.length} de ${max} sesión(es) permitida(s).<br>Cierra una para continuar aquí.</p>
+      </div>
+      <div style="max-height:200px;overflow-y:auto;margin-bottom:16px">${sessionsList}</div>
+      <div style="text-align:center">
+        <button onclick="closeModal()" style="padding:10px 24px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);cursor:pointer">Cancelar</button>
+      </div>
+    </div>`;
+  openModal('Sesiones activas',html);
 }
 function showSessionActiveModal(device){
   const html=`
