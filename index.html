@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.1.9</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.2.1</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v7.1.9</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.2.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx_cLQBN5QQSu1xrMuT_VkWV-_GKRHwHaTzp2hX6o35ZvX_GRUqMj0dkWhJOcuI-JanIg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbw4Ac-HMsslEVxelP31MCWZqkRquNhOe9j2Fy00fZvGb1LfLocDCLR82e3i9rlALuXGlA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -4422,7 +4422,8 @@ async function addUserAction(){
 function openEditUser(idx){
   const u=_usersList[idx];if(!u)return;
   const uname=u.username||u.code||'';
-  const roleOpts=['lector','editor','admin'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('');
+  const uRole=String(u.role||'lector').toLowerCase();
+  const roleOpts=['lector','editor','admin'].map(r=>`<option value="${r}"${uRole===r?' selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('');
   const html=`<div style="padding:10px 0">
     <div class="field"><label>Usuario</label><input type="text" id="eu-username" value="${escH(uname)}" disabled style="background:var(--surface2)"></div>
     <div class="field"><label>Nombre</label><input type="text" id="eu-name" value="${escH(u.name||'')}"></div>
