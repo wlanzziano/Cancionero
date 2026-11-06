@@ -1,5 +1,5 @@
-// ── Cancionero Católico — Service Worker v6 ──────────────────
-const CACHE_NAME = 'cancionero-v6';
+// ── Cancionero Católico — Service Worker v7.1 ──────────────────
+const CACHE_NAME = 'cancionero-v7.1';
 const STATIC_FILES = [
   '/Cancionero/',
   '/Cancionero/index.html',
@@ -12,8 +12,7 @@ const STATIC_FILES = [
   '/Cancionero/icon-152.png',
   '/Cancionero/icon-192.png',
   '/Cancionero/icon-384.png',
-  '/Cancionero/icon-512.png',
-  '/Cancionero/offline.html'
+  '/Cancionero/icon-512.png'
 ];
 
 // Instalar — cachear archivos estáticos
@@ -41,7 +40,7 @@ self.addEventListener('activate', function(event) {
   self.clients.claim();
 });
 
-// Fetch — estrategia: Network first, caché como fallback
+// Fetch — Network first para API, Cache first para estáticos
 self.addEventListener('fetch', function(event) {
   const url = event.request.url;
 
@@ -51,14 +50,13 @@ self.addEventListener('fetch', function(event) {
       url.includes('youtube.com') ||
       url.includes('fonts.googleapis.com') ||
       url.includes('fonts.gstatic.com')) {
-    return; // dejar pasar sin interceptar
+    return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then(function(response) {
-        // Si la respuesta es válida, actualizar la caché
-        if (response && response.status === 200 && response.type === 'basic') {
+        if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
             cache.put(event.request, responseClone);
@@ -67,26 +65,19 @@ self.addEventListener('fetch', function(event) {
         return response;
       })
       .catch(function() {
-        // Sin red — intentar desde caché
         return caches.match(event.request).then(function(cached) {
           if (cached) return cached;
-          // Si piden navegación y no está en caché, página offline
+          // Página offline para navegación
           if (event.request.mode === 'navigate') {
-            return caches.match('/Cancionero/offline.html')
-              .then(function(offlinePage) {
-                return offlinePage || caches.match('/Cancionero/index.html');
-              });
+            return caches.match('/Cancionero/index.html');
           }
-          return new Response('Sin conexión', { 
-            status: 503,
-            statusText: 'Sin conexión'
-          });
+          return new Response('Sin conexión', { status: 503 });
         });
       })
   );
 });
 
-// Mensaje desde la app para forzar actualización
+// Mensaje para forzar actualización
 self.addEventListener('message', function(event) {
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
