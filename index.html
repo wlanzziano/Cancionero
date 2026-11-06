@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.0.1</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.0.3</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v7.0.1</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.0.3</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzE9BMTrkp60_xsqFgZZ9jk7NrVAkj3HtbOQofLzrg1vYIAQ14a2CUBL02Zia76DKUYlQ/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxpt6bXZwXJBupIA51z1Jafnz5iXrll1TxUuzTXnX3QY5yVDjKGCAJrUd37iQStRH3hUg/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -3514,7 +3514,7 @@ async function doLogin(forceCloseToken=false){
   const r=await apiGet({action:'login',user,pass,ua,forceClose:forceParam});
   btn.disabled=false;btn.textContent='Entrar';
   if(r.ok){
-    currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token};
+    currentUser={name:r.name,role:String(r.role||'').trim().toLowerCase(),token:r.token,username:r.username,device:r.device};
     localStorage.setItem('cancionero_session',JSON.stringify(currentUser));
     document.getElementById('login-view').style.display='none';
     startSessionCheck();
@@ -3562,11 +3562,11 @@ function showSessionActiveModal(device){
   openModal('',html);
 }
 async function doLogout(){
-  // Invalidar sesión en el servidor
-  if(currentUser&&currentUser.token){
+  // Invalidar sesión en el servidor usando username+device
+  if(currentUser&&currentUser.username&&currentUser.device){
     try{
-      await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',token:currentUser.token})});
-    }catch(e){}
+      await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',token:currentUser.token,username:currentUser.username,device:currentUser.device})});
+    }catch(e){console.log('Logout error:',e);}
   }
   if(sessionCheckInterval)clearInterval(sessionCheckInterval);
   currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
