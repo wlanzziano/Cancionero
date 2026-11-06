@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.8</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.9</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.8</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.9</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxO4lQuJNeURzvwkPo72ywo6xx7Meogk4AF_yz43bmFPFloKNF3RTRvSc9PYGoTRdRELQ/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxNN5Ato9OIfsGXDSVfVFwi8RrZJMXigw14kHsR4OdKq7BOySEEKP1lYX_MzRQJ2AiWhw/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -1872,9 +1872,9 @@ async function loadLoginStats(){
     // Filtrar solo usuarios con sesiones activas
     const activeUsers = users.filter(u => u.sessions && u.sessions.length > 0);
     if(!activeUsers.length){ container.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">✓ No hay sesiones activas</div>'; return; }
-    // Guardar sesiones para referencia
+    // Guardar sesiones para referencia (con username para expulsar)
     _auditSessions = [];
-    activeUsers.forEach(u => u.sessions.forEach(s => _auditSessions.push({...s, userName: u.name})));
+    activeUsers.forEach(u => u.sessions.forEach(s => _auditSessions.push({...s, username: u.username, userName: u.name})));
     const totalSessions = _auditSessions.length;
     let html = '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">'+totalSessions+' sesión(es) activa(s)</div>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
@@ -1899,10 +1899,16 @@ async function loadLoginStats(){
     container.innerHTML='<div style="color:var(--red)">Error: '+e.message+'</div>';
   }
 }
-function expulsarSesion(idx){
+async function expulsarSesion(idx){
   const s = _auditSessions[idx];
   if(!s) return;
-  forceLogoutSession(s.token);
+  if(!confirm('¿Expulsar sesión de '+s.userName+' en '+s.device+'?')) return;
+  try{
+    const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_device',token:currentUser.token,username:s.username,device:s.device})});
+    const d = await r.json();
+    if(d.ok){ toast('✓ Sesión expulsada'); loadLoginStats(); }
+    else toast(d.error||'Error');
+  }catch(e){ toast('Error: '+e.message); }
 }
 async function forceLogoutAll(){
   if(!confirm('¿Desconectar a TODOS los usuarios? Tendrán que volver a iniciar sesión.')) return;
