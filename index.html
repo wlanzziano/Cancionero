@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.5</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.7</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.5</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.7</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -1868,19 +1868,24 @@ async function loadLoginStats(){
     const d = await r.json();
     if(!d.ok){ container.innerHTML='<div style="color:var(--red)">'+d.error+'</div>'; return; }
     const users = d.stats.users || [];
-    if(!users.length){ container.innerHTML='<div style="color:var(--text3)">No hay registros de login</div>'; return; }
-    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<tr style="background:var(--surface2);text-align:left"><th style="padding:8px">Usuario</th><th style="padding:8px">Logins</th><th style="padding:8px">Último</th><th style="padding:8px">Dispositivos</th><th style="padding:8px"></th></tr>';
-    for(const u of users){
-      const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}) : '-';
-      const devices = (u.devices||[]).join(', ') || '-';
-      html += `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px;font-weight:500">${escH(u.name)}</td>
-        <td style="padding:8px;text-align:center">${u.logins||0}</td>
-        <td style="padding:8px;font-size:11px;color:var(--text3)">${lastLogin}</td>
-        <td style="padding:8px;font-size:11px">${devices}</td>
-        <td style="padding:8px"><button onclick="forceLogoutUser('${escH(u.username||u.name)}')" style="background:var(--red);color:white;border:none;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">Desconectar</button></td>
-      </tr>`;
+    // Filtrar solo usuarios con sesiones activas
+    const activeUsers = users.filter(u => u.sessions && u.sessions.length > 0);
+    if(!activeUsers.length){ container.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">✓ No hay sesiones activas</div>'; return; }
+    const totalSessions = activeUsers.reduce((sum,u) => sum + u.sessions.length, 0);
+    let html = '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">'+totalSessions+' sesión(es) activa(s)</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<tr style="background:var(--surface2);text-align:left"><th style="padding:8px">Usuario</th><th style="padding:8px">Dispositivo</th><th style="padding:8px">Inicio sesión</th><th style="padding:8px"></th></tr>';
+    for(const u of activeUsers){
+      const sessions = u.sessions || [];
+      sessions.forEach((s,idx) => {
+        const loginDate = s.loginDate ? new Date(s.loginDate).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}) : '-';
+        html += `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px;font-weight:500">${idx===0?escH(u.name):''}</td>
+          <td style="padding:8px;font-size:12px">${escH(s.device||'Desconocido')}</td>
+          <td style="padding:8px;font-size:11px;color:var(--text3)">${loginDate}</td>
+          <td style="padding:8px"><button onclick="forceLogoutSession('${s.token}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">Expulsar</button></td>
+        </tr>`;
+      });
     }
     html += '</table>';
     container.innerHTML = html;
@@ -1903,6 +1908,15 @@ async function forceLogoutUser(userName){
     const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_user',token:currentUser.token,userName})});
     const d = await r.json();
     if(d.ok){ toast('✓ '+userName+' desconectado'); loadLoginStats(); }
+    else toast(d.error||'Error');
+  }catch(e){ toast('Error: '+e.message); }
+}
+async function forceLogoutSession(token){
+  if(!confirm('¿Expulsar esta sesión?')) return;
+  try{
+    const r = await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'force_logout_session',token:currentUser.token,sessionToken:token})});
+    const d = await r.json();
+    if(d.ok){ toast('✓ Sesión expulsada'); loadLoginStats(); }
     else toast(d.error||'Error');
   }catch(e){ toast('Error: '+e.message); }
 }
