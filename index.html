@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v6.9.9</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.0.0</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v6.9.9</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.0.0</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -563,7 +563,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxNN5Ato9OIfsGXDSVfVFwi8RrZJMXigw14kHsR4OdKq7BOySEEKP1lYX_MzRQJ2AiWhw/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxRIvLCT74m5BlUCnyHomTQMVL3LTFrP7LIgPrzOYlkzBrb0gvNvxUzpXg9r7jnwKgNSA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -3561,7 +3561,14 @@ function showSessionActiveModal(device){
     </div>`;
   openModal('',html);
 }
-function doLogout(){
+async function doLogout(){
+  // Invalidar sesión en el servidor
+  if(currentUser&&currentUser.token){
+    try{
+      await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',token:currentUser.token})});
+    }catch(e){}
+  }
+  if(sessionCheckInterval)clearInterval(sessionCheckInterval);
   currentUser=null;songs=[];localStorage.removeItem('cancionero_session');
   document.getElementById('app').style.display='none';
   document.getElementById('login-user').value='';
