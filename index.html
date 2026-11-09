@@ -376,7 +376,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.2.4</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.3.1</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -416,7 +416,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v7.2.4</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.3.1</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -564,7 +564,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
   <div class="modal-box" id="generic-modal-content"></div>
 </div>
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbw4Ac-HMsslEVxelP31MCWZqkRquNhOe9j2Fy00fZvGb1LfLocDCLR82e3i9rlALuXGlA/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxsCUdNViMcFXa_zUgjOxNHB5Rwtomd7CmE-XN8vlefFW0LuV9U-PFE9kKP53uCiwrPkA/exec';
 const NS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
@@ -1621,15 +1621,29 @@ async function openSetlists(){
 
 function renderSetlists(){
   const el = document.getElementById('setlists-view');
-  const items = setlists.length ? setlists.map(sl=>{
+  // Filtrar solo setlists padre (sin parentId)
+  const parentSetlists = setlists.filter(sl => !sl.parentId);
+
+  const items = parentSetlists.length ? parentSetlists.map(sl=>{
     const canEdit = currentUser.role==='admin' || sl.createdBy===currentUser.name;
+    // Contar sub-setlists
+    const children = setlists.filter(c => c.parentId === sl.id);
+    const hasChildren = children.length > 0;
+    const totalSongs = hasChildren
+      ? children.reduce((sum, c) => sum + (c.songs||[]).length, 0)
+      : (sl.songs||[]).length;
+    const subtitle = hasChildren
+      ? `${children.length} sección${children.length!==1?'es':''} · ${totalSongs} canción${totalSongs!==1?'es':''}`
+      : `${(sl.songs||[]).length} canción${(sl.songs||[]).length!==1?'es':''}`;
+    const icon = hasChildren ? '📁' : '🎵';
+
     return `
     <div class="song-card" style="flex-direction:column;align-items:flex-start;gap:6px" onclick="openSetlistDetail('${sl.id}')">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-        <div style="font-size:15px;font-weight:500;color:var(--text)">${escH(sl.name)}</div>
+        <div style="font-size:15px;font-weight:500;color:var(--text)">${icon} ${escH(sl.name)}</div>
         ${canEdit?`<button class="song-del" onclick="event.stopPropagation();confirmDeleteSetlist('${sl.id}','${escH(sl.name)}')">&#10005;</button>`:''}
       </div>
-      <div style="font-size:12px;color:var(--text3)">${(sl.songs||[]).length} canción${(sl.songs||[]).length!==1?'es':''} · ${escH(sl.createdBy||'')}</div>
+      <div style="font-size:12px;color:var(--text3)">${subtitle} · ${escH(sl.createdBy||'')}</div>
     </div>`;
   }).join('') :
     '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">&#127897;&#65039;</div><p style="font-size:14px">No hay setlists aún</p></div>';
@@ -1644,10 +1658,46 @@ function renderSetlists(){
 }
 
 async function createSetlist(){
-  const name = prompt('Nombre del setlist:');
+  // Mostrar modal para elegir tipo
+  const html = `<div style="padding:10px 0">
+    <div style="font-size:14px;color:var(--text2);margin-bottom:16px">¿Qué tipo de setlist quieres crear?</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="createSetlistType('simple')" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;cursor:pointer;text-align:left">
+        <div style="font-size:15px;font-weight:500;color:var(--text)">🎵 Setlist simple</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Lista de canciones para un evento</div>
+      </button>
+      <button onclick="createSetlistType('sections')" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;cursor:pointer;text-align:left">
+        <div style="font-size:15px;font-weight:500;color:var(--text)">📁 Con secciones</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Para eventos con varios momentos (retiros, vigilias, etc.)</div>
+      </button>
+    </div>
+    <button onclick="closeModal()" style="width:100%;margin-top:16px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;color:var(--text3);cursor:pointer">Cancelar</button>
+  </div>`;
+  openModal('Nuevo Setlist', html);
+}
+
+async function createSetlistType(type){
+  closeModal();
+  const name = prompt(type === 'sections' ? 'Nombre del evento:' : 'Nombre del setlist:');
   if(!name || !name.trim()) return;
   const r = await api({action:'add_setlist', setlist:{name:name.trim(), songs:[], createdBy:currentUser.name}});
-  if(r.ok){ await loadSetlists(); renderSetlists(); toast('✓ Setlist creado'); }
+  if(r.ok){
+    await loadSetlists();
+    if(type === 'sections'){
+      // Abrir directamente el setlist para agregar secciones
+      currentSetlist = setlists.find(s=>s.id===r.id);
+      if(currentSetlist){
+        renderSetlistWithChildren();
+        toast('✓ Evento creado. Ahora agrega secciones.');
+      } else {
+        renderSetlists();
+        toast('✓ Evento creado');
+      }
+    } else {
+      renderSetlists();
+      toast('✓ Setlist creado');
+    }
+  }
   else toast('Error: '+r.error);
 }
 
@@ -1658,10 +1708,99 @@ async function deleteSetlistAction(id){
   else toast('Error: '+r.error);
 }
 
+var parentSetlistStack = []; // Para navegación hacia atrás
+
 function openSetlistDetail(id){
   currentSetlist = setlists.find(s=>s.id===id);
   if(!currentSetlist) return;
+
+  // Verificar si tiene sub-setlists
+  const children = setlists.filter(c => c.parentId === id);
+  if(children.length > 0){
+    renderSetlistWithChildren();
+  } else {
+    renderSetlistDetail();
+  }
+}
+
+function renderSetlistWithChildren(){
+  const sl = currentSetlist;
+  const children = setlists.filter(c => c.parentId === sl.id);
+  const canEditSl = currentUser.role==='admin' || sl.createdBy===currentUser.name;
+  const el = document.getElementById('setlists-view');
+
+  const childItems = children.map(child => {
+    const songCount = (child.songs||[]).length;
+    return `
+    <div class="song-card" style="flex-direction:column;align-items:flex-start;gap:6px" onclick="openSubSetlist('${child.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="font-size:15px;font-weight:500;color:var(--text)">🎵 ${escH(child.name)}</div>
+        ${canEditSl?`<button class="song-del" onclick="event.stopPropagation();confirmDeleteSetlist('${child.id}','${escH(child.name)}')">&#10005;</button>`:''}
+      </div>
+      <div style="font-size:12px;color:var(--text3)">${songCount} canción${songCount!==1?'es':''}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <button class="back-btn" onclick="backFromSetlist()">&#8592; Volver</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">📁 ${escH(sl.name)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">${children.length} sección${children.length!==1?'es':''}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${canEditSl?`<button class="sv-action-btn" style="font-size:11px;padding:3px 8px" onclick="editSetlistName()" title="Editar nombre">✏️</button>`:''}
+        ${canEditSl?`<button class="btn-add" style="font-size:12px;padding:6px 12px" onclick="createSubSetlist('${sl.id}')">+ Sección</button>`:''}
+      </div>
+    </div>
+    ${childItems}
+    ${!children.length?'<div style="text-align:center;padding:30px 0;color:var(--text3)"><p style="font-size:14px">No hay secciones aún</p></div>':''}`;
+}
+
+function openSubSetlist(id){
+  parentSetlistStack.push(currentSetlist.id);
+  currentSetlist = setlists.find(s=>s.id===id);
+  if(!currentSetlist) return;
   renderSetlistDetail();
+}
+
+function backFromSetlist(){
+  if(parentSetlistStack.length > 0){
+    const parentId = parentSetlistStack.pop();
+    currentSetlist = setlists.find(s=>s.id===parentId);
+    if(currentSetlist){
+      const children = setlists.filter(c => c.parentId === parentId);
+      if(children.length > 0){
+        renderSetlistWithChildren();
+      } else {
+        renderSetlistDetail();
+      }
+    } else {
+      renderSetlists();
+    }
+  } else if(currentSetlist && currentSetlist.parentId){
+    currentSetlist = setlists.find(s=>s.id===currentSetlist.parentId);
+    if(currentSetlist){
+      renderSetlistWithChildren();
+    } else {
+      renderSetlists();
+    }
+  } else {
+    renderSetlists();
+  }
+}
+
+async function createSubSetlist(parentId){
+  const name = prompt('Nombre de la sección:');
+  if(!name || !name.trim()) return;
+  const r = await api({action:'add_setlist', setlist:{name:name.trim(), songs:[], createdBy:currentUser.name, parentId:parentId}});
+  if(r.ok){
+    await loadSetlists();
+    currentSetlist = setlists.find(s=>s.id===parentId);
+    renderSetlistWithChildren();
+    toast('✓ Sección creada');
+  }
+  else toast('Error: '+r.error);
 }
 
 function renderSetlistDetail(){
@@ -1692,9 +1831,13 @@ function renderSetlistDetail(){
 
   const canEditSl = currentUser.role==='admin' || sl.createdBy===currentUser.name;
 
+  // Determinar a dónde volver
+  const backAction = sl.parentId ? `backFromSetlist()` : `openSetlists()`;
+  const backLabel = sl.parentId ? setlists.find(p=>p.id===sl.parentId)?.name || 'Volver' : 'Setlists';
+
   el.innerHTML = `
-    <button class="back-btn" onclick="openSetlists()">&#8592; Setlists</button>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <button class="back-btn" onclick="${backAction}">&#8592; ${escH(backLabel)}</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text)">${escH(sl.name)}</div>
         ${canEditSl?`<button class="sv-action-btn" style="font-size:11px;padding:3px 8px" onclick="editSetlistName()" title="Editar nombre">✏️</button>`:''}
