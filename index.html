@@ -121,8 +121,8 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .sv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .sv-artist{font-size:13px;color:var(--text2)}
 .sv-bpm{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);border-radius:5px;font-family:var(--font-mono);font-size:12px;padding:2px 8px}
-.sv-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:12px 0;transition:box-shadow .2s}
-.sv-controls.stuck{position:fixed;top:0;left:0;right:0;z-index:100;border-radius:0;margin:0;box-shadow:0 2px 12px rgba(0,0,0,0.15)}
+.sv-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:12px 0;transition:box-shadow .2s,border-radius .2s;position:sticky;top:0;z-index:100}
+.sv-controls.stuck{border-radius:0;box-shadow:0 2px 12px rgba(0,0,0,0.15);border-left:none;border-right:none}
 .t-group{display:flex;align-items:center;gap:7px}
 .t-label{font-size:12px;color:var(--text3)}
 .t-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font-body)}
@@ -375,7 +375,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
     <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
     <div class="login-info">¿No tienes cuenta? Pide al administrador que te agregue.</div>
-    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.2.2</div>
+    <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text3)">v7.2.3</div>
   </div>
 </div>
 <div id="app" style="display:none">
@@ -415,7 +415,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
       <div id="tag-filter-wrap" class="tag-filter-wrap" style="display:none"></div>
       <div id="alpha-bar" class="alpha-bar"></div>
       <div id="song-list"></div>
-      <div class="footer">Powered by <span>Nanolanzz</span> · v7.2.2</div>
+      <div class="footer">Powered by <span>Nanolanzz</span> · v7.2.3</div>
     </div>
   </div>
   <div id="song-view" style="display:none"></div>
@@ -3905,48 +3905,44 @@ function goHome(){
 
 // ── Sticky controls en song-view ──
 (function(){
-  let controlsTop = 0;
-  let placeholder = null;
-  
-  function checkSticky(){
+  // Sticky controls con IntersectionObserver (sin saltos)
+  let stickyObserver = null;
+
+  function setupStickyObserver(){
     const controls = document.querySelector('#song-view .sv-controls');
-    if(!controls || document.getElementById('song-view').style.display === 'none') return;
-    
-    if(!placeholder){
-      controlsTop = controls.getBoundingClientRect().top + window.scrollY;
+    if(!controls) return;
+
+    // Limpiar observer anterior
+    if(stickyObserver) stickyObserver.disconnect();
+
+    // Crear sentinel justo antes del controls
+    let sentinel = document.getElementById('sticky-sentinel');
+    if(!sentinel){
+      sentinel = document.createElement('div');
+      sentinel.id = 'sticky-sentinel';
+      sentinel.style.cssText = 'height:1px;margin-bottom:-1px;pointer-events:none';
+      controls.parentNode.insertBefore(sentinel, controls);
     }
-    
-    if(window.scrollY > controlsTop - 5){
-      if(!controls.classList.contains('stuck')){
-        controls.classList.add('stuck');
-        if(!placeholder){
-          placeholder = document.createElement('div');
-          placeholder.className = 'sv-controls-placeholder';
-          placeholder.style.height = controls.offsetHeight + 'px';
-          placeholder.style.margin = '12px 0';
-          controls.parentNode.insertBefore(placeholder, controls);
+
+    stickyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        // Cuando el sentinel sale de vista (arriba), el controls está "stuck"
+        if(!entry.isIntersecting && entry.boundingClientRect.top < 0){
+          controls.classList.add('stuck');
+        } else {
+          controls.classList.remove('stuck');
         }
-      }
-    } else {
-      if(controls.classList.contains('stuck')){
-        controls.classList.remove('stuck');
-        if(placeholder){
-          placeholder.remove();
-          placeholder = null;
-        }
-      }
-    }
+      });
+    }, {threshold: 0, rootMargin: '0px'});
+
+    stickyObserver.observe(sentinel);
   }
-  
-  window.addEventListener('scroll', checkSticky, {passive: true});
-  
+
   // Reset cuando cambia de vista
   const origShowView = window.showView;
   window.showView = function(v){
     const controls = document.querySelector('#song-view .sv-controls');
     if(controls) controls.classList.remove('stuck');
-    if(placeholder){ placeholder.remove(); placeholder = null; }
-    controlsTop = 0;
     // Ocultar teleprompter si salimos de song-view
     if(v !== 'song-view' && v !== 'setlist-play-view'){
       tpHideBar();
@@ -3954,10 +3950,7 @@ function goHome(){
     }
     origShowView(v);
     if(v === 'song-view'){
-      setTimeout(()=>{
-        const c = document.querySelector('#song-view .sv-controls');
-        if(c) controlsTop = c.getBoundingClientRect().top + window.scrollY;
-      }, 50);
+      setTimeout(setupStickyObserver, 50);
     }
   };
 })();
